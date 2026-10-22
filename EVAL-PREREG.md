@@ -210,3 +210,144 @@ any data exists for that product.
   does not measure the plugin. The evidence is the calls' own token counts, which do not depend on the results. The
   failed run is recorded in `evidence/run-1/`.
 - **E4 is parked.** `signals` ships `off`, which needs no data. The pilot runs only if the feature comes back.
+
+### A4 (2026-10-23): the scope-A3 harness, fixed before its first run
+
+Reason: A3 says scope-A3 runs generate through Hermes and leaves the exact choices to an amendment. They are fixed
+here before any scope-A3 data exists. Nothing above the Amendments heading changes, and A1's guide, rubric, item and
+schema hashes stay as A1 records them.
+
+- **Host and isolation.** Hermes v0.22.2 from a pinned source tree, recorded by a digest of its source files. Each cell
+  runs in a fresh copy of one warmed home per model and arm, with its own `HERMES_HOME`, `HOME`, XDG folders and
+  `TMPDIR`, an environment built from an allowlist that includes `CLAUDE_CODE_DISABLE_CLAUDE_MDS=1`, macOS
+  `sandbox-exec` allowing writes only inside the run directory, and an empty working directory.
+  `auth.adopt_external_logins` is false and there is no provider fallback.
+- **Persona and settings.** Hermes' default persona: no `SOUL.md`, memory, user profile, curator, title generation or
+  background review. The plugin's `signals` is `off`. Every setting other than the guidance is identical across arms.
+- **Turn and output channel.** One user turn per cell, platform `telegram`, toolsets `skills` only; no audio is made.
+  The item's user message is the turn, unchanged. Every arm carries the same harness instruction, as the prompt
+  section `bench-harness` from a bench plugin: "Your final reply is spoken aloud as a voice message. There is no
+  text_to_speech call in this conversation: write the reply exactly as it should be spoken." Results are a text-only
+  speech proxy and are labelled so.
+- **Arms.** Only the delivery guidance differs. `tts.provider` is `emotion-chip` with `backend: eleven`, `eleven_v4`, in
+  every arm.
+  - `OFF`: `guide_mode: defer` (no chip section, no chip skill).
+  - `ON`: `guide_mode: generate` (the chip's prompt section and the `emotion-chip-voice` skill, which Hermes lists in
+    its skills index and loads on demand).
+  - `NATIVE`: `guide_mode: defer`, plus `bench/native_guide.md` (A1's hash) as two prompt sections, `bench-native-1`
+    and `bench-native-2` (Hermes orders sections by id, so these ids keep the order), split before the heading
+    `### Notes by voice model`, text unchanged apart from Hermes' boundary-whitespace strip. A1's "about 93% of ON's
+    length" is not carried over; the report gives each arm's measured guidance length.
+- **Models and routes.**
+  - `claude-opus-5-5` at medium effort through the subscription relay (`claude-subscription-directsdk-experimental`,
+    source tree pinned by digest, per-call mode, session mode off). The relay runs Claude Code at a pinned version
+    (2.1.306 when this was written). The version used is recorded, and a different one needs a new route record and
+    clean reference.
+  - `gpt-6.1-sol` at medium effort through Hermes' `openai-codex` provider, with a sign-in owned by the harness and
+    provisioned fresh into each cell.
+  - A model that cannot run is reported as missing; the scope-A3 verdict then stays `unverified`.
+- **Captures.** For every model call the probe holds two texts in memory. The first is the Hermes-side request: the
+  system text `S` and messages `M` that Hermes hands its provider, captured before any conversion. The second is the
+  final provider-bound request: on the relay, the upstream body it forwards; on `openai-codex`, the request after
+  Hermes' preflight. The probe runs the checks below on them, then records only:
+  - the sha256 and length of each component;
+  - tool names, and the sha256 of each tool's canonical JSON schema as sent in the final request;
+  - the provider's prompt-token count and the skill reads;
+  - the check results, and which marker strings occur (as opaque labels).
+
+  Prompt text is not recorded. Every public input it is built from is published by hash with its source.
+- **Expected request, per route.** Each expectation is built separately from `S` and `M` with the source's own
+  transformations, then compared with the final request. Roles, content, tool ids and order must match. Cache-control
+  markers and tool-streaming flags are transport metadata, not content.
+  - `openai-codex`: `instructions` and `input` equal what Hermes' own functions make of `S` and `M`:
+    `_chat_messages_to_responses_input` for the messages, then `_preflight_codex_api_kwargs` (instruction
+    normalization and input preflight), both in `agent/codex_responses_adapter.py`. They are called with the options
+    this route sets (issuer kind, replay state, harmony-token sanitizing). No other instruction text or input item is
+    allowed.
+  - Subscription relay: the final system text is `S` (which the relay hands Claude Code as its system prompt file),
+    plus at most blocks of kinds S1 and S2 below. The final messages are the relay's own conversion of `M`
+    (`prepare_history`, from its pinned source), plus at most blocks of kinds M1 and R1. The allowed kinds are:
+    - S1: Claude Code's one-sentence identity line, as the first system block;
+    - S2: Claude Code's billing header block (key=value fields only, no prose);
+    - M1: Claude Code's per-request context on the newest turn or as a trailing system-role message, limited to the
+      current date and the signed-in account's email address;
+    - R1: the relay's skills reminder (its `SKILLS_REMINDER` text, which it appends to a fresh user turn when
+      `skill_view` is offered), exact text from its pinned source.
+
+    Any other Claude Code prose (an effort or budget reminder, for example) is not M1.
+  - **Route record (A4b).** Before the clean reference, the bench owner makes one neutral call per route (fixed text,
+    no held-out item) and reads its full final request.
+    - Each S1, S2 and M1 block found is written into A4b, with its placement, as exact text or as a template. A
+      template's only variable fields are the date, the email address and the billing field values. R1 is written
+      from source.
+    - A block that fits no kind, or carries any instruction beyond R1's, makes the route unclean: that model does not
+      run and is reported missing.
+    - A4b is published with the email shown as a label. It lists blocks only and cannot add a kind.
+- **Normalization.** Equality checks run after the raw marker scan of both captures, on normalized text:
+  - In each system text, the cell's own item directory becomes `<ITEM>`, and lines that start with `Conversation
+    started`, `Today's date (as of`, `Timezone` or `Session ID:` are dropped. These are Hermes' per-session lines,
+    matched by those prefixes alone.
+  - Message content gets only the `<ITEM>` replacement.
+  - A golden home's prompt is normalized with that home's own item directory, and each cell's with its own.
+
+  Nothing else is normalized. The recipe is the probe's `normalise`, published by hash.
+- **Expected system text, per arm.** For each model and arm, Hermes builds the system prompt from the frozen golden
+  home once, without a model call. That text, normalized, is the arm's expected `S`. Before the clean reference:
+  - OFF's expected `S` holds the `bench-harness` section once and no chip or native text;
+  - ON's expected `S` minus OFF's is exactly two things: the chip's framed prompt section, and the
+    `emotion-chip-voice` entry as Hermes renders it in its skills index (with the index's framing if it is the first
+    listed skill);
+  - NATIVE's expected `S` minus OFF's is exactly the framed `bench-native-1` and `bench-native-2` sections, in that
+    order, whose bodies equal the two published parts;
+  - each section body equals its published file after Hermes' strip.
+- **Clean reference, before the pilot.** One `OFF` cell per model on the first G1 held-out item by id. Its first call
+  must show:
+  - `S` equal to OFF's expected `S`;
+  - `M` equal to the item's user message alone;
+  - the final request equal to the route's expected request, with only A4b blocks added.
+
+  The sha256 of each component is recorded. A route that fails does not run.
+- **Cell validity.** A cell is valid only if all of the following hold on every call, for both captures:
+  1. no negative marker (strings from instruction files outside the bench, and this machine's repository paths),
+     scanned before normalization;
+  2. `S` equals the arm's expected `S`, and the final request equals the route's expected request, with only A4b
+     blocks added on the relay;
+  3. on the first call `M` is the item's user message alone. On each later call `M` is the earlier accepted messages,
+     plus the model's previous response and the results of the tools it called. Each result equals what that Hermes
+     tool returns from the frozen home; a `skill_view` result is Hermes' own result for the published skill (its
+     text inside the tool's JSON framing);
+  4. the first call's prompt tokens are within 5% of the median for that model, arm and phase over original attempts
+     (a drift heuristic, not a proof of cleanliness);
+  5. the home's memory store is empty after the turn.
+
+  An invalid cell is an infrastructure failure under the stop rules. It is kept and rerun once. If the rerun is valid,
+  it replaces the original for scoring, and both appear in the validity table. A model whose cells fail check 1, 2 or
+  3 more than once stops for that model. A cell whose rerun also fails only check 4 is reported as an outlier and not
+  admitted. No check is relaxed for it, and it gets no further reruns.
+- **Items, runs, n.** The held-out files of `bench/items/HELDOUT.sha256` (G1 20, G2 10, G3 6, E3 40; manifest sha256 as
+  in A1), 3 runs per item, model and arm: 684 turns per model. n does not change for cost or for a missing model.
+- **Pilot.** After the clean reference, the pilot runs the first two held-out items of each set by id, one run, every
+  model and arm (24 cells per model). It checks the captures, the output channel and validity. Its replies are not
+  scored, do not count toward n, and are not used to edit the guide, the harness instruction or a rubric. A harness
+  change after the pilot needs a new route record (if the route changed), clean reference and pilot, all recorded.
+- **Scoring.** Every arm's raw reply goes through the mechanical gate, using the `eleven_v4` render and the text the
+  user would see. G1 and E3 are scored as A3 and E3 say; self-blame counts E3's failure items (`category: work`,
+  `valence_hint: negative`). G2 items are generated and gated but not judged.
+- **Judges.** As A1 and A3, with batches formed within each generating model before the fixed shuffle. The judge never
+  sees which model wrote a reply.
+  - `claude-opus-5-5` replies are judged by `gpt-6.1-sol` at medium effort through `codex exec`.
+  - `gpt-6.1-sol` replies are judged by `claude-opus-5-5` at medium effort through `claude -p`, run in an empty
+    temporary directory with `CLAUDE_CODE_DISABLE_CLAUDE_MDS=1`.
+  - The 20-item owner spot check and its disagreement rate are still required before any release claim.
+  - A missing judgment is reported as missing, per set, model and arm; a mechanical pass does not make E3 complete.
+- **Report and verdict.** The report is labelled scope A3 and text-only speech proxy. It publishes:
+  - the source and route identities (Hermes source digest, relay and plugin digests, Claude Code version) and A4b;
+  - the full EVAL-PREREG.md sha256 and the frozen-slice sha256;
+  - the clean reference and pilot records, and the normalization recipe's hash;
+  - each arm's guidance length (the sections first shown, and the skill text fetched), the skill-read trace, and
+    per-tool schema hashes (identical across arms);
+  - the expected and admitted cell counts, every invalid attempt with its reason, the scored replies and judge
+    mappings, and anything missing.
+
+  A verdict of `pass` needs the frozen slice to match `prereg-v1`, every generation admitted as valid, both models
+  present, and no mechanical-gate failure. It is a mechanical-gate result, not a release-readiness claim.
