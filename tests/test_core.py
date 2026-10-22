@@ -726,3 +726,18 @@ def test_a_rewrite_after_a_word_or_call_stays_score_syntax(text, tagless, data):
     score = parse(text, data)
     for dialect in ("fish_s2", "eleven_v4"):
         assert check(score, render(score, dialect, data=data), data) == []
+
+
+@pytest.mark.parametrize("text, dialect, expected", [
+    ("See [Mercury](https://en.wikipedia.org/wiki/Mercury_(planet)) now.", "tagless",
+     "See Mercury (https://en.wikipedia.org/wiki/Mercury_(planet)) now."),
+    ("Take v[start..end] and wait.. what.", "eleven_v4", "Take v[start..end] and wait… what."),
+    ("Use ../docs/Guide.md here.", "eleven_v4", "Use ../docs/Guide.md here."),
+    ("Okay. [[warm]] Here.", "fish_s2", "Okay. Here."),
+    ("Wait [[pause]] go.", "fish_s2", "Wait go."),
+    ("Café[[Menu]]is open.", "tagless", "Café Menu is open."),
+    ("Read x[a.  b] now.", "tagless", "Read x[a.  b] now."),
+    ('Use df.loc[[0, 1], ["a", "b"]] here.', "tagless", 'Use df.loc[[0, 1], ["a", "b"]] here.'),
+])
+def test_links_ranges_bare_headers_and_code_text(text, dialect, expected, data):
+    assert render(text, dialect, data=data).text == expected

@@ -157,7 +157,8 @@ def render(text_or_score, dialect, options=None, data=None):
         # Collapse gaps left by dropped tokens; the agent's own bracket text stays byte-for-byte.
         rendered = re.sub(r"(\[[^\[\]]*\])|[ \t]{2,}", lambda m: m[1] or " ", close_gaps("".join(chunks))).strip()
         if name == "eleven_v4":
-            rendered = re.sub(r"(?<!\.)\.\.(?!\.)", "…", rendered)
+            # Prose ".." only: a range or path ("v[a..b]", "../docs") keeps its dots.
+            rendered = re.sub(r"(?<!\.)\.\.(?![.\w/])", "…", rendered)
         if rendered:
             output.append(rendered)
         spoken = re.sub(r"\s{2,}", " ", close_gaps("".join(plain))).strip()

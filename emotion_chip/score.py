@@ -21,8 +21,15 @@ SPEAKER_ID = re.compile(r"\d{1,3}")
 INNER = re.compile(r"(\[[^\[\]]*\])")
 # A bracket group with no letter names no cue ("items[0]", "[1]", "[::1]"); a Markdown link's target is a URL or path.
 LETTER = re.compile(r"[^\W\d_]")
-LINK_TARGET = re.compile(r"\(([^\s()]*[/.:#][^\s()]*)\)")
+# A link target may hold one level of balanced parentheses ("wiki/Mercury_(planet)").
+LINK_TARGET = re.compile(r"\(((?:[^\s()]|\([^\s()]*\))+)\)")
 RUNG = re.compile(r"^(slightly|a little|somewhat|very|extremely|deeply|really)\s+", re.I)
+
+
+@lru_cache(maxsize=1)
+def _default_data():
+    from .data import load_data
+    return load_data()
 
 
 @lru_cache(maxsize=1)
@@ -198,6 +205,12 @@ def parse(text: str, data=None) -> Score:
                 return ident(j)
         return False
 
+    def register(inner):
+        """Whether a bare double-bracket group names only delivery words or sounds ("[[warm]]", "[[pause]]")."""
+        lexicon = data if data is not None else _default_data()
+        parts = [RUNG.sub("", p.strip()).lower() for p in inner.split(",")]
+        return all(p and (p in events or lexicon.lookup(p)) for p in parts)
+
     def guard(i):
         """The boundary a rewrite leads with, so its first cue is read as a cue, not as part of a word or code."""
         return GAP if lead(i) or in_code(i) else ""
@@ -208,16 +221,24 @@ def parse(text: str, data=None) -> Score:
             end = _find_after(_scan(body)[2], i + 2)
             if end != -1:
                 inner = body[i + 2:end]
-                if any(c in inner for c in ":;[") or not inner.strip():
+                close = _close(body, i)
+                if "[" in inner and in_code(i) and close != -1 and not SPAN_OPEN.search(body, i + 1, close):
+                    # Code with nested lists ("df.loc[[0, 1], ['a', 'b']]") is text.
+                    append_text(body[i:close + 1])
+                    kept, i = close, close + 1
+                    continue
+                if any(c in inner for c in ":;[") or not inner.strip() or register(inner):
                     dropped.append(Dropped("header", "misplaced"))
                     append_text(GAP)
                 elif in_code(i):
                     # Code such as pandas columns ("df[['a', 'b']]") is text.
-                    plain(body[i:end + 2])
+                    append_text(body[i:end + 2])
                     kept = end + 1
                 else:
-                    # A wiki link ("[[Project Plan]]") is not header syntax: its words are spoken.
+                    # A wiki link ("[[Project Plan]]") is not header syntax: its words are spoken, apart from neighbours.
+                    append_text(lead(i))
                     plain(inner.strip())
+                    append_text(GAP)
                 i = end + 2
                 continue
         if body[i] == "]":
@@ -257,7 +278,7 @@ def parse(text: str, data=None) -> Score:
             # Dict[str, List[int]]. A span ("hap[stress: pi]ness") names its operator, so it stays score syntax.
             close = end if nested == -1 else _close(body, i)
             if close != -1 and not SPAN_OPEN.search(body, i + 1, close):
-                plain(body[i:close + 1])
+                append_text(body[i:close + 1])
                 kept, i = close, close + 1
                 continue
         if nested != -1:
@@ -274,7 +295,7 @@ def parse(text: str, data=None) -> Score:
         content = body[i + 1:end]
         raw = content.strip()
         link = LINK_TARGET.match(body, end + 1)
-        if raw and link:
+        if raw and link and re.search(r"[/.:#]", link[1]):
             # Ordinary text, not score syntax: "[docs](https://x.io)" keeps its words and its target.
             plain(f"{raw} ({link[1]})")
             i = link.end()
