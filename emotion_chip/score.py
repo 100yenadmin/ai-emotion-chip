@@ -44,9 +44,18 @@ def _events(sounds=None):
     return {**{e: e for e in sounds["events"]}, **sounds.get("aliases", {})}
 
 
+# A header field's key is lowercase ("register: warm", "pace: calm"); a wiki namespace ("Category: Happy") is not.
+HEADER_KEY = re.compile(r"[a-z][a-z _-]{0,30}")
+
+
 def _header_shaped(inner, events, data=None):
     """Whether a double-bracket group reads as a register header: fields, empty, or only delivery words or sounds."""
-    if any(c in inner for c in ":;[") or not inner.strip():
+    if "[" in inner or not inner.strip():
+        return True
+    keys = [part.partition(":")[0].strip() for part in inner.split(";") if ":" in part]
+    if keys:
+        return all(key.lower() == "register" or HEADER_KEY.fullmatch(key) for key in keys)
+    if ";" in inner:
         return True
     lexicon = data if data is not None else _default_data()
     parts = [RUNG.sub("", p.strip()).lower() for p in inner.split(",")]

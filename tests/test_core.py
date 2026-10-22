@@ -721,6 +721,12 @@ def test_a_wiki_link_speaks_its_words_and_a_misplaced_header_is_dropped(data):
     assert parse("[[Project Plan]] is ready.", data).header is None
     assert parse("[[sad]] Fine.", data).header.raw == "sad"
     assert parse("[[Sad]] Fine.", data).header.raw == "Sad"
+    assert parse("[[Register: sad]] Fine.", data).header.raw == "Register: sad"
+    # A wiki namespace link ("Category: Happy") is a link, not a header field, at the start and mid-sentence.
+    for dialect in ("fish_s2", "tagless"):
+        assert render("[[Category: Happy]] is useful.", dialect, data=data).text == "Category: Happy is useful."
+        assert render("See [[Category: Happy]] now.", dialect, data=data).text == "See Category: Happy now."
+    assert parse("[[Category: Happy]] is useful.", data).header is None
     assert parse("[[conversational, a little tired]] Fine.", data).header.raw == "conversational, a little tired"
     assert parse("[[register: sad; pace: slow]] Fine.", data).header.raw == "register: sad; pace: slow"
 
