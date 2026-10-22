@@ -16,7 +16,8 @@ tone, emphasis, pacing, softness, whispers, breaths, sighs and laughter, and the
 The agent writes its own delivery cues inline, in a small bracket score such as `[slightly frustrated]`,
 `[soft: I'm glad you told me.]` or `[pause]`. The plugin never adds an emotion the agent did not write. It gives the
 agent facts it cannot see (for example "three errors in a row"), then translates the score into each vendor's dialect
-at that vendor's documented ceiling. Plain neutral speech is always a valid choice.
+at that vendor's documented ceiling. The whole range is open to the agent, crying, sobbing, screaming and
+whispering included; the plugin removes nothing for taste or safety. Plain neutral speech is always a valid choice.
 
 ## Install (pre-release)
 
@@ -102,8 +103,6 @@ We state that research at the strength it supports:
 
 - Cues can shape the agent's words as well as its voice. We measure that with sycophancy and harshness checks before
   any release; see [EVAL-PREREG.md](EVAL-PREREG.md).
-- In emotional-support conversations, Anthropic's system cards report that some Claude models sometimes validated
-  self-harm. A warmer voice does not fix that. Configure your agent's safety guidance independently of this plugin.
 - Synthesis calls are paid requests to ElevenLabs or Fish Audio, billed to your accounts.
 
 ## License

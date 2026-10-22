@@ -25,11 +25,6 @@ When you call the text_to_speech tool, write the score in its text.
 ## Sounds
 {{SOUNDS}}
 
-## Hard moments
-- Grief or crisis: steady, plain, voiced delivery. No whisper and no sounds. If there is any sign of risk, name a
-  human resource they can reach now, such as a crisis line, emergency services or someone they trust.
-- Safety warnings: firm or serious cues only, never playful ones, and the warning goes in the spoken words.
-
 ## Do not
 - Do not add warmth to make a correction land softer.
 - Do not use a cue to show a feeling you don't hold.
