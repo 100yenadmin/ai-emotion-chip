@@ -532,6 +532,15 @@ def test_a_span_can_end_its_sentence(data, text, count):
     assert apply_policy(score, data)[1] == []
 
 
+@pytest.mark.parametrize("text, expected", [("[[laughing]] Hi.", "Hi."), ("[[register: happy, laughing]] Hi.", "[happy] Hi."),
+                                            ("[[register: Laughs]] [sad] Hi.", "[sad] Hi.")])
+def test_sounds_off_drops_a_sound_named_in_the_header(text, expected):
+    data = load_data()
+    assert render(text, "fish_s2", {"sounds": False}, data).text == expected
+    on = render(text, "fish_s2", data=data)
+    assert on.dropped == [] or all(d.reason != "sounds off" for d in on.dropped)
+
+
 def test_breaths_and_sounds_are_never_capped(data):
     text = "[breath] One. [exhale] Two. [breath:shaky] Three. [laugh] [laugh] [sigh] [gasp] Four."
     assert apply_policy(parse(text), data)[1] == []
