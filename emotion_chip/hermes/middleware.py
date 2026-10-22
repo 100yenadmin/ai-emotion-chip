@@ -2,7 +2,7 @@
 from ..data import load_data
 from ..render import dialect_for
 from . import provider as provider_module
-from .fishtags import fish_adapter, settled_render
+from .fishtags import adapt_all, fish_adapter, settled_render
 from .settings import sound_limit, session_env
 from .situation import Situation
 
@@ -26,7 +26,7 @@ def make_middleware(settings, situation=None, env=None):
                 dialect = dialect_for("fish", settings.resolve_fish_model(settings.host("tts.model"), use_setting=False).effective)
                 try:  # every Fish model: see the provider
                     adapt = fish_adapter(provider_module._fish())
-                    text = adapt(text, "S2")
+                    text = adapt_all(text, adapt)
                 except Exception:
                     adapt = None
             elif provider == "elevenlabs" and settings.host("tts.elevenlabs.model_id", "").startswith(("eleven_v3", "eleven_v4")):

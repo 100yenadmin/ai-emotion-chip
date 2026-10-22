@@ -10,7 +10,7 @@ from ..policy import apply_policy
 from ..render import dialect_for
 from ..score import header_cue, parse
 from ._compat import TTSProvider
-from .fishtags import fish_adapter, settled_render
+from .fishtags import adapt_all, fish_adapter, settled_render
 from .log import DeliveryLog
 from .settings import Settings, session_env, session_identity, sound_limit
 from .situation import Situation
@@ -79,7 +79,7 @@ class EmotionChipTTSProvider(TTSProvider):
         # model (drama-3 and the tagless S1 route too) puts each paren cue through the same policy.
         try:
             adapt = self.tag_adapter or fish_adapter(_fish())
-            text = adapt(text, "S2")
+            text = adapt_all(text, adapt)
         except Exception:
             adapt = None
             notes.append("Fish adapt_tags unavailable; skipped pre-parse adaptation")

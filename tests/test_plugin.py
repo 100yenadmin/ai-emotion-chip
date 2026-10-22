@@ -848,3 +848,25 @@ def test_status_prompt_and_skill_follow_tts_model(rig, tmp_path):
     host["tts.model"] = "drama-3"
     assert "dialect: fish_drama3" in ctx.command("status")
     assert ctx.section({"model": "default"}) == build_prompt_section("fish_drama3", "default", load_data())
+
+
+@pytest.mark.parametrize("model", ["s2.1-pro", "drama-3"])
+@pytest.mark.parametrize("text,voiced", [
+    ("[sad] (sobbing) Sorry.", "[sad] Sorry."),
+    ("[[register: sad]] [hysterical] (sobbing) Sorry.", "[sad] Sorry."),
+    ("Done. [hysterical] " + "(sobbing) " * 9 + "Sorry.", "Done. Sorry."),
+    ("I was (sobbing) yesterday.", "I was (sobbing) yesterday."),
+])
+def test_every_leading_paren_cue_passes_policy(fish_tags, model, text, voiced):
+    ctx, fish, host, *_ = fish_tags
+    host["tts.fish-audio.model"] = fish.pinned_model = model
+    ctx.provider.synthesize(text, "out.mp3")
+    assert fish.calls[-1][1] == voiced and fish.spoken[-1] == voiced
+
+
+def test_settling_keeps_the_register_params(fish_tags):
+    ctx, fish, *_ = fish_tags
+    # The stray "]" hides the paren until the parser drops it, so only a second render pass catches it.
+    for text in ("[[register: sad]] [excited] Hi. ] (sobbing) Bye.", "[[register: sad]] [excited] Hi. ] " + "(sobbing) " * 9 + "Bye."):
+        ctx.provider.synthesize(text, "out.mp3")
+        assert fish.spoken[-1] == "[excited] Hi. Bye." and fish.calls[-1][2]["speed"] == 0.92
