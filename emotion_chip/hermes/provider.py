@@ -75,14 +75,14 @@ class EmotionChipTTSProvider(TTSProvider):
         options = {"sounds_per_turn": sound_limit(self.settings, self.situation, self.env), "allow_speakers": False}
         notes = []
         original_chars = len(text)
-        adapt = None
-        if dialect == "fish_s2":
-            try:
-                adapt = self.tag_adapter or fish_adapter(_fish())
-                text = adapt(text, "S2")
-            except Exception:
-                adapt = None
-                notes.append("Fish adapt_tags unavailable; skipped pre-parse adaptation")
+        # Fish performs (cue) parens natively on S1 and adapts them to tags again on S2. Translating them on every Fish
+        # model (drama-3 and the tagless S1 route too) puts each paren cue through the same policy.
+        try:
+            adapt = self.tag_adapter or fish_adapter(_fish())
+            text = adapt(text, "S2")
+        except Exception:
+            adapt = None
+            notes.append("Fish adapt_tags unavailable; skipped pre-parse adaptation")
         data = load_data()
         score = parse(text, data)
         opener = header_cue(score.header)

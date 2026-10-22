@@ -24,12 +24,11 @@ def make_middleware(settings, situation=None, env=None):
             if provider == "fish-audio":
                 # Fish gets tts.model from Hermes, never the chip's own fish_model setting.
                 dialect = dialect_for("fish", settings.resolve_fish_model(settings.host("tts.model"), use_setting=False).effective)
-                if dialect == "fish_s2":
-                    try:
-                        adapt = fish_adapter(provider_module._fish())
-                        text = adapt(text, "S2")
-                    except Exception:
-                        adapt = None
+                try:  # every Fish model: see the provider
+                    adapt = fish_adapter(provider_module._fish())
+                    text = adapt(text, "S2")
+                except Exception:
+                    adapt = None
             elif provider == "elevenlabs" and settings.host("tts.elevenlabs.model_id", "").startswith(("eleven_v3", "eleven_v4")):
                 dialect = "eleven_v4"
             if "[" not in text:

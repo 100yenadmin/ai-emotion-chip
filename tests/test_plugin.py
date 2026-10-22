@@ -784,16 +784,22 @@ def test_compat_path_adapts_parens_and_follows_tts_model(fish_tags):
     assert call("[soft: here]") == "<soft>here</soft>"
 
 
-def test_adapter_resolved_from_the_fish_package_and_only_on_s2(fish_tags, monkeypatch):
+def test_adapter_resolved_from_the_fish_package_on_fish_dialects_only(fish_tags, monkeypatch):
     ctx, fish, host, *_ = fish_tags
     names, resolve = [], importlib.import_module
     monkeypatch.setattr(importlib, "import_module", lambda name, *rest: names.append(name) or resolve(name, *rest))
     ctx.provider.synthesize("(sobbing) Hi.", "out.mp3")
     assert names == [type(fish).__module__.rsplit(".", 1)[0] + ".tags"] and fish.spoken[-1] == "Hi."
+    # drama-3: Fish does not adapt parens there, so the chip translates them and policy applies.
     host["tts.fish-audio.model"], fish.pinned_model, fish.adapt = "drama-3", "drama-3", None
-    names.clear()
     ctx.provider.synthesize("(sobbing) Hi.", "out.mp3")
-    assert names == [] and fish.calls[-1][1] == "(sobbing) Hi."
+    assert fish.calls[-1][1] == "Hi."
+    ctx.provider.synthesize("Done. [hysterical] (sobbing) Sorry. (happy) Fine.", "out.mp3")
+    assert fish.calls[-1][1] == "Done. Sorry. [happy] Fine."
+    # s1 renders tagless, and S1 itself performs parens: the paren is translated, then dropped like any cue.
+    host["tts.fish-audio.model"], fish.pinned_model = "s1", "s1"
+    ctx.provider.synthesize("(sobbing) Hi. (happy) Fine.", "out.mp3")
+    assert fish.calls[-1][1] == "Hi. Fine."
 
 
 def test_subagent_turn_never_repoints_the_parent_key(rig):
