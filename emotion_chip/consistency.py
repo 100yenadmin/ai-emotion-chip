@@ -16,8 +16,8 @@ def check(score, rendered, data):
     findings = []
     for match in re.finditer(r"\[[^\[\]]+\]", rendered.text):
         literal = match[0]
-        # A literal without a letter is the agent's own text ("[1]"), never a cue.
-        if literal in inverse or not re.search(r"[^\W\d_]", literal):
+        # A literal without a letter, or one the agent wrote verbatim ("handlers[pause]"), is the agent's own text.
+        if literal in inverse or not re.search(r"[^\W\d_]", literal) or literal in score.source:
             continue
         for word in cue(literal[1:-1].strip()).words:
             if word not in authored:
