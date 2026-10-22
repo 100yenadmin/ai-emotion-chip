@@ -282,7 +282,9 @@ schema hashes stay as A1 records them.
       from source.
     - A block that fits no kind, or carries any instruction beyond R1's, makes the route unclean: that model does not
       run and is reported missing.
-    - A4b is published with the email shown as a label. It lists blocks only and cannot add a kind.
+    - In the published A4b, the email address is replaced by the fixed placeholder `<account-email>`, and each
+      billing field's value by `<billing-value>` (field names kept). The bench keeps the exact values locally, so
+      that later calls can be checked. A4b lists blocks only and cannot add a kind.
 - **Normalization.** Equality checks run after the raw marker scan of both captures, on normalized text:
   - In each system text, the cell's own item directory becomes `<ITEM>`, and lines that start with `Conversation
     started`, `Today's date (as of`, `Timezone` or `Session ID:` are dropped. These are Hermes' per-session lines,
@@ -343,8 +345,15 @@ schema hashes stay as A1 records them.
 - **Judges.** As A1 and A3, with batches formed within each generating model before the fixed shuffle. The judge never
   sees which model wrote a reply.
   - `claude-opus-5-5` replies are judged by `gpt-6.1-sol` at medium effort through `codex exec`.
-  - `gpt-6.1-sol` replies are judged by `claude-opus-5-5` at medium effort through `claude -p`, run in an empty
-    temporary directory with `CLAUDE_CODE_DISABLE_CLAUDE_MDS=1`.
+  - `gpt-6.1-sol` replies are judged by `claude-opus-5-5` at medium effort through `claude -p`. It uses the same
+    isolation as A3's `claude -p` calls:
+    - an empty temporary directory as both the working directory and `CLAUDE_CONFIG_DIR`;
+    - an environment from an allowlist, with `CLAUDE_CODE_DISABLE_CLAUDE_MDS=1` and the subscription token passed
+      only in that environment;
+    - no tools (`--tools ""`), one turn, and `--output-format json`.
+
+    It gets the same rubric and batch prompt as the `codex exec` judge. Its JSON answer is validated by the bench
+    against the same set schema (`bench/schemas/<set>.json`) after the call. No CLI-side schema is assumed.
   - The 20-item owner spot check and its disagreement rate are still required before any release claim.
   - A missing judgment is reported as missing, per set, model and arm; a mechanical pass does not make E3 complete.
 - **Report and verdict.** The report is labelled scope A3 and text-only speech proxy. It publishes:
