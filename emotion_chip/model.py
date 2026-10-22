@@ -1,4 +1,5 @@
 """Value objects shared by the offline core."""
+import re
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -110,6 +111,16 @@ class Options:
     allow_speakers: bool = False
     model: str | None = None
     overlay: dict | None = None
+    policy_state: dict | None = None  # carried across streamed pieces of one reply; reset per turn
+
+
+# Stands where a token was removed; render turns it into a space only between two word characters, so dropping
+# a token never fuses the words around it ("hap[hysterical]py" stays "hap py").
+GAP = "\ue000"
+
+
+def close_gaps(text):
+    return re.sub(r"(?<=\w)\ue000+(?=\w)", " ", text).replace(GAP, "")
 
 
 def option(options, key, default=None):

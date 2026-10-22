@@ -128,19 +128,34 @@ def validate(data):
                 _require(template is None or isinstance(template, str), f"dialect {name}: invalid template")
                 if kind == "spans" and template not in (None, "uppercase"):
                     try:
-                        fields = {f for _, f, _, _ in string.Formatter().parse(template) if f is not None}
+                        fields = [(f, spec, conv) for _, f, spec, conv in string.Formatter().parse(template)
+                                  if f is not None]
                     except ValueError:
-                        fields = {None}
-                    _require(fields == {"text"}, f"dialect {name}: span {op} must use exactly the {{text}} placeholder")
+                        fields = []
+                    # One plain {text}: no repeat, no conversion and no format spec, so render() can never raise.
+                    _require(fields == [("text", "", None)],
+                             f"dialect {name}: span {op} must use exactly one plain {{text}} placeholder")
+                if kind == "events":
+                    _require(op in sounds["events"], f"dialect {name}: event {op} is not a declared sound event")
                 for literal in LITERALS.findall(template or ""):
                     _require(literal in phrases, f"dialect {name}: emitted phrase {literal} not in whitelist")
                     _require(literal in inverse, f"dialect {name}: missing inverse for {literal}")
+                if template not in (None, "uppercase"):
+                    # Only declared vendor literals and whitespace may surround {text}: no unmarked spoken words.
+                    rest = LITERALS.sub("", template.replace("{text}", ""))
+                    _require(not rest.strip(), f"dialect {name}: {kind[:-1]} {op} adds unmarked text {rest.strip()!r}")
         if name == "eleven_v4":
             variants = _mapping(dialect.get("variants"), "dialect eleven_v4 variants")
             _require(all(isinstance(k, str) and isinstance(v, int) and not isinstance(v, bool) and v > 0
                          for k, v in variants.items()), "dialect eleven_v4: variants must map model ids to positive caps")
         if dialect.get("speaker"):
             _require(dialect["speaker"] in phrases, f"dialect {name}: speaker missing from whitelist")
+            try:
+                fields = [(f, spec, conv) for _, f, spec, conv in string.Formatter().parse(dialect["speaker"])
+                          if f is not None]
+            except ValueError:
+                fields = []
+            _require(fields == [("id", "", None)], f"dialect {name}: speaker must use exactly one plain {{id}} placeholder")
     return data
 
 
