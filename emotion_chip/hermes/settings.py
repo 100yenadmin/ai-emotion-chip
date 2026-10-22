@@ -5,7 +5,7 @@ from pathlib import Path
 
 DEFAULTS = {
     "backend": "fish", "fish_model": "s2.1-pro", "guide_mode": "generate",
-    "signals": "off", "sounds_per_turn": 1, "business_platforms": ["slack", "email"],
+    "signals": "off",
     "delivery_log": True,
 }
 FISH_MODELS = {"s2.1-pro", "s2.1-pro-free", "s2-pro", "drama-3", "s1", "drama-3-preview"}
@@ -27,10 +27,9 @@ def session_identity(env, situation):
     return session_id or situation.get("session_keys", {}).get(key) or ("key:" + key if key else "")
 
 
-def sound_limit(settings, situation, env):
-    if env("HERMES_SESSION_PLATFORM") in settings.get("business_platforms") or situation.get("quiet", False):
-        return 0
-    return settings.get("sounds_per_turn")
+def sounds_on(situation):
+    """Affect sounds are on unless the user turned them off with /chip quiet."""
+    return not situation.get("quiet", False)
 
 
 def read_config(key, default=None):

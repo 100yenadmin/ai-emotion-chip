@@ -34,16 +34,6 @@ config_schema:
     default: "off"
     label: "Situation facts"
     description: "Offer task and transport counters, optionally with permission to stop and report."
-  sounds_per_turn:
-    type: int
-    default: 1
-    label: "Sounds per turn"
-    description: "Maximum authored affect sounds per render; zero silences them."
-  business_platforms:
-    type: list
-    default: [slack, email]
-    label: "Quiet platforms"
-    description: "Suppress affect sounds on these session platforms."
   delivery_log:
     type: bool
     default: true

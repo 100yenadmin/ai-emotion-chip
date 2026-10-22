@@ -3,7 +3,7 @@ from ..data import load_data
 from ..render import dialect_for
 from . import provider as provider_module
 from .fishtags import adapt_all, fish_adapter, settled_render
-from .settings import sound_limit, session_env
+from .settings import session_env, sounds_on
 from .situation import Situation
 
 
@@ -33,7 +33,7 @@ def make_middleware(settings, situation=None, env=None):
                 dialect = "eleven_v4"
             if "[" not in text:
                 return None
-            options = {"sounds_per_turn": sound_limit(settings, situation, env), "allow_speakers": False}
+            options = {"sounds": sounds_on(situation), "allow_speakers": False}
             rendered, _ = settled_render(text, dialect, options, load_data(), adapt)
             return {"args": {**args, "text": rendered.text}}
         except Exception:

@@ -6,13 +6,12 @@ import time
 
 from ..data import load_data
 from ..model import Cue
-from ..policy import apply_policy
 from ..render import dialect_for
 from ..score import header_cue, parse
 from ._compat import TTSProvider
 from .fishtags import adapt_all, fish_adapter, settled_render
 from .log import DeliveryLog
-from .settings import Settings, session_env, session_identity, sound_limit
+from .settings import Settings, session_env, session_identity, sounds_on
 from .situation import Situation
 
 last_render = {}  # session id -> the newest render's explanation for /chip why (the 50 newest sessions)
@@ -50,9 +49,6 @@ class EmotionChipTTSProvider(TTSProvider):
         self.tag_adapter = tag_adapter
         self._lock = RLock()
         self._carried = {}
-        # Per session: (turn marker, policy_state, last used). Streamed pieces of one reply share the sound and
-        # breath limits; a new turn (pre_llm_call) or 120 s of silence starts a fresh state.
-        self._policy = {}
 
     @property
     def streams_pcm(self):
@@ -73,11 +69,11 @@ class EmotionChipTTSProvider(TTSProvider):
         dialect = dialect_for("fish", models.effective)
         session_id = session_identity(self.env, self.situation)
         platform = self.env("HERMES_SESSION_PLATFORM")
-        options = {"sounds_per_turn": sound_limit(self.settings, self.situation, self.env), "allow_speakers": False}
+        options = {"sounds": sounds_on(self.situation), "allow_speakers": False}
         notes = []
         original_chars = len(text)
         # Fish performs (cue) parens natively on S1 and adapts them to tags again on S2. Translating them on every Fish
-        # model (drama-3 and the tagless S1 route too) puts each paren cue through the same policy.
+        # model (drama-3 and the tagless S1 route too) renders each paren cue like a bracket cue.
         try:
             adapt = self.tag_adapter or fish_adapter(_fish())
             text = adapt_all(text, adapt)
@@ -89,21 +85,12 @@ class EmotionChipTTSProvider(TTSProvider):
         opener = header_cue(score.header)
         words = (list(opener.words) if opener else []) + [
             word for sentence in score.sentences for token in sentence.tokens if isinstance(token, Cue) for word in token.words]
-        filtered, _ = apply_policy(score, data, options)
-        has_cue = any(isinstance(token, Cue) for sentence in filtered.sentences for token in sentence.tokens)
+        has_cue = any(isinstance(token, Cue) for sentence in score.sentences for token in sentence.tokens)
         now = self.clock()
         with self._lock:
             self._carried = {k: v for k, v in self._carried.items() if 0 <= now - v[1] <= 120}
-            self._policy = {k: v for k, v in self._policy.items() if 0 <= now - v[2] <= 120}
-            if streaming:
-                if not has_cue and filtered.header is None and session_id and session_id in self._carried:
-                    options["params_from"] = self._carried[session_id][0]
-                if session_id:
-                    turn = self.situation.session(session_id).get("turn")
-                    entry = self._policy.get(session_id)
-                    state = entry[1] if entry is not None and entry[0] == turn else {}
-                    self._policy[session_id] = (turn, state, now)
-                    options["policy_state"] = state
+            if streaming and not has_cue and score.header is None and session_id and session_id in self._carried:
+                options["params_from"] = self._carried[session_id][0]
             rendered, added = settled_render(score, dialect, options, data, adapt)
             # A carried piece refreshes the carry too, so a long reply keeps its opening cue's params.
             if session_id and rendered.group is not None:

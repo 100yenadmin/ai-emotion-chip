@@ -3,7 +3,7 @@ from dataclasses import replace
 import importlib
 import re
 
-from ..model import SPAN_OPS, Cue, option
+from ..model import SPAN_OPS, Cue
 from ..render import render
 from ..score import parse
 
@@ -56,20 +56,15 @@ def _cue_words(text, data):
 def settled_render(score, dialect, options, data, adapt=None):
     """Render, then render again while Fish's adapter would still turn a (cue) paren into a tag.
 
-    Fish adapts the chip's output again, and a paren becomes sentence-initial once the token before it is dropped
-    ("Done. [hysterical] (sobbing) Sorry."). Each pass puts those new tags through the same policy (forbidden
-    words, sound caps), with any carried policy state restored to where this call started. Later passes keep the
-    params group of the first pass that has one, so settling only re-applies policy. Each change turns at least one
-    paren into a tag, so the loop ends within one pass per paren. Returns the render and the cue words those parens
-    added.
+    Fish adapts the chip's output again, and a paren becomes sentence-initial once the token before it is removed
+    ("Done. [pause] (laughing) Sorry." on a dialect without pauses). Each pass renders those new tags like bracket
+    cues, so the sounds-off switch and the params group see them too. Later passes keep the params group of the first
+    pass that has one. Each change turns at least one paren into a tag, so the loop ends within one pass per paren.
+    Returns the render and the cue words those parens added.
     """
-    state = option(options, "policy_state")
-    start = dict(state) if isinstance(state, dict) else None
     rendered = render(score, dialect, options, data)
     if adapt is None:
         return rendered, []
-    # A breath the dialect cannot voice leaves the text in the first pass, so later passes cannot see it.
-    first = dict(state) if start is not None else None
     dropped, notes, added = list(rendered.dropped), list(rendered.notes), []
     later = dict(options)
     for _ in range(rendered.text.count("(") + 1):
@@ -88,12 +83,7 @@ def settled_render(score, dialect, options, data, adapt=None):
                 before.remove(word)
             else:
                 added.append(word)
-        if start is not None:
-            state.clear()
-            state.update(start)
         rendered = render(parse(adapted, data), dialect, later, data)
         dropped += rendered.dropped
         notes += [n for n in rendered.notes if n not in notes]
-        if first is not None:
-            state["since_breath"] = first.get("since_breath", state.get("since_breath"))
     return replace(rendered, dropped=dropped, notes=notes), added

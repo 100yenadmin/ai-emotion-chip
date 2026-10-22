@@ -48,8 +48,6 @@ The plugin's own settings, under `plugins.entries.emotion-chip.settings` (also s
 | `fish_model` | `s2.1-pro` | The Fish model to request when neither Fish's `tts.fish-audio.model` nor the call names one. |
 | `guide_mode` | `generate` | `generate` adds the delivery guide to the system prompt and the `emotion-chip-voice` skill. `defer` leaves guidance to you, for example an existing voice file. |
 | `signals` | `off` | `facts` gives the agent dated task facts (tool errors in a row, retries, session length). `facts+affordance` adds "stopping and reporting is fine". Off until its pilot is measured. |
-| `sounds_per_turn` | `1` | The most affect sounds (laughs, sighs) kept per spoken reply. Extra ones are dropped. |
-| `business_platforms` | `[slack, email]` | Sounds are dropped on these session platforms. |
 | `delivery_log` | `true` | A local log of cue words, dialect, parameters and drops. It never stores the spoken text. |
 
 If you keep `tts.provider: fish-audio`, the plugin still renders a score the agent writes in a `text_to_speech` call
@@ -63,15 +61,15 @@ The agent writes the score in the text of its `text_to_speech` call. For example
 [[register: steady]] The deploy failed again. [frustrated] The migration times out on the same table. [pause] I'll stop retrying and look at the lock.
 ```
 
-The plugin translates the syntax for the selected Fish model (S2 tags, or Drama 3's paired tags). It removes sounds
-the agent may not use (sobbing, crying, screaming, hysterical) and applies the sound and breath limits. Every change is
-recorded. It never adds or upgrades an emotion word.
+The plugin translates the syntax for the selected Fish model (S2 tags, or Drama 3's paired tags). Everything the agent
+writes is kept, crying, sobbing and screaming included, unless the model cannot perform it. Every change is recorded.
+It never adds or upgrades an emotion word.
 
 | Command | What it does |
 |---|---|
 | `/chip status` | Settings, the Fish model and dialect in use, and this session's id |
 | `/chip why` | The last render in this session: the agent's own cue words, what was dropped and why, the parameters |
-| `/chip quiet [on\|off]` | Drop all sounds. One switch for the whole profile, not per chat. |
+| `/chip quiet [on\|off]` | Drop laughs, sighs and other sounds; cues and speech stay. One switch for the whole profile, not per chat. |
 | `/chip register [clear]` | Show or clear the register the agent last wrote in this session |
 
 ### Coverage

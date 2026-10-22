@@ -58,7 +58,7 @@ def test_registration(rig):
     assert ctx.max_chars == 4000
     assert ctx.command_info == ("Hermes Emotion Chip voice delivery", "[status|why|quiet|register]")
     assert all(f"{key}:" in ctx.command("status") for key in
-               ("backend", "fish_model", "dialect", "guide_mode", "signals", "sounds_per_turn", "quiet", "delivery_log"))
+               ("backend", "fish_model", "dialect", "guide_mode", "signals", "quiet", "delivery_log"))
 
 
 def test_defer(tmp_path):
@@ -134,15 +134,15 @@ def test_speed_bounds(rig, base, expected):
     assert fish.calls[-1][2]["speed"] == expected
 
 
-def test_business_and_quiet(rig):
+def test_quiet_is_the_only_sound_switch(rig):
     ctx, fish, _, session, *_ = rig
     session["HERMES_SESSION_PLATFORM"] = "slack"
     ctx.provider.synthesize("[sad] Hello. [sigh]", "out.mp3")
-    assert fish.calls[-1][1] == "[sad] Hello."
+    assert fish.calls[-1][1] == "[sad] Hello. [sighing]"
     session["HERMES_SESSION_PLATFORM"] = "telegram"
     assert ctx.command("quiet on") == "Sounds quiet: on" and ctx.state["quiet"] is True
-    list(ctx.provider.stream("[sigh] Hello."))
-    assert fish.calls[-1][1] == "Hello."
+    list(ctx.provider.stream("[sigh] [crying] Hello."))
+    assert fish.calls[-1][1] == "[crying] Hello."
     ctx.command("quiet off")
     ctx.provider.synthesize("[sigh] Hello.", "out.mp3")
     assert fish.calls[-1][1] == "[sighing] Hello."
@@ -358,8 +358,7 @@ def test_commands_why_and_register(rig, runtime_data):
     for word in set(runtime_data.groups) | {r["id"] for r in runtime_data.emotions}:
         if word not in authored:
             assert not re.search(r"(?<![\w])" + re.escape(word) + r"(?![\w])", why)
-    assert "laugh: sounds_per_turn" in why and "speaker 2: unsupported" in why
-    assert "caps applied: sounds_per_turn" in why
+    assert "speaker 2: unsupported" in why and "laugh:" not in why and "caps" not in why
     for unauthed in ("sad", "frustrated", "angry", "happy", "anxious", "bored"):
         assert unauthed not in why
     assert ctx.command("register") == "[[register: calm]]"
@@ -567,9 +566,9 @@ def test_validator_context_without_state(tmp_path, raises):
     assert ctx.command("status")
 
 
-@pytest.mark.parametrize("piece,expected", [("[sobbing] Two.", .92),
+@pytest.mark.parametrize("piece,expected", [("[pause] Two.", .92),
     ("[[register: curious]] Two.", 1.03), ("[[register: unknown]] Two.", 1.0)])
-def test_carry_after_policy_and_header(rig, piece, expected):
+def test_carry_after_a_cueless_piece_and_header(rig, piece, expected):
     ctx, fish, *_ = rig
     list(ctx.provider.stream("[sad] One."))
     list(ctx.provider.stream(piece))
@@ -600,15 +599,16 @@ def test_normalized_signals(rig, value, expected):
         assert ("Stopping and reporting is fine." in line["context"]) == (expected == "facts+affordance")
 
 
-@pytest.mark.parametrize("quiet,platform", [(True, "telegram"), (False, "slack"), (False, "email")])
-def test_middleware_quiet_and_business(rig, quiet, platform):
+@pytest.mark.parametrize("quiet,platform,expected", [(True, "telegram", "[sad] Hi."),
+    (False, "slack", "[sad] Hi. [sighing]"), (False, "email", "[sad] Hi. [sighing]")])
+def test_middleware_quiet(rig, quiet, platform, expected):
     ctx, _, host, env, *_ = rig
     host["tts.provider"] = "fish-audio"
     env["HERMES_SESSION_PLATFORM"] = platform
     if quiet:
         ctx.command("quiet on")
     result = ctx.middleware(tool_name="text_to_speech", args={"text": "[sad] Hi. [sigh]"})
-    assert result["args"]["text"] == "[sad] Hi."
+    assert result["args"]["text"] == expected
 
 
 def test_counter_reset_and_truthful_success(rig):
@@ -643,7 +643,7 @@ def test_tts_provider_normalization(rig, name):
     assert (result is None) == (name.strip().lower() == "emotion-chip")
 
 
-def test_fish_paren_adapter_before_policy(rig, monkeypatch):
+def test_fish_paren_adapter_runs_before_render(rig, monkeypatch):
     ctx, fish, *_ = rig
     calls = []
     def adapter(text, family):
@@ -655,8 +655,8 @@ def test_fish_paren_adapter_before_policy(rig, monkeypatch):
     text = "(sobbing) Hi. (sighing) Next. (sighing) Last."
     ctx.provider.synthesize(text, "out.mp3")
     assert calls[0] == (text, "S2") and {family for _, family in calls} == {"S2"}
-    assert fish.calls[-1][1] == "Hi. [sighing] Next. Last."
-    assert {d["reason"] for d in latest()["dropped"]} >= {"assistant_ok:false", "sounds_per_turn"}
+    assert fish.calls[-1][1] == "[sobbing] Hi. [sighing] Next. [sighing] Last."
+    assert latest()["dropped"] == []
 
 
 def test_fish_adapter_injectable_and_missing(rig, monkeypatch):
@@ -702,27 +702,13 @@ def test_transform_tool_result_mid_task(rig, mode, result):
     assert hook(**kw, result=result) is None
 
 
-def test_stream_pieces_share_one_turn_of_sound_and_breath_limits(rig):
-    ctx, fish, _, session, now, _ = rig
+def test_stream_pieces_keep_every_sound(rig):
+    ctx, fish, *_ = rig
     ctx.hooks["pre_llm_call"](session_id="fixture-session")
-    for piece in ("[laugh] One.", "[laugh] Two.", "[breath] Three.", "[breath] Four."):
+    for piece in ("[laugh] One.", "[laugh] Two.", "[sobbing] Three.", "[laugh] [laugh] Four."):
         list(ctx.provider.stream(piece))
-    assert [row[1] for row in fish.calls] == ["[laughing] One.", "Two.", "Three.", "Four."]
-    assert latest()["dropped"][0]["reason"] == "breath density"
-    # Another session keeps its own limits; the tool path stays one call, one cap.
-    session["HERMES_SESSION_ID"] = "other-fixture-session"
-    list(ctx.provider.stream("[laugh] Other."))
-    session["HERMES_SESSION_ID"] = "fixture-session"
-    ctx.provider.synthesize("[laugh] Tool.", "out.mp3")
-    assert [row[1] for row in fish.calls[-2:]] == ["[laughing] Other.", "[laughing] Tool."]
-    # A new turn starts fresh limits, and so does a long silence without one.
-    ctx.hooks["pre_llm_call"](session_id="fixture-session")
-    list(ctx.provider.stream("[laugh] Five."))
-    list(ctx.provider.stream("[laugh] Six."))
-    now[0] += 121
-    list(ctx.provider.stream("[laugh] Seven."))
-    assert [row[1] for row in fish.calls[-3:]] == ["[laughing] Five.", "Six.", "[laughing] Seven."]
-
+    assert [row[1] for row in fish.calls] == ["[laughing] One.", "[laughing] Two.", "[sobbing] Three.",
+                                              "[laughing] [laughing] Four."]
 
 
 @pytest.fixture
@@ -737,18 +723,18 @@ def fish_tags(rig, monkeypatch):
     return rig
 
 
-@pytest.mark.parametrize("platform,text,voiced,reasons", [
-    ("telegram", "Done. [hysterical] (sobbing) Sorry.", "Done. Sorry.", {"assistant_ok:false"}),
-    ("telegram", "[[register: hysterical]] (sobbing) I'm sorry.", "I'm sorry.", {"assistant_ok:false"}),
-    ("telegram", "Done. [hysterical] (sobbing) (crying loudly) Sorry.", "Done. Sorry.", {"assistant_ok:false"}),
-    ("telegram", "[sigh] One. [hysterical] (sighing) Two.", "[sighing] One. Two.", {"sounds_per_turn"}),
-    ("slack", "Ok. [hysterical] (sighing) fine.", "Ok. fine.", {"sounds_per_turn"}),
+@pytest.mark.parametrize("quiet,text,voiced", [
+    (False, "Done. [hysterical] (sobbing) Sorry.", "Done. [hysterical] [sobbing] Sorry."),
+    (False, "[[register: hysterical]] (sobbing) I'm sorry.", "[sobbing] I'm sorry."),
+    (False, "[sigh] One. [hysterical] (sighing) Two.", "[sighing] One. [hysterical] [sighing] Two."),
+    (True, "[sigh] One. [hysterical] (sighing) Two.", "One. [hysterical] Two."),
+    (True, "Ok. [hysterical] (sighing) fine.", "Ok. [hysterical] fine."),
 ])
-def test_parens_fish_adapts_after_render_still_pass_policy(fish_tags, platform, text, voiced, reasons):
-    ctx, fish, _, session, *_ = fish_tags
-    session["HERMES_SESSION_PLATFORM"] = platform
+def test_parens_fish_adapts_are_kept_unless_quiet(fish_tags, quiet, text, voiced):
+    ctx, fish, *_ = fish_tags
+    if quiet:
+        ctx.command("quiet on")
     ctx.provider.synthesize(text, "out.mp3")
-    assert {d["reason"] for d in latest()["dropped"]} >= reasons
     list(ctx.provider.stream(text))
     assert fish.spoken == [voiced, voiced] and [row[1] for row in fish.calls] == [voiced, voiced]
 
@@ -759,14 +745,6 @@ def test_parens_adapted_after_render_name_their_cue_words(fish_tags):
     assert latest()["cue_words"] == ["hysterical", "sobbing"]
 
 
-def test_each_settling_pass_counts_from_the_turn_state_it_started_with(fish_tags):
-    ctx, fish, *_ = fish_tags
-    ctx.hooks["pre_llm_call"](session_id="fixture-session")
-    list(ctx.provider.stream("[laugh] Two. [hysterical] (sighing) x."))
-    assert fish.spoken == ["[laughing] Two. x."]
-    assert ctx.provider._policy["fixture-session"][1]["affect_count"] == 1
-
-
 def test_compat_path_adapts_parens_and_follows_tts_model(fish_tags):
     ctx, fish, host, session, *_ = fish_tags
     host["tts.provider"] = "fish-audio"
@@ -774,12 +752,14 @@ def test_compat_path_adapts_parens_and_follows_tts_model(fish_tags):
     def call(text):
         result = ctx.middleware(tool_name="text_to_speech", args={"text": text})
         return result and result["args"]["text"]
-    assert call("(sobbing) Sorry.") == "Sorry."
-    assert call("[calm] Hi. (sobbing) Sorry.") == "[calm] Hi. Sorry."
-    assert call("Done. [hysterical] (sobbing) Sorry.") == "Done. Sorry."
+    assert call("(sobbing) Sorry.") == "[sobbing] Sorry."
+    assert call("[calm] Hi. (sobbing) Sorry.") == "[calm] Hi. [sobbing] Sorry."
+    assert call("Done. [hysterical] (sobbing) Sorry.") == "Done. [hysterical] [sobbing] Sorry."
     assert call("Plain words.") is None
-    session["HERMES_SESSION_PLATFORM"] = "slack"
+    assert call("Ok. (sighing) fine.") == "Ok. [sighing] fine."
+    ctx.command("quiet on")
     assert call("Ok. (sighing) fine.") == "Ok. fine."
+    ctx.command("quiet off")
     # The chip's own fish_model never reaches Fish on this path; Hermes passes tts.model.
     ctx.set_config("fish_model", "drama-3")
     assert call("[soft: here]") == "[soft tone] here"
@@ -792,13 +772,13 @@ def test_adapter_resolved_from_the_fish_package_on_fish_dialects_only(fish_tags,
     names, resolve = [], importlib.import_module
     monkeypatch.setattr(importlib, "import_module", lambda name, *rest: names.append(name) or resolve(name, *rest))
     ctx.provider.synthesize("(sobbing) Hi.", "out.mp3")
-    assert names == [type(fish).__module__.rsplit(".", 1)[0] + ".tags"] and fish.spoken[-1] == "Hi."
-    # drama-3: Fish does not adapt parens there, so the chip translates them and policy applies.
+    assert names == [type(fish).__module__.rsplit(".", 1)[0] + ".tags"] and fish.spoken[-1] == "[sobbing] Hi."
+    # drama-3: Fish does not adapt parens there, so the chip translates them like bracket cues.
     host["tts.fish-audio.model"], fish.pinned_model, fish.adapt = "drama-3", "drama-3", None
     ctx.provider.synthesize("(sobbing) Hi.", "out.mp3")
-    assert fish.calls[-1][1] == "Hi."
+    assert fish.calls[-1][1] == "[sobbing] Hi."
     ctx.provider.synthesize("Done. [hysterical] (sobbing) Sorry. (happy) Fine.", "out.mp3")
-    assert fish.calls[-1][1] == "Done. Sorry. [happy] Fine."
+    assert fish.calls[-1][1] == "Done. [hysterical] [sobbing] Sorry. [happy] Fine."
     # s1 renders tagless, and S1 itself performs parens: the paren is translated, then dropped like any cue.
     host["tts.fish-audio.model"], fish.pinned_model = "s1", "s1"
     ctx.provider.synthesize("(sobbing) Hi. (happy) Fine.", "out.mp3")
@@ -856,15 +836,15 @@ def test_status_prompt_and_skill_follow_tts_model(rig, tmp_path):
 
 @pytest.mark.parametrize("model", ["s2.1-pro", "drama-3"])
 @pytest.mark.parametrize("text,voiced", [
-    ("[sad] (sobbing) Sorry.", "[sad] Sorry."),
-    ("[[register: sad]] [hysterical] (sobbing) Sorry.", "[sad] Sorry."),
-    ("Done. [hysterical] " + "(sobbing) " * 9 + "Sorry.", "Done. Sorry."),
+    ("[sad] (sobbing) Sorry.", "[sad] [sobbing] Sorry."),
+    ("[[register: sad]] [hysterical] (sobbing) Sorry.", "[hysterical] [sobbing] Sorry."),
+    ("Done. [hysterical] " + "(sobbing) " * 9 + "Sorry.", "Done. [hysterical] " + "[sobbing] " * 9 + "Sorry."),
     ("I was (sobbing) yesterday.", "I was (sobbing) yesterday."),
     # Fish's opaque regions stay as written: the paren is not converted there.
     ("`Example. [sad] (sobbing) text`", "`Example. [sad] (sobbing) text`"),
     ("Hi. `code [sad] (sobbing) here", "Hi. `code [sad] (sobbing) here"),
 ])
-def test_every_leading_paren_cue_passes_policy(fish_tags, model, text, voiced):
+def test_every_leading_paren_cue_is_rendered(fish_tags, model, text, voiced):
     ctx, fish, host, *_ = fish_tags
     host["tts.fish-audio.model"] = fish.pinned_model = model
     ctx.provider.synthesize(text, "out.mp3")
@@ -897,19 +877,23 @@ def test_compat_path_adapts_parens_on_drama3(fish_tags):
     host["tts.provider"] = "fish-audio"
     host["tts.model"] = host["tts.fish-audio.model"] = "drama-3"
     result = ctx.middleware(tool_name="text_to_speech", args={"text": "Done. [hysterical] (sobbing) Sorry. (happy) Ok."})
-    assert result["args"]["text"] == "Done. Sorry. [happy] Ok."
+    assert result["args"]["text"] == "Done. [hysterical] [sobbing] Sorry. [happy] Ok."
 
 
 def test_settling_keeps_the_register_params(fish_tags):
     ctx, fish, *_ = fish_tags
     # The stray "]" hides the paren until the parser drops it, so only a second render pass catches it.
-    for text in ("[[register: sad]] [excited] Hi. ] (sobbing) Bye.", "[[register: sad]] [excited] Hi. ] " + "(sobbing) " * 9 + "Bye."):
+    for text, voiced in (("[[register: sad]] [excited] Hi. ] (sobbing) Bye.", "[excited] Hi. [sobbing] Bye."),
+                         ("[[register: sad]] [excited] Hi. ] " + "(sobbing) " * 9 + "Bye.",
+                          "[excited] Hi. " + "[sobbing] " * 9 + "Bye.")):
         ctx.provider.synthesize(text, "out.mp3")
-        assert fish.spoken[-1] == "[excited] Hi. Bye." and fish.calls[-1][2]["speed"] == 0.92
+        assert fish.spoken[-1] == voiced and fish.calls[-1][2]["speed"] == 0.92
 
 
-def test_settling_keeps_breath_accounting(fish_tags):
+def test_settling_applies_the_quiet_switch(fish_tags):
     ctx, fish, *_ = fish_tags
-    ctx.hooks["pre_llm_call"](session_id="fixture-session")
-    list(ctx.provider.stream("[breath] A. ] (sobbing) B."))
-    assert fish.spoken[-1] == "A. B." and ctx.provider._policy["fixture-session"][1]["since_breath"] == 1
+    ctx.provider.synthesize("[excited] Hi. ] (sighing) Bye.", "out.mp3")
+    assert fish.spoken[-1] == "[excited] Hi. [sighing] Bye."
+    ctx.command("quiet on")
+    ctx.provider.synthesize("[excited] Hi. ] (sighing) Bye.", "out.mp3")
+    assert fish.spoken[-1] == "[excited] Hi. Bye."
