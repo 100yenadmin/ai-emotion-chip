@@ -1,0 +1,39 @@
+# Common delivery words that are not among the 171 concepts, mapped to a rendering group for params only.
+# The renderer still passes the agent's word through literally. Design mapping (CC0), no external source.
+warm: {group: tenderness_care, arousal_bucket: 0}
+warmly: {group: tenderness_care, arousal_bucket: 0}
+gentle: {group: tenderness_care, arousal_bucket: -1}
+gently: {group: tenderness_care, arousal_bucket: -1}
+comforting: {group: tenderness_care, arousal_bucket: -1}
+reassuring: {group: tenderness_care, arousal_bucket: -1}
+tender: {group: tenderness_care, arousal_bucket: -1}
+thoughtful: {group: calm_contentment, arousal_bucket: -1}
+steady: {group: calm_contentment, arousal_bucket: -1}
+composed: {group: calm_contentment, arousal_bucket: -1}
+level: {group: calm_contentment, arousal_bucket: -1}
+unhurried: {group: calm_contentment, arousal_bucket: -1}
+conversational: {group: calm_contentment, arousal_bucket: 0}
+trusting: {group: calm_contentment, arousal_bucket: -1}
+curious: {group: interest_curiosity, arousal_bucket: 1}
+interested: {group: interest_curiosity, arousal_bucket: 1}
+intrigued: {group: interest_curiosity, arousal_bucket: 1}
+firm: {group: cold_anger_firm, arousal_bucket: 0}
+serious: {group: cold_anger_firm, arousal_bucket: 0}
+determined: {group: cold_anger_firm, arousal_bucket: 1}
+critical: {group: cold_anger_firm, arousal_bucket: 0}
+confident: {group: pride, arousal_bucket: 0}
+sarcastic: {group: contempt, arousal_bucket: 0}
+deadpan: {group: boredom_fatigue, arousal_bucket: -1}
+worn: {group: boredom_fatigue, arousal_bucket: -1}
+distant: {group: boredom_fatigue, arousal_bucket: -1}
+mischievous: {group: amusement, arousal_bucket: 1}
+mischievously: {group: amusement, arousal_bucket: 1}
+bright: {group: happiness, arousal_bucket: 1}
+breathless: {group: elation, arousal_bucket: 2}
+startled: {group: surprise, arousal_bucket: 2}
+threatened: {group: panic_fear, arousal_bucket: 2}
+despair: {group: despair_grief, arousal_bucket: 1}
+let down: {group: sadness, arousal_bucket: -1}
+disappointed: {group: sadness, arousal_bucket: -1}
+busy: {group: anxiety_worry, arousal_bucket: 1}
+repelled: {group: disgust, arousal_bucket: 0}

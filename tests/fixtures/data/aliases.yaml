@@ -1,0 +1,9 @@
+frustrated:
+  group: hot_anger
+  arousal_bucket: 1
+gentle:
+  group: tenderness_care
+  arousal_bucket: -1
+excited:
+  group: elation
+  arousal_bucket: 2

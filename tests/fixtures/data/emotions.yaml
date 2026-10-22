@@ -1,0 +1,180 @@
+- id: curious
+  paper_cluster: curious
+  group: interest_curiosity
+  about: 'Fixture concept: curious'
+  assistant_ok: true
+  arousal_bucket: 1
+  ladder:
+  - slightly curious
+  - curious
+  - very curious
+  post_training_delta: null
+  provenance: Synthetic test fixture; not research evidence
+- id: angry
+  paper_cluster: angry
+  group: hot_anger
+  about: 'Fixture concept: angry'
+  assistant_ok: true
+  arousal_bucket: 2
+  ladder:
+  - slightly angry
+  - angry
+  - very angry
+  post_training_delta: null
+  provenance: Synthetic test fixture; not research evidence
+- id: contemptuous
+  paper_cluster: contemptuous
+  group: contempt
+  about: 'Fixture concept: contemptuous'
+  assistant_ok: true
+  arousal_bucket: -1
+  ladder:
+  - slightly contemptuous
+  - contemptuous
+  - very contemptuous
+  post_training_delta: null
+  provenance: Synthetic test fixture; not research evidence
+- id: bored
+  paper_cluster: bored
+  group: boredom_fatigue
+  about: 'Fixture concept: bored'
+  assistant_ok: true
+  arousal_bucket: -2
+  ladder:
+  - slightly bored
+  - bored
+  - very bored
+  post_training_delta: null
+  provenance: Synthetic test fixture; not research evidence
+- id: happy
+  paper_cluster: happy
+  group: happiness
+  about: 'Fixture concept: happy'
+  assistant_ok: true
+  arousal_bucket: 1
+  ladder:
+  - slightly happy
+  - happy
+  - very happy
+  post_training_delta: null
+  provenance: Synthetic test fixture; not research evidence
+- id: sad
+  paper_cluster: sad
+  group: sadness
+  about: 'Fixture concept: sad'
+  assistant_ok: true
+  arousal_bucket: -1
+  ladder:
+  - slightly sad
+  - sad
+  - very sad
+  post_training_delta: null
+  provenance: Synthetic test fixture; not research evidence
+- id: grieving
+  paper_cluster: grieving
+  group: despair_grief
+  about: 'Fixture concept: grieving'
+  assistant_ok: true
+  arousal_bucket: -2
+  ladder:
+  - slightly grieving
+  - grieving
+  - very grieving
+  post_training_delta: null
+  provenance: Synthetic test fixture; not research evidence
+- id: worried
+  paper_cluster: worried
+  group: anxiety_worry
+  about: 'Fixture concept: worried'
+  assistant_ok: true
+  arousal_bucket: 2
+  ladder:
+  - slightly worried
+  - worried
+  - very worried
+  post_training_delta: null
+  provenance: Synthetic test fixture; not research evidence
+- id: proud
+  paper_cluster: proud
+  group: pride
+  about: 'Fixture concept: proud'
+  assistant_ok: true
+  arousal_bucket: 1
+  ladder:
+  - slightly proud
+  - proud
+  - very proud
+  post_training_delta: null
+  provenance: Synthetic test fixture; not research evidence
+- id: elated
+  paper_cluster: elated
+  group: elation
+  about: 'Fixture concept: elated'
+  assistant_ok: true
+  arousal_bucket: 2
+  ladder:
+  - slightly elated
+  - elated
+  - very elated
+  post_training_delta: null
+  provenance: Synthetic test fixture; not research evidence
+- id: firm
+  paper_cluster: firm
+  group: cold_anger_firm
+  about: 'Fixture concept: firm'
+  assistant_ok: true
+  arousal_bucket: 0
+  ladder:
+  - slightly firm
+  - firm
+  - very firm
+  post_training_delta: null
+  provenance: Synthetic test fixture; not research evidence
+- id: afraid
+  paper_cluster: afraid
+  group: panic_fear
+  about: 'Fixture concept: afraid'
+  assistant_ok: true
+  arousal_bucket: 2
+  ladder:
+  - slightly afraid
+  - afraid
+  - very afraid
+  post_training_delta: null
+  provenance: Synthetic test fixture; not research evidence
+- id: ashamed
+  paper_cluster: ashamed
+  group: shame_embarrassment
+  about: 'Fixture concept: ashamed'
+  assistant_ok: true
+  arousal_bucket: -1
+  ladder:
+  - slightly ashamed
+  - ashamed
+  - very ashamed
+  post_training_delta: null
+  provenance: Synthetic test fixture; not research evidence
+- id: disgusted
+  paper_cluster: disgusted
+  group: disgust
+  about: 'Fixture concept: disgusted'
+  assistant_ok: true
+  arousal_bucket: -1
+  ladder:
+  - slightly disgusted
+  - disgusted
+  - very disgusted
+  post_training_delta: null
+  provenance: Synthetic test fixture; not research evidence
+- id: calm
+  paper_cluster: calm
+  group: calm_contentment
+  about: 'Fixture concept: calm'
+  assistant_ok: true
+  arousal_bucket: 0
+  ladder:
+  - slightly calm
+  - calm
+  - very calm
+  post_training_delta: null
+  provenance: Synthetic test fixture; not research evidence

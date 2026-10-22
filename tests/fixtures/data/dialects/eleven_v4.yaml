@@ -1,0 +1,102 @@
+dialect_version: '2026-10-22'
+spans:
+  soft: '[softly] {text}'
+  whisper: '[whispers] {text}'
+  stress: uppercase
+  emphasis: uppercase
+  slow: '[slowly] {text}'
+  fast: '[rushed] {text}'
+  smiling: '[smiling] {text}'
+  forceful: '[firmly] {text}'
+events:
+  chuckle: '[chuckles]'
+  laugh: '[laughs]'
+  laugh:harder: '[laughs harder]'
+  giggle: '[giggles]'
+  sigh: '[sighs]'
+  sigh:relieved: '[sighs]'
+  sigh:resigned: '[sighs]'
+  gasp: '[gasps]'
+  clears-throat: '[clears throat]'
+  breath: '[exhales]'
+  breath:shaky: '[shaky breath]'
+  exhale: '[exhales]'
+  pause: '[pause]'
+  pause:long: '[long pause]'
+speaker: null
+phrases:
+- '[softly]'
+- '[whispers]'
+- '[slowly]'
+- '[rushed]'
+- '[smiling]'
+- '[firmly]'
+- '[chuckles]'
+- '[laughs]'
+- '[laughs harder]'
+- '[giggles]'
+- '[sighs]'
+- '[gasps]'
+- '[clears throat]'
+- '[exhales]'
+- '[shaky breath]'
+- '[pause]'
+- '[long pause]'
+inverse:
+  '[softly]':
+    kind: span
+    id: soft
+  '[whispers]':
+    kind: span
+    id: whisper
+  '[slowly]':
+    kind: span
+    id: slow
+  '[rushed]':
+    kind: span
+    id: fast
+  '[smiling]':
+    kind: span
+    id: smiling
+  '[firmly]':
+    kind: span
+    id: forceful
+  '[chuckles]':
+    kind: event
+    id: chuckle
+  '[laughs]':
+    kind: event
+    id: laugh
+  '[laughs harder]':
+    kind: event
+    id: laugh:harder
+  '[giggles]':
+    kind: event
+    id: giggle
+  '[sighs]':
+    kind: event
+    id: sigh:resigned
+  '[gasps]':
+    kind: event
+    id: gasp
+  '[clears throat]':
+    kind: event
+    id: clears-throat
+  '[exhales]':
+    kind: event
+    id: exhale
+  '[shaky breath]':
+    kind: event
+    id: breath:shaky
+  '[pause]':
+    kind: event
+    id: pause
+  '[long pause]':
+    kind: event
+    id: pause:long
+notes: ''
+variants:
+  eleven_v4: 10000
+  eleven_v4_turbo: 10000
+  eleven_v3: 5000
+  eleven_v3_conversational: 5000
