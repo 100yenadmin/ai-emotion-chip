@@ -141,20 +141,30 @@ def compare_request(expected, final, a4b):
         return [k for k in ("instructions", "input") if norm(expected.get(k), k == "instructions")
                 != norm(final.get(k), k == "instructions")]
     body = {k: copy.deepcopy(expected[k]) for k in ("system", "messages")}
+    s_at, m_at, trailing = 0, len(expected["_queried"]), []
+    user = body["messages"][-1]["content"]
     # The owner-approved PRIVATE record contains exact values; published placeholders are never used for checking.
     for block in a4b.get("blocks", []):
         kind, text, place = block["kind"], block["text"], block["placement"]
         part = {"type": "text", "text": text}
         if kind in {"S1", "S2"} and place == "system-prefix":
-            index = 0 if kind == "S1" else sum(b["kind"] == "S1" for b in a4b["blocks"])
-            body["system"].insert(index, part)
+            body["system"].insert(s_at, part)
+            s_at += 1
         elif kind == "M1" and place == "newest-user":
-            content = body["messages"][-1]["content"]
-            content.insert(len(expected["_queried"]), part)
+            user.insert(m_at, part)
+            m_at += 1
         elif kind == "M1" and place == "trailing-system":
-            body["messages"].append({"role": "system", "content": text})
+            trailing.append(text)
         else:
             return ["invalid_a4b"]
+    for text in trailing:
+        position = len(body["messages"])
+        seen = final.get("messages", [])[position:position + 1]
+        content = seen[0].get("content") if seen and seen[0].get("role") == "system" else None
+        if (isinstance(content, list) and len(content) == 1 and isinstance(content[0], dict)
+                and content[0].get("type") == "text" and set(content[0]) == {"type", "text"}):
+            text = [{"type": "text", "text": text}]
+        body["messages"].append({"role": "system", "content": text})
     admission, queried = expected["_admission"], expected["_queried"]
     payload = canonical(body).encode()
     payload = admission.restore_queried_turn(payload, queried)

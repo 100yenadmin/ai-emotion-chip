@@ -107,7 +107,11 @@ def claude_judge_batch(prompt_path, schema_path, output_path, runner=None, token
     if result.returncode:
         raise RuntimeError("judge failed; subprocess diagnostics suppressed")
     try:
-        return json.loads(extract_reply(json.loads(result.stdout)))
+        answer = extract_reply(json.loads(result.stdout)).strip()
+        lines = answer.splitlines()
+        if len(lines) >= 3 and lines[0] in {"```", "```json"} and lines[-1] == "```":
+            answer = "\n".join(lines[1:-1])
+        return json.loads(answer)
     except (ValueError, TypeError):
         raise RuntimeError("judge returned invalid output") from None
 

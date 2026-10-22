@@ -114,7 +114,8 @@ def test_isolated_generation_with_fake_runner():
     assert not seen[0].exists()
     env = gen.isolated_environment("fake", "config", {
         "CLAUDECODE": "1", "CLAUDE_CODE_NEW_MARKER": "1", "ANTHROPIC_BASE_URL": "fake",
-        "ANTHROPIC_AUTH_TOKEN": "fake", "ANTHROPIC_API_KEY": "fake", "PATH": "retained"})
+        "ANTHROPIC_AUTH_TOKEN": "fake", "ANTHROPIC_API_KEY": "fake", "PATH": "retained",
+        "OPENAI_API_KEY": "fake", "HERMES_HOME": "x"})
     assert set(env) == {"PATH", "CLAUDE_CONFIG_DIR", "CLAUDE_CODE_OAUTH_TOKEN", "CLAUDE_CODE_DISABLE_CLAUDE_MDS"}
     assert env["CLAUDE_CODE_DISABLE_CLAUDE_MDS"] == "1"
 

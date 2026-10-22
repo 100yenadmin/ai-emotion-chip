@@ -8,6 +8,7 @@ The last stdout line starting with PROOF= is the JSON result. Writes only inside
 """
 import json
 import copy
+import inspect
 from functools import wraps
 import os
 import re
@@ -192,8 +193,72 @@ def golden_delta(agent, prompt, args):
     elif skills:
         raise RuntimeError("unexpected golden skill index")
     return {"residue": component(normalise(residue, args["item_dir"])),
+            "skill_tree": skill_tree(),
             "sections": {s.id: component(s.content) for s in sections}, "skill_index": component(skills),
             "skill": component(build_skill("eleven_v4", "default", load_data()) if args["arm"] == "ON" else "")}
+
+
+def skill_tree(home=None):
+    """Hash both skill sources; skill_usage writes only these two root sidecars."""
+    home = Path(home or os.environ["HERMES_HOME"])
+    roots = (home / "skills", home / "plugin-data/emotion-chip/skills")
+    files = []
+    for index, root in enumerate(roots):
+        for path in sorted(root.rglob("*")):
+            relative = path.relative_to(root).as_posix()
+            if index == 0 and relative in {".usage.json", ".usage.json.lock"}:
+                continue
+            if path.is_file():
+                files.append([index, relative, digest(path.read_bytes().hex())])
+    return component(files)["sha256"]
+
+
+def tool_reference(function, call_id, agent):
+    """Normal read result, without skill_view's usage bump or repeat-view stub."""
+    from tools import skills_tool
+    from agent.tool_executor import _budget_for_agent, get_active_env
+    from tools.tool_result_storage import maybe_persist_tool_result
+    from agent.tool_dispatch_helpers import make_tool_result_message
+    name = function.get("name")
+    if name not in {"skills_list", "skill_view"}:
+        return None
+    try:
+        arguments = json.loads(function.get("arguments") or "{}")
+        handler = getattr(skills_tool, name)
+        inspect.signature(handler).bind(**arguments)
+    except (ValueError, TypeError):
+        return None
+    arguments.setdefault("task_id", agent._current_task_id)
+    result = handler(**arguments)
+    result = maybe_persist_tool_result(result, name, call_id,
+        env=get_active_env(agent._current_task_id), config=_budget_for_agent(agent))
+    return make_tool_result_message(name, agent._tool_result_content_for_active_model(name, result), call_id)
+
+
+def tool_results_match(messages, agent):
+    from agent.tool_executor import _budget_for_agent, get_active_env
+    from tools.tool_result_storage import enforce_turn_budget
+    calls, expected, actual, changed = {}, [], [], False
+    def matches():
+        enforce_turn_budget(expected, env=get_active_env(agent._current_task_id), config=_budget_for_agent(agent))
+        return [m["content"] for m in expected] == [m.get("content") for m in actual]
+    for message in messages:
+        if message.get("role") == "assistant":
+            if not matches():
+                return False
+            expected, actual = [], []
+            for call in message.get("tool_calls", []):
+                calls[call["id"]] = call["function"]
+                changed |= call["function"].get("name") == "skill_manage"
+        elif message.get("role") == "tool":
+            if changed:
+                return False
+            reference = tool_reference(calls.get(message.get("tool_call_id"), {}), message.get("tool_call_id"), agent)
+            if reference is None:
+                return False
+            expected.append(reference)
+            actual.append(message)
+    return matches()
 
 
 def install_text_capture(args, agent):
@@ -222,6 +287,8 @@ def install_text_capture(args, agent):
         fields = {"role", "content", "tool_calls", "tool_call_id"}
         project = lambda rows: [{k: v for k, v in m.items() if k in fields} for m in rows]
         row["history_matches"] = project(state["M"]) == project(wanted)
+        if any(m.get("role") == "tool" for m in state["M"]):
+            row["history_matches"] &= tool_results_match(state["M"], agent)
         prior = [n for n in accepted if n < state["call"]]
         current = project(state["M"])
         if prior:
@@ -232,7 +299,8 @@ def install_text_capture(args, agent):
             row["history_matches"] &= bool(calls) and [c["id"] for c in calls] == [m.get("tool_call_id") for m in suffix[1:]]
         accepted[state["call"]] = current
         calls = {c["id"]: c["function"] for m in state["M"] for c in m.get("tool_calls", [])}
-        row["skill_reads"] = [{**component(m), "tool": calls.get(m.get("tool_call_id"), {}).get("name")}
+        row["skill_reads"] = [{**component(str(m.get("content") or "").replace(str(args["item_dir"]), "<ITEM>")),
+                               "tool": calls.get(m.get("tool_call_id"), {}).get("name")}
                               for m in state["M"] if m.get("role") == "tool"]
         finals[state["call"]] = row
         if args.get("route_record_path"):
@@ -281,6 +349,7 @@ def turn(args):
             "tts_calls": calls, "tts_results": results, "sent_to_voice": sent, "last_render": renders,
             "api_calls": result.get("api_calls"), "completed": result.get("completed"),
             "failed": result.get("failed"), "error": result.get("error"),
+            **({"skill_tree": skill_tree()} if text else {}),
             "captures": list(captures.values())}
 
 

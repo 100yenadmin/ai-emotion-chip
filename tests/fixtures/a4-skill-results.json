@@ -1,0 +1,12 @@
+{
+  "source": "Hermes v0.22.2 AST-extracted read/JSON/budget/wrapping functions; synthetic skill; no binary, model, credential or network access",
+  "source_sha256": {
+    "tools/skills_tool_plugin.py": "fd4b8a07379bc14b196c1f41c473495423a9306d5542c1c6dfcad9abf6786e6c",
+    "tools/skills_tool.py": "a5fac64ae3c2f2496cd7da46aacd396d6a50a0dd5d9f4ef4d1ba2d8d7ba9df2f",
+    "tools/tool_result_storage.py": "91c06ef00735ee0480700976c8b08b263f98040a8c4424b47f3cd94e5638b73b",
+    "agent/tool_dispatch_helpers.py": "fded1508e518f2f248dd1ced597b6222b54b2f8c901a6a736402a9572c9c2faa"
+  },
+  "skill_text": "---\nname: emotion-chip-voice\ndescription: Synthetic delivery guide\n---\nSpeak [calm] clearly.\n",
+  "skill_view": "{\"success\": true, \"name\": \"emotion-chip:emotion-chip-voice\", \"content\": \"[Bundle context: This skill is part of the 'emotion-chip' plugin.]\\n\\n---\\nname: emotion-chip-voice\\ndescription: Synthetic delivery guide\\n---\\nSpeak [calm] clearly.\\n\", \"description\": \"Synthetic delivery guide\", \"linked_files\": null, \"readiness_status\": \"available\", \"skill_dir\": \"<ITEM>/home/plugin-data/emotion-chip/skills/emotion-chip-voice\", \"_source_path\": \"<ITEM>/home/plugin-data/emotion-chip/skills/emotion-chip-voice/SKILL.md\"}",
+  "skills_list": "{\"success\": true, \"skills\": [{\"name\": \"emotion-chip:emotion-chip-voice\", \"description\": \"Synthetic delivery guide\"}], \"categories\": [], \"count\": 1, \"hint\": \"Use skill_view(name) to see full content, tags, and linked files\"}"
+}

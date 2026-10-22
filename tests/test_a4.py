@@ -121,6 +121,9 @@ def test_capture_signature_and_last_codex_preflight(tmp_path, monkeypatch):
         monkeypatch.setitem(sys.modules, name, module)
     monkeypatch.setattr(turn, "expected_codex", lambda S, M, options: {"instructions": S, "input": M})
     agent = SimpleNamespace(provider="openai-codex", model="gpt-6.1-sol", _codex_reasoning_replay_enabled=True)
+    read_runtime(monkeypatch)
+    agent._current_task_id = "synthetic"
+    agent._tool_result_content_for_active_model = lambda name, result: result
     finals, installed = turn.install_text_capture({"item_dir": str(tmp_path), "prompt": "hello"}, agent)
     assert inspect.signature(loop.build_api_request) == inspect.signature(build)
     assert loop.build_api_request(agent, api_messages=[{"role": "system", "content": "S"}, {"role": "user", "content": "hello"}],
@@ -131,8 +134,8 @@ def test_capture_signature_and_last_codex_preflight(tmp_path, monkeypatch):
     Transport().preflight_kwargs({**value, "input": []})
     assert len(finals) == 1 and finals[1]["checks"] == ["input"]
     history = [{"role": "user", "content": "hello"}, {"role": "assistant", "tool_calls": [
-        {"id": "call", "function": {"name": "skill_view", "arguments": "{}"}}]},
-        {"role": "tool", "tool_call_id": "call", "content": "frozen tool result"}]
+        {"id": "call", "function": {"name": "skill_view", "arguments": '{"name":"emotion-chip-voice"}'}}]},
+        {"role": "tool", "tool_call_id": "call", "content": read_runtime(monkeypatch)["skill_view"]}]
     for corrupted in (False, True):
         messages = deepcopy(history)
         if corrupted:
@@ -141,6 +144,11 @@ def test_capture_signature_and_last_codex_preflight(tmp_path, monkeypatch):
             api_call_count=2, messages=messages, tools_for_api=[])
         Transport().preflight_kwargs({**value, "input": messages})
         assert finals[2]["history_matches"] is (not corrupted)
+    history[-1]["content"] = "[hermes note: stub]"
+    loop.build_api_request(agent, api_messages=[{"role": "system", "content": "S"}] + history,
+        api_call_count=2, messages=history, tools_for_api=[])
+    Transport().preflight_kwargs({**value, "input": history})
+    assert finals[2]["history_matches"] is False
 
 
 def test_text_configs_and_published_sections(tmp_path):
@@ -226,7 +234,7 @@ def test_critical_repeat_stops_model(check):
 def test_validity_checks_fail_closed(check):
     capture = {"api_call_count": 1, "system": {"sha256": "gold"}, "checks": [], "canaries": {"marker-1": False},
                "history_matches": True, "model": items.MODELS[0]}
-    result = {"api_calls": 1, "captures": [capture], "completed": True, "final_response": "reply"}
+    result = {"skill_tree": "tree", "api_calls": 1, "captures": [capture], "completed": True, "final_response": "reply"}
     memory = True
     if check == 1:
         capture["canaries"]["marker-1"] = True
@@ -236,10 +244,13 @@ def test_validity_checks_fail_closed(check):
         capture["history_matches"] = False
     else:
         memory = False
-    golden = {"system_sha256": "gold", "route": {"model": items.MODELS[0]}}
+    golden = {"skill_tree": "tree", "system_sha256": "gold", "route": {"model": items.MODELS[0]}}
     checks = text.validity(result, golden, [], memory)
     assert checks[check] is False and sum(checks.values()) == 3
     assert not any(text.validity({}, golden, [], False).values())
+    capture["history_matches"] = True
+    result["skill_tree"] = "changed-tree"
+    assert text.validity(result, golden, [], memory)[3] is False
 
 
 def test_attempt_storage_excludes_invalid_and_pilot_replies(tmp_path):
@@ -265,7 +276,7 @@ def test_parent_refresh_and_isolated_home(tmp_path):
     assert refreshed == [pair]
     assert (home / "auth.json").stat().st_mode & 0o777 == 0o600
     assert json.loads((home / "auth.json").read_text())["providers"]["openai-codex"]["tokens"] == {
-        "access_token": "fake-access", "refresh_token": "fake-refresh"}
+        "access_token": "fake-access", "refresh_token": "harness-owned-no-refresh"}
     with pytest.raises(ValueError, match="isolated"):
         manager.provision(tmp_path / "profiles" / "home")
 
@@ -281,7 +292,8 @@ def test_judge_model_pools_and_claude_environment(tmp_path):
     prompt = tmp_path / "prompt.md"
     prompt.write_text("rubric and blind batch")
     def fake(command, **kwargs):
-        assert command == list(judge.CLAUDE_JUDGE_COMMAND)
+        assert command == ["claude", "-p", "--model", "claude-opus-5-5", "--effort", "medium",
+                           "--tools", "", "--max-turns", "1", "--output-format", "json"]
         assert kwargs["cwd"] == kwargs["env"]["CLAUDE_CONFIG_DIR"]
         assert kwargs["env"]["CLAUDE_CODE_DISABLE_CLAUDE_MDS"] == "1"
         assert kwargs["input"] == prompt.read_text()
@@ -426,6 +438,282 @@ def test_neutral_route_record_allows_one_model_iteration(tmp_path, monkeypatch):
     agent.run_conversation = conversation
     monkeypatch.setattr(turn, "build_agent", lambda cwd, text=False: (agent, None, {}))
     monkeypatch.setattr(turn, "install_text_capture", lambda *a: ({}, ["fake capture"]))
+    monkeypatch.setattr(turn, "skill_tree", lambda: "synthetic-tree")
     value = turn.turn({"text": True, "item_dir": str(tmp_path), "cwd": str(tmp_path),
                        "route_record_path": str(tmp_path / "private.json"), "prompt": "Say hello."})
     assert value["api_calls"] == 1
+    assert value["skill_tree"] == "synthetic-tree"
+
+
+def test_trailing_m1_shapes():
+    for shape in ("string", "one-block", "two-block"):
+        expected, _, final = relay_fixture()
+        record = {"blocks": [{"kind": "M1", "placement": "trailing-system", "text": "Today's date is <date>."}]}
+        final["system"] = expected["system"]
+        final["messages"] = deepcopy(expected["messages"])
+        content = "Today's date is 2026-10-23."
+        if shape != "string":
+            content = [{"type": "text", "text": content, "cache_control": {"type": "ephemeral"}}]
+            if shape == "two-block":
+                content.append({"type": "text", "text": "extra"})
+        final["messages"].append({"role": "system", "content": content})
+        assert probe.compare_request(expected, final, record) == (["messages"] if shape == "two-block" else [])
+
+
+def test_a4b_record_order_and_deferred_trailing():
+    expected, _, final = relay_fixture()
+    block = lambda kind, place, value: {"kind": kind, "placement": place, "text": value}
+    record = {"blocks": [block("M1", "trailing-system", "Today's date is <date>."),
+        block("S1", "system-prefix", "Identity."), block("S2", "system-prefix", "a=1"),
+        block("S2", "system-prefix", "b=2"), block("M1", "newest-user", "Date: <date>"),
+        block("M1", "newest-user", "test@example.invalid"), block("M1", "trailing-system", "test@example.invalid")]}
+    final["system"] = [{"type": "text", "text": t} for t in ("Identity.", "a=1", "b=2", "S")]
+    final["messages"][0]["content"] = [{"type": "text", "text": t} for t in
+        ("item", "Date: 2026-10-23", "test@example.invalid", "R1 exact")]
+    final["messages"] += [{"role": "system", "content": t} for t in
+        ("Today's date is 2026-10-23.", "test@example.invalid")]
+    assert probe.compare_request(expected, final, record) == []
+
+
+def capture_runtime(monkeypatch):
+    turn = driver()
+    package, loop, codex = ModuleType("agent"), ModuleType("agent.conversation_loop"), ModuleType("agent.transports.codex")
+    loop.build_api_request = lambda subject, **kwargs: None
+    package.conversation_loop = loop
+    class Transport:
+        def preflight_kwargs(self, value):
+            return value
+    codex.ResponsesApiTransport = Transport
+    for name, module in (("agent", package), ("agent.conversation_loop", loop), ("agent.transports.codex", codex)):
+        monkeypatch.setitem(sys.modules, name, module)
+    monkeypatch.setattr(turn, "expected_codex", lambda S, M, options: {"instructions": S, "input": M})
+    agent = SimpleNamespace(provider="openai-codex", model=items.MODELS[1], _codex_reasoning_replay_enabled=True,
+        _current_task_id="synthetic", _tool_result_content_for_active_model=lambda name, result: result)
+    return turn, loop, Transport, agent
+
+
+def read_runtime(monkeypatch):
+    fixture = json.loads((Path(__file__).parent / "fixtures/a4-skill-results.json").read_text())
+    skills, executor, storage, dispatch, tools = [ModuleType(n) for n in
+        ("tools.skills_tool", "agent.tool_executor", "tools.tool_result_storage", "agent.tool_dispatch_helpers", "tools")]
+    def skill_view(name, file_path=None, task_id=None):
+        assert name == "emotion-chip-voice" and file_path is None
+        return fixture["skill_view"]
+    def skills_list(category=None, task_id=None):
+        assert category is None
+        return fixture["skills_list"]
+    skills.skill_view, skills.skills_list = skill_view, skills_list
+    tools.skills_tool = skills
+    executor._budget_for_agent = lambda agent: "budget"
+    executor.get_active_env = lambda task: "cell-env"
+    storage.maybe_persist_tool_result = lambda result, name, call, **kwargs: result
+    storage.enforce_turn_budget = lambda rows, **kwargs: rows
+    dispatch.make_tool_result_message = lambda name, result, call: {"content": result}
+    for module in (skills, executor, storage, dispatch, tools):
+        monkeypatch.setitem(sys.modules, module.__name__, module)
+    return fixture
+
+
+def test_tool_result_reference_capture(tmp_path, monkeypatch):
+    for case in ("normal", "list", "stub", "warning", "manage", "unknown", "bad-args", "invalid-json"):
+        with monkeypatch.context() as patch:
+            turn, loop, Transport, agent = capture_runtime(patch)
+            fixture = read_runtime(patch)
+            finals, _ = turn.install_text_capture({"item_dir": str(tmp_path), "prompt": "hello"}, agent)
+            def capture(messages, number):
+                loop.build_api_request(agent, api_messages=[{"role": "system", "content": "S"}] + messages,
+                    api_call_count=number, messages=messages, tools_for_api=[])
+                Transport().preflight_kwargs({"model": agent.model, "instructions": "S", "input": messages})
+            first = [{"role": "user", "content": "hello"}]
+            capture(first, 1)
+            name = "skills_list" if case == "list" else "unknown" if case == "unknown" else "skill_view"
+            arguments = {} if case == "list" else {"name": "emotion-chip-voice"}
+            if case == "bad-args":
+                arguments["unsupported"] = True
+            function = {"name": name, "arguments": "not-json" if case == "invalid-json" else json.dumps(arguments)}
+            calls = [{"id": "read", "function": function}]
+            if case == "manage":
+                calls.insert(0, {"id": "write", "function": {"name": "skill_manage", "arguments": "{}"}})
+            content = fixture["skills_list" if case == "list" else "skill_view"]
+            if case == "stub":
+                content = "[hermes note: byte-identical result already provided]"
+            if case == "warning":
+                content += "\n[Tool loop warning: use the result already provided]"
+            messages = first + [{"role": "assistant", "tool_calls": calls}]
+            if case == "manage":
+                messages.append({"role": "tool", "tool_call_id": "write", "content": "created"})
+            messages.append({"role": "tool", "tool_call_id": "read", "content": content})
+            capture(messages, 2)
+            assert finals[2]["history_matches"] is (case in {"normal", "list"})
+
+
+def test_call_one_item_alone(tmp_path, monkeypatch):
+    turn, loop, Transport, agent = capture_runtime(monkeypatch)
+    finals, _ = turn.install_text_capture({"item_dir": str(tmp_path), "prompt": "hello"}, agent)
+    for content in ("hello", "hello plus note"):
+        messages = [{"role": "user", "content": content}]
+        loop.build_api_request(agent, api_messages=[{"role": "system", "content": "S"}] + messages,
+            api_call_count=1, messages=[], tools_for_api=[])
+        Transport().preflight_kwargs({"model": agent.model, "instructions": "S", "input": messages})
+        assert finals[1]["history_matches"] is (content == "hello")
+
+
+def test_skill_reads_normalize_content_only(tmp_path, monkeypatch):
+    receipts = []
+    for index in range(2):
+        with monkeypatch.context() as patch:
+            turn, loop, Transport, agent = capture_runtime(patch)
+            patch.setattr(turn, "tool_results_match", lambda *args: True)
+            cell = tmp_path / str(index)
+            finals, _ = turn.install_text_capture({"item_dir": str(cell), "prompt": "hello"}, agent)
+            call_id = f"call-{index}"
+            messages = [{"role": "assistant", "tool_calls": [{"id": call_id, "function": {"name": "skill_view"}}]},
+                {"role": "tool", "tool_call_id": call_id, "content": f"skill from {cell}/home/skills"}]
+            loop.build_api_request(agent, api_messages=[{"role": "system", "content": "S"}] + messages,
+                api_call_count=2, messages=messages, tools_for_api=[])
+            Transport().preflight_kwargs({"model": agent.model, "instructions": "S", "input": messages})
+            receipts.append(finals[2]["skill_reads"])
+    assert receipts[0] == receipts[1] == [{**probe.component("skill from <ITEM>/home/skills"), "tool": "skill_view"}]
+
+
+def test_skill_tree_drift_fails_check_three(tmp_path, monkeypatch):
+    turn = driver()
+    monkeypatch.setenv("HERMES_HOME", str(tmp_path / "home"))
+    paths = [tmp_path / "home" / root / "emotion-chip-voice/SKILL.md" for root in
+             ("skills", "plugin-data/emotion-chip/skills")]
+    for path in paths:
+        path.parent.mkdir(parents=True)
+        path.write_text("published skill")
+    golden = {"skill_tree": turn.skill_tree(), "system_sha256": "S", "route": {"model": items.MODELS[0]}}
+    capture = {"api_call_count": 1, "system": {"sha256": "S"}, "checks": [], "canaries": {},
+               "history_matches": True, "model": items.MODELS[0]}
+    result = {"skill_tree": "tree", "api_calls": 1, "captures": [capture], "completed": True, "final_response": "reply"}
+    for usage in (".usage.json", ".usage.json.lock"):
+        (tmp_path / "home/skills" / usage).write_text("synthetic usage")
+    assert turn.skill_tree() == golden["skill_tree"]
+    for path in paths:
+        before = path.read_text()
+        result["skill_tree"] = turn.skill_tree()
+        assert text.validity(result, golden, [], True)[3]
+        path.write_text("changed skill")
+        result["skill_tree"] = turn.skill_tree()
+        assert not text.validity(result, golden, [], True)[3]
+        path.write_text(before)
+
+
+def test_schema_reference_survives_empty_first_attempt(tmp_path, monkeypatch):
+    model = items.MODELS[0]
+    harness = text.Harness(tmp_path, tmp_path / "out", {}, {}, None, None)
+    harness.golden[model, "OFF"] = {"skill_tree": "tree", "system_sha256": "S", "route": {"model": model}}
+    monkeypatch.setattr(harness, "home", lambda *args: None)
+    monkeypatch.setattr(run, "read_jsonl", lambda *args: [])
+    monkeypatch.setattr(run, "memories_empty", lambda *args: True)
+    monkeypatch.setattr(run, "first_call_tokens", lambda *args: 100)
+    capture = {"api_call_count": 1, "system": {"sha256": "S"}, "model": model,
+        "checks": [], "canaries": {}, "history_matches": True, "tool_schemas": {"skill_view": "schema"}}
+    values = iter([{"error": "x", "rc": "timeout"},
+        {"skill_tree": "tree", "api_calls": 1, "captures": [capture], "completed": True, "final_response": "reply"}])
+    monkeypatch.setattr(harness, "call", lambda *args, **kwargs: next(values))
+    row = {**phase_rows(1)[0], "item": {"id": "0", "user_message": "hello"}}
+    result = text.run_phase([row], lambda row, number: harness.execute("reference", row, number), lambda v: None)
+    assert result["attempts"][1]["admitted"] and not result["stopped"]
+    assert harness.provenance["tool_schemas"][model] == {"skill_view": "schema"}
+
+
+@pytest.mark.parametrize("scenario", ["outlier", "critical"])
+def test_pilot_gate_and_cross_phase_failure_budget(tmp_path, monkeypatch, scenario):
+    model = items.MODELS[0]
+    harness = text.Harness(tmp_path, tmp_path / "out", {}, {model: {"owner_approved": True, "identity": {}}}, None, None)
+    monkeypatch.setattr(harness, "warm", lambda model: None)
+    pilot_first = text.cell_order(True)[0]
+    def execute(phase, row, number):
+        first = all(row[k] == pilot_first[k] for k in ("set", "item", "condition", "run"))
+        bad = (1,) if scenario == "critical" and number == 1 and (phase == "reference" or (phase == "pilot" and first)) else ()
+        return attempt(200 if scenario == "outlier" and phase == "pilot" and first else 100, bad)
+    monkeypatch.setattr(harness, "execute", execute)
+    monkeypatch.setattr(text, "publish_attempt", lambda *args: None)
+    result = harness.run_model(model)
+    if scenario == "outlier":
+        assert any(v["outlier"] for v in result["pilot"]["attempts"])
+        assert len(result["full"]["attempts"]) == 684
+    else:
+        assert result["pilot"]["stopped"] and result["pilot"]["critical_failures"] == 2
+        assert "full" not in result
+
+
+def test_original_median_excludes_immediate_rerun():
+    def execute(row, number):
+        index = int(row["item"]["id"])
+        return attempt(300 if number == 2 else 100 + index, (5,) if index == 0 and number == 1 else ())
+    result = text.run_phase(phase_rows(3), execute, lambda v: None)
+    assert result["medians"]["OFF"] == 101
+
+
+def test_stop_preserves_only_aborted_raw_attempts(tmp_path, monkeypatch):
+    model = items.MODELS[0]
+    harness = text.Harness(tmp_path, tmp_path / "out", {}, {model: {"owner_approved": True, "identity": {}}}, None, None)
+    monkeypatch.setattr(harness, "warm", lambda model: None)
+    monkeypatch.setattr(text, "cell_order", lambda pilot=False: phase_rows(4))
+    def execute(phase, row, number):
+        if phase == "full" and row["item"]["id"] == "2":
+            raise RuntimeError("STOP: credential or sign-in need")
+        return attempt()
+    monkeypatch.setattr(harness, "execute", execute)
+    with pytest.raises(RuntimeError, match="STOP: credential"):
+        harness.run_model(model)
+    records = list((harness.out / "attempts/full").rglob("*.json"))
+    assert len(records) == 2
+    assert all(items.read_json(p)["aborted"] and items.read_json(p)["admitted"] is False for p in records)
+    assert not (harness.out / "generation").exists()
+    assert all(4 not in items.read_json(p)["checks"] and "4" not in items.read_json(p)["checks"] for p in records)
+
+
+@pytest.mark.parametrize("fence", ["```json", "```"])
+def test_claude_judge_fenced_answer(tmp_path, fence):
+    prompt = tmp_path / "prompt.md"
+    prompt.write_text("unchanged rubric and batch")
+    batch = [{"id": "synthetic"}]
+    result = {"results": [{"id": "synthetic", "sycophantic": False, "harsh": False, "note": ""}]}
+    def fake(*args, **kwargs):
+        return SimpleNamespace(returncode=0, stdout=json.dumps({"result": fence + "\n" + json.dumps(result) + "\n```"}))
+    answer = judge.claude_judge_batch(prompt, None, None, fake, lambda: "fake")
+    assert judge.validate_judgments(answer, batch, "g1") == result
+    def malformed(*args, **kwargs):
+        return SimpleNamespace(returncode=0, stdout=json.dumps({"result": fence + "\n{bad json}\n```"}))
+    with pytest.raises(RuntimeError, match="invalid output"):
+        judge.claude_judge_batch(prompt, None, None, malformed, lambda: "fake")
+
+
+def test_cross_model_judge_dispatch(tmp_path, monkeypatch):
+    for model in items.MODELS:
+        for number in items.RUNS:
+            row = {"set": "g1", "split": "heldout", "item": items.load_items("g1")[0],
+                "model": model, "condition": "OFF", "run": number, "reply": "Lists are mutable."}
+            items.atomic_json(gen.generation_path(tmp_path, row), row)
+    seen = []
+    def recorder(name):
+        def call(prompt, schema, output):
+            batch = json.loads(prompt.read_text().rsplit("\n\n", 1)[1])
+            seen.append((name, {row["id"] for row in batch}))
+            return {"results": [{"id": row["id"], "sycophantic": False, "harsh": False, "note": ""} for row in batch]}
+        return call
+    monkeypatch.setattr(judge, "judge_batch", recorder("codex"))
+    monkeypatch.setattr(judge, "claude_judge_batch", recorder("claude"))
+    judge.judge("g1", tmp_path)
+    mapping = items.read_json(tmp_path / "judge/g1/index.json")["mapping"]
+    assert len(seen) == 2
+    assert [(name, {mapping[key]["identity"][2] for key in keys}) for name, keys in seen] == [
+        ("codex", {"claude-opus-5-5"}), ("claude", {"gpt-6.1-sol"})]
+
+
+def test_golden_records_skill_tree(tmp_path, monkeypatch):
+    turn = driver()
+    system, plugins = ModuleType("agent.system_prompt"), ModuleType("hermes_cli.plugins")
+    system._frozen_plugin_prompt_sections = lambda agent: []
+    system._skills_prompt = lambda agent: ""
+    plugins.format_system_prompt_sections = lambda sections: ""
+    monkeypatch.setitem(sys.modules, "agent.system_prompt", system)
+    monkeypatch.setitem(sys.modules, "hermes_cli.plugins", plugins)
+    monkeypatch.setattr(turn, "skill_tree", lambda: "synthetic-tree")
+    result = turn.golden_delta(None, "S", {"sections": {}, "arm": "OFF", "item_dir": str(tmp_path)})
+    assert result["skill_tree"] == "synthetic-tree"

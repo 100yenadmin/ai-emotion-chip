@@ -95,7 +95,8 @@ class TokenPair:
         if pair["expires_at"] - self.clock() < 900:
             raise RuntimeError("credential lifetime is too short")
         value = {"version": 1, "active_provider": "openai-codex", "providers": {"openai-codex": {
-            "auth_mode": "chatgpt", "tokens": {k: pair[k] for k in ("access_token", "refresh_token")}}}}
+            "auth_mode": "chatgpt", "tokens": {"access_token": pair["access_token"],
+                                               "refresh_token": "harness-owned-no-refresh"}}}}
         fd = os.open(home / "auth.json", os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
         with os.fdopen(fd, "w") as handle:
             json.dump(value, handle)
@@ -108,7 +109,8 @@ def validity(result, golden, rows, memory_empty):
     return {1: complete and all(not any(r["canaries"].values()) for r in captures),
             2: complete and all(r["system"]["sha256"] == golden["system_sha256"] and not r["checks"]
                                     and r["model"] == golden["route"]["model"] for r in captures),
-            3: complete and all(r["history_matches"] for r in captures),
+            3: complete and all(r["history_matches"] for r in captures)
+                and result.get("skill_tree") is not None and result["skill_tree"] == golden.get("skill_tree"),
             5: memory_empty and host.turn_gate(result)["pass"] and bool(result.get("final_response", "").strip())}
 
 
@@ -130,32 +132,38 @@ def run_phase(rows, execute, record, failure_count=0):
         if failures > 1:
             value["stopped"] = True
         return value
-    stopped = False
-    for index, row in enumerate(rows):
-        first = attempt(index, row, 1)
-        originals.append(first)
-        chosen[index] = first
-        if first.get("stopped"):
-            stopped = True
-            break
-        if not all(first["checks"].values()):
-            chosen[index] = attempt(index, row, 2)
-            if chosen[index].get("stopped"):
+    try:
+        stopped = False
+        for index, row in enumerate(rows):
+            first = attempt(index, row, 1)
+            originals.append(first)
+            chosen[index] = first
+            if first.get("stopped"):
                 stopped = True
                 break
-    medians = {c: host.median(v["tokens"] for v in originals if v["row"]["condition"] == c
-                             and v.get("tokens") is not None) for c in CONDITIONS}
-    for value in attempts:
-        mid, tokens = medians[value["row"]["condition"]], value.get("tokens")
-        value["median"] = mid
-        value["checks"][4] = bool(mid) and tokens is not None and abs(tokens - mid) <= .05 * mid
-    if not stopped:
-        for index, first in enumerate(originals):
-            if first["attempt"] == 1 and not first["checks"][4] and all(first["checks"][k] for k in (1, 2, 3, 5)):
-                chosen[index] = attempt(index, first["row"], 2, medians[first["row"]["condition"]])
+            if not all(first["checks"].values()):
+                chosen[index] = attempt(index, row, 2)
                 if chosen[index].get("stopped"):
                     stopped = True
                     break
+        medians = {c: host.median(v["tokens"] for v in originals if v["row"]["condition"] == c
+                                 and v.get("tokens") is not None) for c in CONDITIONS}
+        for value in attempts:
+            mid, tokens = medians[value["row"]["condition"]], value.get("tokens")
+            value["median"] = mid
+            value["checks"][4] = bool(mid) and tokens is not None and abs(tokens - mid) <= .05 * mid
+        if not stopped:
+            for index, first in enumerate(originals):
+                if first["attempt"] == 1 and not first["checks"][4] and all(first["checks"][k] for k in (1, 2, 3, 5)):
+                    chosen[index] = attempt(index, first["row"], 2, medians[first["row"]["condition"]])
+                    if chosen[index].get("stopped"):
+                        stopped = True
+                        break
+    except BaseException:
+        for value in attempts:
+            value.update(aborted=True, admitted=False)
+            record(value)
+        raise
     for value in attempts:
         value["admitted"] = chosen[value["index"]] is value and all(value["checks"].values())
         value["outlier"] = value["attempt"] == 2 and not value["checks"][4] and all(value["checks"][k] for k in (1, 2, 3, 5))
@@ -168,6 +176,8 @@ def publish_attempt(out, phase, value):
     row = value["row"]
     path = Path(out) / "attempts" / phase / row["model"] / row["set"] / row["condition"] / row["item"]["id"]
     atomic_json(path / f'{row["run"]}-{value["attempt"]}.json', value)
+    if value.get("aborted"):
+        return
     if not value["admitted"]:
         log = gen.failures_path(out, row["set"])
         log.parent.mkdir(parents=True, exist_ok=True)
@@ -269,9 +279,10 @@ class Harness:
             raise RuntimeError("STOP: credential or sign-in need")
         rows = host.read_jsonl(item / "probe.jsonl")
         schemas = [r["tool_schemas"] for r in result.get("captures", [])]
-        reference = self.provenance.setdefault("tool_schemas", {}).setdefault(model, schemas[0] if schemas else {})
         checks = validity(result, self.golden[model, arm], rows, host.memories_empty(item / "home"))
-        checks[2] = checks[2] and all(s == reference for s in schemas)
+        if checks[2] and schemas:
+            reference = self.provenance.setdefault("tool_schemas", {}).setdefault(model, schemas[0])
+            checks[2] = all(s == reference for s in schemas)
         return {"checks": checks,
                 "reply": result.get("final_response", ""), "tokens": host.first_call_tokens(rows),
                 "captures": result.get("captures", [])}
@@ -294,8 +305,8 @@ class Harness:
             receipts[phase] = run_phase(rows, lambda r, a: self.execute(phase, r, a),
                                        lambda v: publish_attempt(self.out, phase, v), failures)
             failures = receipts[phase]["critical_failures"]
-            if receipts[phase]["stopped"] or any(not any(v["admitted"] and v["index"] == i
-                for v in receipts[phase]["attempts"]) for i in range(len(rows))):
+            if receipts[phase]["stopped"] or (phase == "reference" and not any(
+                v["admitted"] for v in receipts[phase]["attempts"])):
                 break
         return receipts
 
