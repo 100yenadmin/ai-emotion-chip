@@ -14,10 +14,10 @@ def test_package_data():
 
 @pytest.mark.skipif(not (ROOT / "emotions.yaml").exists(), reason="real emotion data not present")
 @pytest.mark.parametrize("dialect", ["fish_s2", "fish_drama3", "eleven_v4", "tagless"])
-def test_real_guides_carry_crisis_guidance(dialect):
+def test_real_guides_offer_the_whole_range(dialect):
     from emotion_chip.guide import build_prompt_section, build_skill
     data = load_data(ROOT)
     for model in ("claude-opus-5-5", "claude-fable-5-1", "default"):
         for text in (build_prompt_section(dialect, model, data), build_skill(dialect, model, data)):
-            assert "human resource" in text and "No whisper" in text and "steady" in text
+            assert "Hard moments" not in text and "human resource" not in text and "No whisper" not in text
             assert len(build_prompt_section(dialect, model, data)) <= 3800

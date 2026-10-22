@@ -97,12 +97,11 @@ def validate(data):
     ids = set()
     for row in data.emotions:
         _mapping(row, "emotion")
-        for key in ("id", "paper_cluster", "group", "about", "assistant_ok", "ladder", "post_training_delta", "provenance"):
+        for key in ("id", "paper_cluster", "group", "about", "ladder", "post_training_delta", "provenance"):
             _require(key in row, f"emotion missing {key}")
         _require(isinstance(row["id"], str) and row["id"] and row["id"] not in ids, "invalid or duplicate emotion id")
         ids.add(row["id"])
         _require(row["group"] in data.groups, f"unknown group {row['group']}")
-        _require(isinstance(row["assistant_ok"], bool), "assistant_ok must be boolean")
         _require("arousal_bucket" not in row or _number(row["arousal_bucket"]), "arousal_bucket must be numeric")
         _require(isinstance(row["ladder"], list) and len(row["ladder"]) == 3 and all(isinstance(x, str) for x in row["ladder"]), "ladder must contain three strings")
         _require(bool(row["provenance"]), "provenance is required")
@@ -114,9 +113,6 @@ def validate(data):
     for name, row in _mapping(sounds.get("events"), "events").items():
         _require(isinstance(row, dict) and row.get("kind") in {"affect", "structural"}, f"event {name}: invalid kind")
         _require(not _shadows_score(data, name), f"event {name} would capture an emotion cue or score form")
-    _require(isinstance(sounds.get("forbidden_cue_words"), list) and sounds["forbidden_cue_words"]
-             and all(isinstance(x, str) and x.strip() for x in sounds["forbidden_cue_words"]),
-             "forbidden_cue_words must be a nonempty list of nonblank strings")
     for alias, target in _mapping(sounds.get("aliases", {}), "sound aliases").items():
         _require(isinstance(alias, str) and alias.strip() and target in sounds["events"],
                  f"sound alias {alias}: target {target} is not an event")

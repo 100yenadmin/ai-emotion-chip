@@ -79,7 +79,7 @@ def render(text_or_score, dialect, options=None, data=None):
     opener = header_cue(score.header)
     if score.header is not None and (tagless or opener is None):
         dropped.append(Dropped("header", score.header.raw, "not spoken"))
-    # Params follow the header, else the first cue that survives policy, so a dropped forbidden cue never sets them.
+    # Params follow the header, else the first cue.
     first = opener or _first_cue(score)
     override = option(options, "params_from")
     # A params dict comes from the caller (a streamed piece of a rendered reply), so no cue of this piece set them.
