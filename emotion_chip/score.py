@@ -11,9 +11,9 @@ INNER = re.compile(r"(\[[^\[\]]*\])")
 RUNG = re.compile(r"^(slightly|a little|somewhat|very|extremely|deeply|really)\s+", re.I)
 
 
-def _events():
-    """Event ids, plus vendor spellings (laughs, sighing, long pause) mapped to them."""
-    sounds = load_data().sounds
+def _events(sounds=None):
+    """Event ids, plus vendor spellings (laughs, sighing, long pause) mapped to them, from the active data."""
+    sounds = sounds if sounds is not None else load_data().sounds
     return {**{e: e for e in sounds["events"]}, **sounds.get("aliases", {})}
 
 
@@ -93,7 +93,17 @@ def cue(raw: str) -> Cue:
     return Cue(raw, parts, rung, words)
 
 
-def parse(text: str) -> Score:
+def header_cue(header):
+    """The header's delivery words as one cue, in the order written: register values and bare parts."""
+    if header is None:
+        return None
+    values = [part.partition(":")[2].strip() if ":" in part else part.strip() for part in header.raw.split(";")]
+    values = [v for v in values if v]
+    return cue(", ".join(values)) if values else None
+
+
+def parse(text: str, data=None) -> Score:
+    events = _events(data.sounds if data is not None else None)
     header = None
     dropped = []
     body = text
@@ -186,8 +196,8 @@ def parse(text: str) -> Score:
         low = raw.lower()
         span = SPAN.match(raw)
         speaker = re.match(r"^speaker:\s*(\S.*)$", raw, re.I | re.S)
-        if low in _events():
-            tokens.append(Event(_events()[low], raw))
+        if low in events:
+            tokens.append(Event(events[low], raw))
         elif span:
             op = span[1].lower()
             if BOUNDARY.search(span[2]):

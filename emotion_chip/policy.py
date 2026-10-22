@@ -2,19 +2,23 @@
 from dataclasses import replace
 import re
 
-from .model import Cue, Dropped, Event, Sentence, option
-from .score import cue
+from .model import Cue, Dropped, Event, Header, Sentence, option
+from .score import cue, header_cue
 
 
 def apply_policy(score, data, options=None):
     limit = option(options, "sounds_per_turn", 1)
     if not isinstance(limit, int) or limit < 0:
         raise ValueError("sounds_per_turn must be a nonnegative integer")
-    words = sorted(data.sounds["forbidden_cue_words"], key=len, reverse=True)
+    # The sound denylist plus every concept marked assistant_ok: false, so the data field is enforced on its own.
+    words = sorted(set(data.sounds["forbidden_cue_words"])
+                   | {row["id"] for row in data.emotions if row.get("assistant_ok") is False}, key=len, reverse=True)
     # Matched on the rung-stripped word, as a whole word: [very hysterical], [crying softly] and [loud-screaming]
     # drop. So do negated mentions ([firm without screaming]): TTS models do not reliably follow negation inside a
     # tag, and naming the sound primes it. The guide asks for the positive delivery instead ([firm]).
-    forbidden = re.compile(r"\b(?:" + "|".join(map(re.escape, words)) + r")\b", re.I)
+    words = [w for w in words if w.strip()]
+    # An empty list must never compile to an empty alternative, which would match every word.
+    forbidden = re.compile(r"\b(?:" + "|".join(map(re.escape, words)) + r")\b", re.I) if words else re.compile(r"(?!)")
     dropped = []
     sentences = []
     affect_count = 0
@@ -43,5 +47,12 @@ def apply_policy(score, data, options=None):
                     last_breath = index
             kept.append(token)
         sentences.append(Sentence(kept))
-    return replace(score, sentences=sentences), dropped
+    header = score.header
+    opener = header_cue(header)
+    if opener is not None:
+        allowed = [p for p, w in zip(opener.parts, opener.words) if not forbidden.search(w)]
+        if len(allowed) != len(opener.parts):
+            dropped.append(Dropped("header", header.raw, "assistant_ok:false"))
+            header = Header({"register": ", ".join(allowed)}, "register: " + ", ".join(allowed)) if allowed else None
+    return replace(score, header=header, sentences=sentences), dropped
 

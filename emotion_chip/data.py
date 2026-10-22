@@ -5,6 +5,7 @@ from pathlib import Path
 import hashlib
 import json
 import re
+import string
 
 DIALECTS = ("fish_s2", "fish_drama3", "eleven_v4", "tagless", "prose")
 LITERALS = re.compile(r"\[[^\[\]]+\]|</?\w+>")
@@ -29,11 +30,36 @@ class Data:
         return self.aliases.get(word.lower())
 
 
+@lru_cache(maxsize=1)
+def _unique_key_loader():
+    """A safe loader that rejects duplicate mapping keys instead of keeping the last one (authoring only)."""
+    import yaml
+
+    class UniqueKeyLoader(yaml.SafeLoader):
+        pass
+
+    def unique_mapping(loader, node, deep=False):
+        keys = [loader.construct_object(k, deep=deep) for k, _ in node.value]
+        duplicates = sorted({str(k) for k in keys if keys.count(k) > 1})
+        if duplicates:
+            raise yaml.constructor.ConstructorError(None, None, f"duplicate keys: {', '.join(duplicates)}",
+                                                    node.start_mark)
+        return loader.construct_mapping(node, deep=deep)
+
+    UniqueKeyLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, unique_mapping)
+    return UniqueKeyLoader
+
+
+def safe_load_unique(text):
+    import yaml
+    return yaml.load(text, Loader=_unique_key_loader())
+
+
 def _read(path):
     import yaml
 
     try:
-        return yaml.safe_load(path.read_text(encoding="utf-8"))
+        return safe_load_unique(path.read_text(encoding="utf-8"))
     except (OSError, yaml.YAMLError) as exc:
         raise ValueError(f"Cannot load {path.name}: {exc}") from exc
 
@@ -85,7 +111,12 @@ def validate(data):
     sounds = _mapping(data.sounds, "sounds")
     for name, row in _mapping(sounds.get("events"), "events").items():
         _require(isinstance(row, dict) and row.get("kind") in {"affect", "structural"}, f"event {name}: invalid kind")
-    _require(isinstance(sounds.get("forbidden_cue_words"), list) and all(isinstance(x, str) for x in sounds["forbidden_cue_words"]), "forbidden_cue_words must be a list of strings")
+    _require(isinstance(sounds.get("forbidden_cue_words"), list) and sounds["forbidden_cue_words"]
+             and all(isinstance(x, str) and x.strip() for x in sounds["forbidden_cue_words"]),
+             "forbidden_cue_words must be a nonempty list of nonblank strings")
+    for alias, target in _mapping(sounds.get("aliases", {}), "sound aliases").items():
+        _require(isinstance(alias, str) and alias.strip() and target in sounds["events"],
+                 f"sound alias {alias}: target {target} is not an event")
     for name in DIALECTS:
         dialect = _mapping(data.dialects.get(name), f"dialect {name}")
         _require(isinstance(dialect.get("dialect_version"), str), f"dialect {name}: missing dialect_version")
@@ -95,9 +126,19 @@ def validate(data):
         for kind in ("spans", "events"):
             for op, template in _mapping(dialect.get(kind), f"dialect {name} {kind}").items():
                 _require(template is None or isinstance(template, str), f"dialect {name}: invalid template")
+                if kind == "spans" and template not in (None, "uppercase"):
+                    try:
+                        fields = {f for _, f, _, _ in string.Formatter().parse(template) if f is not None}
+                    except ValueError:
+                        fields = {None}
+                    _require(fields == {"text"}, f"dialect {name}: span {op} must use exactly the {{text}} placeholder")
                 for literal in LITERALS.findall(template or ""):
                     _require(literal in phrases, f"dialect {name}: emitted phrase {literal} not in whitelist")
                     _require(literal in inverse, f"dialect {name}: missing inverse for {literal}")
+        if name == "eleven_v4":
+            variants = _mapping(dialect.get("variants"), "dialect eleven_v4 variants")
+            _require(all(isinstance(k, str) and isinstance(v, int) and not isinstance(v, bool) and v > 0
+                         for k, v in variants.items()), "dialect eleven_v4: variants must map model ids to positive caps")
         if dialect.get("speaker"):
             _require(dialect["speaker"] in phrases, f"dialect {name}: speaker missing from whitelist")
     return data
