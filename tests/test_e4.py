@@ -26,8 +26,16 @@ def no_external_process(monkeypatch):
 
 @pytest.fixture
 def neutral(bench_temp_root):
-    """Agent workspaces need a path without study words; the pytest basetemp may carry them."""
-    with tempfile.TemporaryDirectory(prefix="w") as path:
+    """Agent workspaces need a path without study words; the pytest basetemp may carry them, and so can a random
+    temp suffix (about 1 draw in 200 spells "e4"), so draw again until the path is neutral."""
+    for _ in range(100):
+        holder = tempfile.TemporaryDirectory(prefix="w")
+        if not run.leaks(holder.name):
+            break
+        holder.cleanup()
+    else:
+        pytest.fail("no neutral temporary directory in 100 draws; the temp root itself spells a study word")
+    with holder as path:
         yield Path(path)
 
 
