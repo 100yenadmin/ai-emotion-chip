@@ -40,6 +40,9 @@ class EmotionChipTTSProvider(TTSProvider):
         self.tag_adapter = tag_adapter
         self._lock = RLock()
         self._carried = {}
+        # Per session: (turn marker, policy_state, last used). Streamed pieces of one reply share the sound and
+        # breath limits; a new turn (pre_llm_call) or 120 s of silence starts a fresh state.
+        self._policy = {}
 
     @property
     def streams_pcm(self):
@@ -82,9 +85,16 @@ class EmotionChipTTSProvider(TTSProvider):
         now = self.clock()
         with self._lock:
             self._carried = {k: v for k, v in self._carried.items() if 0 <= now - v[1] <= 120}
+            self._policy = {k: v for k, v in self._policy.items() if 0 <= now - v[2] <= 120}
             if streaming:
                 if not has_cue and filtered.header is None and session_id and session_id in self._carried:
                     options["params_from"] = self._carried[session_id][0]
+                if session_id:
+                    turn = self.situation.session(session_id).get("turn")
+                    entry = self._policy.get(session_id)
+                    state = entry[1] if entry is not None and entry[0] == turn else {}
+                    self._policy[session_id] = (turn, state, now)
+                    options["policy_state"] = state
             rendered = render(score, dialect, options)
             if session_id and rendered.group is not None and "params_from" not in options:
                 self._carried[session_id] = (rendered.group, now)

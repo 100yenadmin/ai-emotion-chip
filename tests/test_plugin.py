@@ -688,3 +688,25 @@ def test_transform_tool_result_mid_task(rig, mode, result):
     ctx.set_config("signals", "facts")
     ctx.hooks["post_tool_call"](**kw, status="ok")
     assert hook(**kw, result=result) is None
+
+
+def test_stream_pieces_share_one_turn_of_sound_and_breath_limits(rig):
+    ctx, fish, _, session, now, _ = rig
+    ctx.hooks["pre_llm_call"](session_id="fixture-session")
+    for piece in ("[laugh] One.", "[laugh] Two.", "[breath] Three.", "[breath] Four."):
+        list(ctx.provider.stream(piece))
+    assert [row[1] for row in fish.calls] == ["[laughing] One.", "Two.", "Three.", "Four."]
+    assert provider_module.last_render["dropped"][0]["reason"] == "breath density"
+    # Another session keeps its own limits; the tool path stays one call, one cap.
+    session["HERMES_SESSION_ID"] = "other-fixture-session"
+    list(ctx.provider.stream("[laugh] Other."))
+    session["HERMES_SESSION_ID"] = "fixture-session"
+    ctx.provider.synthesize("[laugh] Tool.", "out.mp3")
+    assert [row[1] for row in fish.calls[-2:]] == ["[laughing] Other.", "[laughing] Tool."]
+    # A new turn starts fresh limits, and so does a long silence without one.
+    ctx.hooks["pre_llm_call"](session_id="fixture-session")
+    list(ctx.provider.stream("[laugh] Five."))
+    list(ctx.provider.stream("[laugh] Six."))
+    now[0] += 121
+    list(ctx.provider.stream("[laugh] Seven."))
+    assert [row[1] for row in fish.calls[-3:]] == ["[laughing] Five.", "Six.", "[laughing] Seven."]

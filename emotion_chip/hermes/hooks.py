@@ -59,6 +59,7 @@ class Hooks:
 
         def change(row):
             nonlocal line
+            row["turn"] = row.get("turn", 0) + 1  # a new reply: streamed pieces start fresh sound and breath limits
             line = situation_line(row, now, mode == "facts+affordance") if mode != "off" else ""
             if line:
                 row["last_situation"] = line
