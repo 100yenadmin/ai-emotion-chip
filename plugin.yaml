@@ -1,0 +1,62 @@
+name: emotion-chip
+version: 0.1.0.dev0
+description: "Hermes Emotion Chip renders the agent's own voice delivery score with Fish Audio or ElevenLabs. It measures nothing about feelings. Synthesis calls are billed to your backend account."
+kind: standalone
+manifest_version: 2
+api_version: 1
+requires_hermes: ">=0.22.2"
+license: Apache-2.0
+homepage: https://github.com/100yenadmin/ai-emotion-chip
+provides_hooks: [pre_llm_call, post_tool_call, api_request_error, on_session_start, on_session_end, transform_tool_result]
+provides_middleware: [tool_request]
+config_schema:
+  backend:
+    type: str
+    choices: [fish, eleven]
+    default: fish
+    label: "Voice backend"
+    description: "Render the agent's score for Fish Audio or ElevenLabs."
+  fish_model:
+    type: str
+    choices: [s2.1-pro, s2.1-pro-free, s2-pro, drama-3]
+    default: s2.1-pro
+    label: "Fish model"
+    description: "Requested model when the call has no Fish model; Fish tts.fish-audio.model takes precedence."
+  eleven_model:
+    type: str
+    choices: [eleven_v4, eleven_v4_turbo, eleven_v3]
+    default: eleven_v4
+    label: "ElevenLabs model"
+    description: "Model to use unless tts.elevenlabs.model_id names one of these models."
+  eleven_voice_id:
+    type: str
+    default: ""
+    label: "ElevenLabs voice id"
+    description: "Voice to use unless the call names one; outranks tts.elevenlabs.voice_id."
+  eleven_style:
+    type: float
+    default: null
+    label: "ElevenLabs style"
+    description: "Optional voice style; omitted from requests when unset."
+  eleven_speed:
+    type: float
+    default: null
+    label: "ElevenLabs speed"
+    description: "Optional voice speed; omitted from requests when unset."
+  guide_mode:
+    type: str
+    choices: [generate, defer]
+    default: generate
+    label: "Delivery guide"
+    description: "generate supplies the prompt and skill; defer leaves guidance to the operator."
+  signals:
+    type: str
+    choices: ["off", facts, facts+affordance]
+    default: "off"
+    label: "Situation facts"
+    description: "Offer task and transport counters, optionally with permission to stop and report."
+  delivery_log:
+    type: bool
+    default: true
+    label: "Delivery log"
+    description: "Keep local delivery metadata without spoken text."

@@ -1,10 +1,8 @@
 """A bracket scanner; vendor angle markup remains ordinary text."""
 from bisect import bisect_left
-import re
-from pathlib import Path
 from functools import lru_cache
-
-import yaml
+import re
+from .data import load_data
 
 from .model import GAP, SPAN_OPS, Cue, Dropped, Event, Header, Score, Sentence, Span, Speaker, Text
 
@@ -26,21 +24,9 @@ LINK_TARGET = re.compile(r"\(((?:[^\s()]|\([^\s()]*\))+)\)")
 RUNG = re.compile(r"^(slightly|a little|somewhat|very|extremely|deeply|really)\s+", re.I)
 
 
-@lru_cache(maxsize=1)
-def _default_data():
-    from .data import load_data
-    return load_data()
-
-
-@lru_cache(maxsize=1)
-def _default_sounds():
-    from .data import safe_load_unique
-    return safe_load_unique((Path(__file__).with_name("data") / "sounds.yaml").read_text())
-
-
 def _events(sounds=None):
     """Event ids, plus vendor spellings (laughs, sighing, long pause) mapped to them, from the active data."""
-    sounds = sounds if sounds is not None else _default_sounds()
+    sounds = sounds if sounds is not None else load_data().sounds
     return {**{e: e for e in sounds["events"]}, **sounds.get("aliases", {})}
 
 
@@ -57,7 +43,7 @@ def _header_shaped(inner, events, data=None):
         return all(key.lower() == "register" or HEADER_KEY.fullmatch(key) for key in keys)
     if ";" in inner:
         return True
-    lexicon = data if data is not None else _default_data()
+    lexicon = data if data is not None else load_data()
     parts = [RUNG.sub("", p.strip()).lower() for p in inner.split(",")]
     return all(p and (p in events or lexicon.lookup(p)) for p in parts)
 

@@ -16,3 +16,9 @@ def data():
 @pytest.fixture(autouse=True)
 def hermes_home(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", str(tmp_path / "hermes"))
+
+
+@pytest.fixture
+def runtime_data():
+    """M1 consumes the shipped JSON bundle, rather than YAML fixtures."""
+    return load_data()

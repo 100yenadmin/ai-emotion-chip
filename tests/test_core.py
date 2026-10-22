@@ -173,12 +173,14 @@ def test_guide(dialect, data):
 
 def test_optional_blocks_last_first(data, tmp_path):
     root = fixture_copy(tmp_path)
-    local = load_data(root)
     path = root / "guide" / "section.md"
     path.write_text("x"*3700 + "<!-- optional -->FIRST<!-- /optional -->" + "<!-- optional -->" + "y"*200 + "<!-- /optional -->")
+    local = load_data(root)
     text = build_prompt_section("fish_s2", "absent", local)
     assert text.endswith("FIRST") and "y" not in text
     path.write_text("x"*3801 + "<!-- optional -->tail<!-- /optional -->")
+    load_data.cache_clear()
+    local = load_data(root)
     with pytest.raises(ValueError, match="3800"):
         build_prompt_section("fish_s2", "absent", local)
 
@@ -607,9 +609,9 @@ def test_model_notes_are_validated(tmp_path):
         load_data(root)
     (root / "models" / "broken.yaml").write_text("note: fine\n")
     data = load_data(root)
-    (root / "models" / "broken.yaml").write_text("note: [1, 2]\n")
+    # Notes are loaded with the data; one changed afterwards still cannot crash guide generation.
     with pytest.raises(ValueError, match="model note broken"):
-        build_prompt_section("fish_s2", "broken", data)
+        build_prompt_section("fish_s2", "broken", replace(data, models={**data.models, "broken": {"note": [1, 2]}}))
 
 
 def test_streamed_pieces_keep_neutral_params(data):
