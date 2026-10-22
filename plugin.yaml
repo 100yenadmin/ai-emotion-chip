@@ -1,0 +1,50 @@
+name: emotion-chip
+version: 0.1.0.dev0
+description: "Hermes Emotion Chip renders the agent's own voice delivery score with Fish Audio. It measures nothing about feelings. Fish synthesis calls are billed to your Fish account."
+kind: standalone
+manifest_version: 2
+api_version: 1
+requires_hermes: ">=0.22.2"
+license: Apache-2.0
+homepage: https://github.com/100yenadmin/ai-emotion-chip
+provides_hooks: [pre_llm_call, post_tool_call, api_request_error, on_session_start, on_session_end]
+config_schema:
+  backend:
+    type: str
+    choices: [fish]
+    default: fish
+    label: "Voice backend"
+    description: "Render the agent's score for Fish Audio."
+  fish_model:
+    type: str
+    choices: [s2.1-pro, s2.1-pro-free, s2-pro, drama-3]
+    default: s2.1-pro
+    label: "Fish model"
+    description: "Model to use unless the synthesis call names a Fish model."
+  guide_mode:
+    type: str
+    choices: [generate, defer]
+    default: generate
+    label: "Delivery guide"
+    description: "generate supplies the prompt and skill; defer leaves guidance to the operator."
+  signals:
+    type: str
+    choices: ["off", facts, facts+affordance]
+    default: "off"
+    label: "Situation facts"
+    description: "Offer task and transport counters, optionally with permission to stop and report."
+  sounds_per_turn:
+    type: int
+    default: 1
+    label: "Sounds per turn"
+    description: "Maximum authored affect sounds per render; zero silences them."
+  business_platforms:
+    type: list
+    default: [slack, email]
+    label: "Quiet platforms"
+    description: "Suppress affect sounds on these session platforms."
+  delivery_log:
+    type: bool
+    default: true
+    label: "Delivery log"
+    description: "Keep local delivery metadata without spoken text."

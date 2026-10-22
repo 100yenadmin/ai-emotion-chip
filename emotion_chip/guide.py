@@ -1,21 +1,13 @@
 """Assemble local templates using capabilities from the dialect tables."""
 import re
 
-import yaml
-
 OPTIONAL = re.compile(r"<!-- optional -->(.*?)<!-- (?:/optional|endoptional) -->", re.S)
 
 
 def _assemble(template, dialect, model, data, overlay):
     table = data.dialects[dialect]
-    root = data.path
-    licence = (root / "guide" / "licence.md").read_text(encoding="utf-8")
-    model_note = ""
-    # Model identifiers are filenames, never paths outside the model directory.
-    if model and re.fullmatch(r"[A-Za-z0-9_.-]+", model):
-        path = root / "models" / f"{model}.yaml"
-        if path.is_file():
-            model_note = (yaml.safe_load(path.read_text(encoding="utf-8")) or {}).get("note", "")
+    licence = data.guide["licence"]
+    model_note = data.models.get(model, {}).get("note", "")
     # The agent writes score forms only; vendor syntax stays inside the renderer.
     forms = ["- `[word]` or `[word, word]` before a sentence sets its delivery; add `slightly` or `very` for intensity.",
              "- `[[register: word; word]]` at the very start sets the whole reply's register. It is never spoken."]
@@ -38,7 +30,7 @@ def _assemble(template, dialect, model, data, overlay):
 
 
 def build_prompt_section(dialect, model, data, overlay=None):
-    template = (data.path / "guide" / "section.md").read_text(encoding="utf-8")
+    template = data.guide["section"]
     result = _assemble(template, dialect, model, data, overlay)
     while True:
         visible = OPTIONAL.sub(lambda m: m[1], result).strip()
@@ -52,5 +44,5 @@ def build_prompt_section(dialect, model, data, overlay=None):
 
 
 def build_skill(dialect, model, data, overlay=None):
-    template = (data.path / "guide" / "skill.md").read_text(encoding="utf-8")
+    template = data.guide["skill"]
     return OPTIONAL.sub(lambda m: m[1], _assemble(template, dialect, model, data, overlay)).strip()

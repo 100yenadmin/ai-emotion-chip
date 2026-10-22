@@ -4,7 +4,7 @@ from dataclasses import asdict
 import json
 import sys
 
-from .data import DIALECTS, load_data
+from .data import DATA_ROOT, DIALECTS, build_bundle, check_bundle, load_data
 from .guide import build_prompt_section, build_skill
 from .render import render
 
@@ -23,11 +23,16 @@ def main(argv=None):
     guide_cmd.add_argument("--skill", action="store_true")
     validate_cmd = commands.add_parser("validate-data")
     validate_cmd.add_argument("--path")
+    for name in ("build-bundle", "check-bundle"):
+        commands.add_parser(name).add_argument("--path")
     args = parser.parse_args(argv)
     try:
         if args.command == "validate-data":
-            load_data(args.path)
+            load_data(args.path or DATA_ROOT)
             print("data valid")
+        elif args.command in {"build-bundle", "check-bundle"}:
+            (build_bundle if args.command == "build-bundle" else check_bundle)(args.path)
+            print("bundle built" if args.command == "build-bundle" else "bundle current")
         elif args.command == "guide":
             builder = build_skill if args.skill else build_prompt_section
             print(builder(args.dialect, args.model, load_data()))

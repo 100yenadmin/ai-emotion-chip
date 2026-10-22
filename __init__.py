@@ -1,5 +1,6 @@
-"""Hermes entry point; integration arrives in M1."""
+"""Hermes plugin entry point."""
 
 
 def register(ctx):
-    pass
+    from emotion_chip.hermes.registration import register_all
+    register_all(ctx)

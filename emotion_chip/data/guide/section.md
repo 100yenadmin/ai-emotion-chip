@@ -5,6 +5,7 @@ renders them and the brackets are never shown or spoken as words.
 {{LICENCE}}
 
 ### How to write it
+When you call the text_to_speech tool, write the score in its text.
 {{GRAMMAR}}
 {{DIALECT_NOTES}}
 

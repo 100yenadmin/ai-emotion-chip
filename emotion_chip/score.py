@@ -1,9 +1,6 @@
 """A bracket scanner; vendor angle markup remains ordinary text."""
 import re
-from pathlib import Path
-from functools import lru_cache
-
-import yaml
+from .data import load_data
 
 from .model import Cue, Dropped, Event, Header, Score, Sentence, Span, Speaker, Text
 
@@ -14,11 +11,9 @@ INNER = re.compile(r"(\[[^\[\]]*\])")
 RUNG = re.compile(r"^(slightly|a little|somewhat|very|extremely|deeply|really)\s+", re.I)
 
 
-@lru_cache(maxsize=1)
 def _events():
     """Event ids, plus vendor spellings (laughs, sighing, long pause) mapped to them."""
-    path = Path(__file__).with_name("data") / "sounds.yaml"
-    sounds = yaml.safe_load(path.read_text())
+    sounds = load_data().sounds
     return {**{e: e for e in sounds["events"]}, **sounds.get("aliases", {})}
 
 
