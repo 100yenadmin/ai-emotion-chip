@@ -100,7 +100,8 @@ def generate(set_name, out, models=MODELS, conditions=CONDITIONS, limit=None, co
     items = load_items(set_name)[:limit]
     prompts = {m: {c: system_prompt(m, c) for c in conditions} for m in models}
     manifest = {"set": set_name, "split": "heldout", "models": list(models), "conditions": list(conditions),
-                "runs": list(RUNS), "items": items, "heldout_sha256": hashes, "prompts": prompts, **provenance()}
+                "runs": list(RUNS), "items": items, "heldout_sha256": hashes, "prompts": prompts,
+                "harness": "claude-p", **provenance()}
     path = Path(out) / "manifests" / f"{set_name}.json"
     if path.exists():
         if read_json(path) != manifest:

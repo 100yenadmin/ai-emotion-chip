@@ -283,6 +283,8 @@ def smoke(directory, variant="crc", arm="facts", runner=subprocess.run, auth_loa
 
 
 if __name__ == "__main__":
+    # EVAL-PREREG A3 parks E4. Its harness needs the fixes in issue #8 before any episode runs.
+    sys.exit("E4 is parked (EVAL-PREREG A3); fix issue #8 before running it.")
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", required=True)
     parser.add_argument("--work-root")

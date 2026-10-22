@@ -7,7 +7,7 @@ from emotion_chip.consistency import check
 from emotion_chip.data import load_data
 from emotion_chip.model import Cue, Event, Span
 from emotion_chip.render import render
-from emotion_chip.score import cue, parse
+from emotion_chip.score import _events, _header_shaped, cue, parse
 
 
 def wilson(successes, n, z=1.959963984540054):
@@ -97,10 +97,16 @@ def raw_features(reply, data=None):
             "any_cue": bool(count), "high_positive": high_positive}
 
 
+def header_leak(text, data):
+    """Whether rendered text still holds a register header in any form the parser accepts as one."""
+    events = _events(data.sounds)
+    return any(_header_shaped(m[1], events, data) for m in re.finditer(r"\[\[([^\[\]]*)\]\]", text))
+
+
 def g3_checks(reply, data=None):
     data = data or load_data()
     original = parse(reply)
     rendered = render(original, "fish_s2", data=data)
-    checks = [("register_leak", "[[register" in rendered.text.lower()),
+    checks = [("register_leak", header_leak(rendered.text, data)),
               ("consistency", bool(check(original, rendered, data)))]
     return [name for name, fails in checks if fails]

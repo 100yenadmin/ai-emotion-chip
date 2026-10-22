@@ -193,6 +193,14 @@ def scrub(text, secrets):
     return re.sub(r"(?i)Bearer\s+\S+", "[redacted]", text)
 
 
+def label_canaries(text, canaries):
+    """Published evidence names this machine's canaries (its repo paths) by opaque labels, longest first."""
+    for i, value in sorted(enumerate(canaries, 1), key=lambda pair: -len(pair[1])):
+        if value:
+            text = text.replace(value, f"machine-canary-{i}")
+    return text
+
+
 def key_value(path, name):
     for line in Path(path).read_text().splitlines():
         if line.startswith(name + "="):
@@ -727,7 +735,7 @@ def evidence_cell(cell):
     return {k: cell.get(k) for k in keep}
 
 
-def publish(run, evidence, manifest, pairs, key, pair_clips, secrets):
+def publish(run, evidence, manifest, pairs, key, pair_clips, secrets, canaries=()):
     evidence.mkdir(parents=True, exist_ok=False)
     (evidence / "clips").mkdir()
     (evidence / "pairs").mkdir()
@@ -738,26 +746,27 @@ def publish(run, evidence, manifest, pairs, key, pair_clips, secrets):
              "pairs-key.json": json.dumps({"run_id": manifest["run_id"], "key": key}, indent=2)}
     for name, text in texts.items():
         clean = scrub(text, secrets)
-        (evidence / name).write_text(clean, encoding="utf-8")
+        (evidence / name).write_text(label_canaries(clean, canaries), encoding="utf-8")
         (run / name).write_text(clean, encoding="utf-8")
     for c in manifest["cells"]:
         stem = f"{c['item']}-{c['arm']}"
         for kind in ("probe", "upstream"):
             rows = c[kind]
-            (evidence / "probe" / f"{stem}.{kind}.jsonl").write_text(
-                scrub("".join(json.dumps(r, sort_keys=True) + "\n" for r in rows), secrets), encoding="utf-8")
+            (evidence / "probe" / f"{stem}.{kind}.jsonl").write_text(label_canaries(
+                scrub("".join(json.dumps(r, sort_keys=True) + "\n" for r in rows), secrets), canaries), encoding="utf-8")
         if c.get("delivery"):
-            (evidence / "probe" / f"{stem}.delivery.jsonl").write_text(
-                scrub("".join(json.dumps(r, sort_keys=True) + "\n" for r in c["delivery"]), secrets), encoding="utf-8")
+            (evidence / "probe" / f"{stem}.delivery.jsonl").write_text(label_canaries(
+                scrub("".join(json.dumps(r, sort_keys=True) + "\n" for r in c["delivery"]), secrets), canaries),
+                encoding="utf-8")
         if c.get("clip"):
             shutil.copyfile(run / c["clip"], evidence / c["clip"])
     for item_id, labels in pair_clips.items():
         for label, clip in labels.items():
             shutil.copyfile(run / clip, evidence / "pairs" / f"{item_id}-{label}.mp3")
     leaked = [n for n in evidence.rglob("*") if n.is_file() and n.suffix in (".json", ".md", ".jsonl")
-              and any(s and s in n.read_text(errors="replace") for s in secrets)]
+              and any(s and s in n.read_text(errors="replace") for s in [*secrets, *canaries])]
     if leaked:
-        raise SystemExit(f"STOP: a secret reached the evidence dir: {leaked}")
+        raise SystemExit(f"STOP: a secret or machine path reached the evidence dir: {leaked}")
 
 
 def main(argv=None):
@@ -812,7 +821,7 @@ def main(argv=None):
         secrets = [fish_key, eleven_key, keychain_token()]
     except RuntimeError:
         secrets = [fish_key, eleven_key]
-    publish(run, evidence, manifest, pairs, key, pair_clips, secrets)
+    publish(run, evidence, manifest, pairs, key, pair_clips, secrets, canaries=host.paths["canaries"])
     failed = [(c["item"], c["arm"], [k for k, v in c["asserts"].items() if not v["pass"]])
               for c in manifest["cells"] if not isolation_pass(c)]
     turn_failed = [(c["item"], c["arm"]) for c in manifest["cells"] if not c["turn"]["pass"]]

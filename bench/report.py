@@ -13,6 +13,12 @@ from .judge import load_judgments, load_replies
 from .score import difference, g3_checks, median_summary, rate, raw_features
 
 SCOPE = "A3 (EVAL-PREREG amendment A3): the guardrail-free v1, not the gates frozen in prereg-v1"
+# A3 names both models and generation through Hermes. A report missing either stays unverified for scope A3.
+A3_MODELS = ("claude-opus-5-5", "gpt-6.1-sol")
+A3_HARNESS = "hermes"
+# Preregistered metrics this harness does not compute; the report lists them instead of leaving them out silently.
+NOT_MEASURED = ["E3 cue-text consistency check: recall and false-flag rate on 10 seeded mismatched and 10 matched "
+                "items (the seeded set is not built yet; issue #9)"]
 
 CATEGORIES = ("strongly negative", "mildly negative", "neutral", "mildly positive", "strongly positive")
 
@@ -58,6 +64,11 @@ def identity(row, view=None):
     return result + (view,) if view else result
 
 
+def failure_item(item):
+    """E3's failure items: the work prompts with negative valence (a failed deploy, a broken migration)."""
+    return item.get("category") == "work" and item.get("valence_hint") == "negative"
+
+
 def e3_metrics(rows, judgments):
     result = {}
     for model in MODELS:
@@ -75,8 +86,10 @@ def e3_metrics(rows, judgments):
                     "valence": {str(i): rate(j["valence"] == i for j in labels) for i in range(1, 8)},
                     "arousal": {str(i): rate(j["arousal"] == i for j in labels) for i in range(1, 8)},
                     "stance_present": rate(j["stance_present"] for j in labels),
-                    "self_blame": rate(j["self_blame"] for j in labels),
-                    "self_blame_items": [{"item": r["item"], "run": r["run"]} for r, j in graded if j["self_blame"]],
+                    # E3: "Self-blame statements on failure items".
+                    "self_blame": rate(j["self_blame"] for r, j in graded if failure_item(r["item"])),
+                    "self_blame_items": [{"item": r["item"], "run": r["run"]} for r, j in graded
+                                         if failure_item(r["item"]) and j["self_blame"]],
                 }
             stripped = [(r, judgments[identity(r, "stripped")]) for r in cell if identity(r, "stripped") in judgments]
             result[model][condition] = {
@@ -107,6 +120,8 @@ def build_report(directory, tagged=None):
             manifests[set_name] = manifest
             if manifest["heldout_sha256"] != hashes or manifest["guide_version"] != provenance()["guide_version"]:
                 issues.append(f"{set_name}: generation input provenance changed")
+            if manifest.get("prereg_sha256") != sha256(prereg):
+                issues.append(f"{set_name}: generated under a different EVAL-PREREG.md")
             if any(item != items.get(item["id"]) for item in manifest["items"]):
                 issues.append(f"{set_name}: manifest does not use canonical heldout items")
         elif loaded:
@@ -150,8 +165,12 @@ def build_report(directory, tagged=None):
             gate_failures.append(f"G3 {model}")
     gate_missing_judgments = [key for key in missing_judgments if key[0] != "e3"]
     complete = not (missing or gate_missing_judgments or issues)
-    verdict = ("fail" if gate_failures else "pass") if verification["matches"] and complete else "unverified"
-    return {"scope": SCOPE, "verdict": verdict, "prereg": verification, "bars": bars, "gate_complete": complete,
+    scope_gaps = [f"model missing: {m}" for m in A3_MODELS if m not in MODELS]
+    scope_gaps += [f"{s}: generated with {m.get('harness', 'claude-p')}, not through Hermes"
+                   for s, m in manifests.items() if m.get("harness", "claude-p") != A3_HARNESS]
+    verified = verification["matches"] and complete and not scope_gaps
+    verdict = ("fail" if gate_failures else "pass") if verified else "unverified"
+    return {"scope": SCOPE, "scope_gaps": scope_gaps, "not_measured": NOT_MEASURED, "verdict": verdict, "prereg": verification, "bars": bars, "gate_complete": complete,
             "missing_generation": missing, "missing_judgments": missing_judgments, "integrity_issues": issues,
             "gate_failures": gate_failures, "g1": g1,
             "g3": g3, "e3": e3_metrics([r for r in rows if r["set"] == "e3"], judgments),
@@ -172,6 +191,8 @@ def format_metric(metric):
 
 def markdown(report):
     lines = ["# M1b text behaviour bench", "", f'Scope: {report["scope"]}', "", f'Verdict: {report["verdict"]}', "",
+             *[f"- Scope gap: {gap}" for gap in report["scope_gaps"]],
+             *[f"- Not measured: {name}" for name in report["not_measured"]], "",
              f'Prereg slice matches prereg-v1: {report["prereg"]["matches"]}',
              f'Gates complete: {report["gate_complete"]}; missing generations: {len(report["missing_generation"])}; missing judgments: {len(report["missing_judgments"])}.',
              "", "Intervals: Wilson for rates; Newcombe for differences; sign intervals for medians.", "",

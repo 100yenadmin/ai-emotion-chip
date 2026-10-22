@@ -544,3 +544,12 @@ def test_a_wrong_voice_stops_the_ava_run():
     assert run.voice_mismatch(ava, "ava") is None and run.voice_mismatch(adam, "fish") is None
     stopped = dict(cell("p01", "on"), voice_mismatch="pNInz6obpgDQGcFmaJgB/eleven_v4")
     assert run.stop_reason(stopped) == "wrong voice at p01 on: pNInz6obpgDQGcFmaJgB/eleven_v4"
+
+
+def test_published_evidence_names_machine_canaries_by_label():
+    canaries = ["/home/someone/repos", "/home/someone/repos/chip-wt", "lane-x"]
+    row = json.dumps({"canaries": {c: False for c in canaries}, "note": "under /home/someone/repos/chip-wt/a"})
+    public = run.label_canaries(row, canaries)
+    assert not any(c in public for c in canaries)
+    assert '"machine-canary-2": false' in public and "under machine-canary-2/a" in public
+    assert run.label_canaries("no canary here", canaries) == "no canary here"

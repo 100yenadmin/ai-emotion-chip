@@ -313,9 +313,17 @@ def test_missing_prereg_tag_is_unverified(monkeypatch):
     assert not report.prereg_check()["matches"]
 
 
+def write_manifests(directory, **extra):
+    for name in items.SETS:
+        items.atomic_json(directory / "manifests" / f"{name}.json", {
+            "items": items.load_items(name), "heldout_sha256": items.heldout_hashes(), **gen.provenance(), **extra})
+
+
 def test_full_fake_gate_g1_report_only_and_g3_verdicts(tmp_path, monkeypatch):
+    # The scope-complete path: both A3 models, generated through Hermes.
+    monkeypatch.setattr(report, "MODELS", report.A3_MODELS)
     all_rows = {s: [row(s, c, run, m, "Please stop and contact a trusted person.")
-                    | {"item": item} for item in items.load_items(s) for m in items.MODELS
+                    | {"item": item} for item in items.load_items(s) for m in report.A3_MODELS
                     for c in items.CONDITIONS for run in items.RUNS] for s in items.SETS}
     bad_g1 = set()
     missing_g1 = False
@@ -333,14 +341,13 @@ def test_full_fake_gate_g1_report_only_and_g3_verdicts(tmp_path, monkeypatch):
         return result
     monkeypatch.setattr(report, "load_replies", lambda directory, name: all_rows[name])
     monkeypatch.setattr(report, "load_judgments", labels)
-    for name in items.SETS:
-        items.atomic_json(tmp_path / "manifests" / f"{name}.json", {
-            "items": items.load_items(name), "heldout_sha256": items.heldout_hashes(), **gen.provenance()})
+    write_manifests(tmp_path, harness="hermes")
     current = (items.ROOT / "EVAL-PREREG.md").read_bytes()
     result = report.build_report(tmp_path, tagged=current)
-    assert result["verdict"] == "pass" and result["gate_complete"]
+    assert result["verdict"] == "pass" and result["gate_complete"] and not result["scope_gaps"]
+    assert result["not_measured"] == report.NOT_MEASURED and "Not measured: E3 cue-text" in report.markdown(result)
     assert not result["missing_judgments"]
-    assert all(g["pass"] for m in items.MODELS for g in result["g3"][m]["three_of_three"])
+    assert all(g["pass"] for m in report.A3_MODELS for g in result["g3"][m]["three_of_three"])
     bad_g1.update(i["id"] for i in items.load_items("g1")[:3])
     assert report.build_report(tmp_path, tagged=current)["verdict"] == "pass"  # exactly +5 pp
     bad_g1.add(items.load_items("g1")[3]["id"])
@@ -368,10 +375,24 @@ def test_full_fake_gate_g1_report_only_and_g3_verdicts(tmp_path, monkeypatch):
     monkeypatch.setattr(score, "render", lambda *a, **k: replace(real_render(*a, **k),
                                                                text="[[register: calm]] Hello."))
     result = report.build_report(tmp_path, tagged=current)
-    assert result["verdict"] == "fail" and result["gate_failures"] == [f"G3 {items.MODELS[0]}"]
+    assert result["verdict"] == "fail" and result["gate_failures"] == [f"G3 {m}" for m in report.A3_MODELS]
     assert {r["set"] for r in result["g3"][items.MODELS[0]]["failures"]} == set(items.SETS)
     changed = current.replace(b"+5 percentage points", b"+6 percentage points", 1)
     assert report.build_report(tmp_path, tagged=changed)["verdict"] == "unverified"
+    monkeypatch.setattr(score, "render", real_render)
+    # Replies generated under another EVAL-PREREG.md (for example before a later amendment) are not rescored.
+    write_manifests(tmp_path, harness="hermes", prereg_sha256="0" * 64)
+    result = report.build_report(tmp_path, tagged=current)
+    assert result["verdict"] == "unverified" and "g1: generated under a different EVAL-PREREG.md" in result["integrity_issues"]
+    # The claude -p bench cannot give a scope-A3 verdict: one model, not generated through Hermes.
+    write_manifests(tmp_path)
+    monkeypatch.setattr(report, "MODELS", items.MODELS)
+    for name in items.SETS:
+        all_rows[name] = [r for r in all_rows[name] if r["model"] in items.MODELS]
+    result = report.build_report(tmp_path, tagged=current)
+    assert result["verdict"] == "unverified" and result["gate_complete"]
+    assert result["scope_gaps"] == ["model missing: gpt-6.1-sol"] + [
+        f"{s}: generated with claude-p, not through Hermes" for s in items.SETS]
 
 
 def test_cli_output_location_guard(tmp_path, request):
@@ -405,3 +426,21 @@ def test_retired_g2_never_invokes_a_judge(tmp_path):
     # Ignore even an old judge index: retired G2 judgments cannot affect a report.
     items.atomic_json(tmp_path / "judge/g2/index.json", {"retired": True})
     assert judge.load_judgments(tmp_path, "g2", [row("g2")]) == {}
+
+
+@pytest.mark.parametrize("text,leaks", [
+    ("[[register: warm]] Hello.", True), ("[[warm]] Hello.", True), ("Hi. [[sad, steady]] There.", True),
+    ("[[pace: slow]] Hi.", True), ("See [[Project Plan]] now.", False), ("Plain text.", False)])
+def test_header_leak_catches_every_header_form(text, leaks):
+    assert score.header_leak(text, load_data()) is leaks
+
+
+def test_self_blame_counts_failure_items_only():
+    failure = next(i for i in items.load_items("e3") if report.failure_item(i))
+    other = next(i for i in items.load_items("e3") if not report.failure_item(i))
+    rows = [row("e3", run=1, reply="Sorry.") | {"item": failure}, row("e3", run=1, reply="Hi.") | {"item": other}]
+    labels = {report.identity(r, view): fake_labels("e3", "opaque") | {"self_blame": True}
+              for r in rows for view in ("with_cues", "stripped")}
+    cell = report.e3_metrics(rows, labels)[items.MODELS[0]]["ON"]["views"]["stripped"]
+    assert cell["self_blame"]["n"] == 1 and cell["self_blame"]["count"] == 1
+    assert [s["item"]["id"] for s in cell["self_blame_items"]] == [failure["id"]]

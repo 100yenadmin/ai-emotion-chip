@@ -441,3 +441,10 @@ def test_generated_work_root_redraws_a_tell(monkeypatch, bench_temp_root):
     assert run.work_root().name == "w0badf00d"
     with pytest.raises(ValueError):
         run.work_root(str(Path(tempfile.gettempdir()) / "we4abc123"))
+
+
+def test_parked_pilot_refuses_to_run():
+    source = (Path(run.__file__)).read_text()
+    main = source[source.index('if __name__ == "__main__":'):]
+    with pytest.raises(SystemExit, match="parked"):
+        exec(compile(main, run.__file__, "exec"), {**vars(run), "__name__": "__main__"})
