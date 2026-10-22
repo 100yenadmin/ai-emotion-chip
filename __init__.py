@@ -1,5 +1,7 @@
-"""Hermes entry point; integration arrives in M1."""
+"""Hermes plugin entry point."""
 
 
 def register(ctx):
-    pass
+    # Hermes imports a directory plugin as hermes_plugins.<slug> without adding it to sys.path: import relatively.
+    from .emotion_chip.hermes.registration import register_all
+    register_all(ctx)

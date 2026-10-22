@@ -19,8 +19,9 @@ Hermes Emotion Chip (repo: AI Emotion Chip) is a Hermes Agent plugin that lets t
 
 <!-- Every command below was run in a clean checkout when this file was written. -->
 ```bash
-uv venv && uv pip install -e '.[dev]'
+uv venv && uv pip install -r requirements-dev.txt
 uv run pytest -q
+uv run python -m emotion_chip check-bundle   # after editing anything in emotion_chip/data/: build-bundle
 ```
 
 ## Rules

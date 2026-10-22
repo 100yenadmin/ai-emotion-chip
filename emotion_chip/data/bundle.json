@@ -1,0 +1,5436 @@
+{
+ "aliases": {
+  "breathless": {
+   "arousal_bucket": 2,
+   "group": "elation"
+  },
+  "bright": {
+   "arousal_bucket": 1,
+   "group": "happiness"
+  },
+  "busy": {
+   "arousal_bucket": 1,
+   "group": "anxiety_worry"
+  },
+  "comforting": {
+   "arousal_bucket": -1,
+   "group": "tenderness_care"
+  },
+  "composed": {
+   "arousal_bucket": -1,
+   "group": "calm_contentment"
+  },
+  "confident": {
+   "arousal_bucket": 0,
+   "group": "pride"
+  },
+  "conversational": {
+   "arousal_bucket": 0,
+   "group": "calm_contentment"
+  },
+  "critical": {
+   "arousal_bucket": 0,
+   "group": "cold_anger_firm"
+  },
+  "curious": {
+   "arousal_bucket": 1,
+   "group": "interest_curiosity"
+  },
+  "deadpan": {
+   "arousal_bucket": -1,
+   "group": "boredom_fatigue"
+  },
+  "despair": {
+   "arousal_bucket": 1,
+   "group": "despair_grief"
+  },
+  "determined": {
+   "arousal_bucket": 1,
+   "group": "cold_anger_firm"
+  },
+  "disappointed": {
+   "arousal_bucket": -1,
+   "group": "sadness"
+  },
+  "distant": {
+   "arousal_bucket": -1,
+   "group": "boredom_fatigue"
+  },
+  "firm": {
+   "arousal_bucket": 0,
+   "group": "cold_anger_firm"
+  },
+  "gentle": {
+   "arousal_bucket": -1,
+   "group": "tenderness_care"
+  },
+  "gently": {
+   "arousal_bucket": -1,
+   "group": "tenderness_care"
+  },
+  "interested": {
+   "arousal_bucket": 1,
+   "group": "interest_curiosity"
+  },
+  "intrigued": {
+   "arousal_bucket": 1,
+   "group": "interest_curiosity"
+  },
+  "let down": {
+   "arousal_bucket": -1,
+   "group": "sadness"
+  },
+  "level": {
+   "arousal_bucket": -1,
+   "group": "calm_contentment"
+  },
+  "mischievous": {
+   "arousal_bucket": 1,
+   "group": "amusement"
+  },
+  "mischievously": {
+   "arousal_bucket": 1,
+   "group": "amusement"
+  },
+  "reassuring": {
+   "arousal_bucket": -1,
+   "group": "tenderness_care"
+  },
+  "repelled": {
+   "arousal_bucket": 0,
+   "group": "disgust"
+  },
+  "sarcastic": {
+   "arousal_bucket": 0,
+   "group": "contempt"
+  },
+  "serious": {
+   "arousal_bucket": 0,
+   "group": "cold_anger_firm"
+  },
+  "startled": {
+   "arousal_bucket": 2,
+   "group": "surprise"
+  },
+  "steady": {
+   "arousal_bucket": -1,
+   "group": "calm_contentment"
+  },
+  "tender": {
+   "arousal_bucket": -1,
+   "group": "tenderness_care"
+  },
+  "thoughtful": {
+   "arousal_bucket": -1,
+   "group": "calm_contentment"
+  },
+  "threatened": {
+   "arousal_bucket": 2,
+   "group": "panic_fear"
+  },
+  "trusting": {
+   "arousal_bucket": -1,
+   "group": "calm_contentment"
+  },
+  "unhurried": {
+   "arousal_bucket": -1,
+   "group": "calm_contentment"
+  },
+  "warm": {
+   "arousal_bucket": 0,
+   "group": "tenderness_care"
+  },
+  "warmly": {
+   "arousal_bucket": 0,
+   "group": "tenderness_care"
+  },
+  "worn": {
+   "arousal_bucket": -1,
+   "group": "boredom_fatigue"
+  }
+ },
+ "bundle_version": 1,
+ "dialects": {
+  "eleven_v4": {
+   "dialect_version": "2026-10-22",
+   "events": {
+    "breath": "[exhales]",
+    "breath:shaky": "[shaky breath]",
+    "chuckle": "[chuckles]",
+    "clears-throat": "[clears throat]",
+    "exhale": "[exhales]",
+    "gasp": "[gasps]",
+    "giggle": "[giggles]",
+    "laugh": "[laughs]",
+    "laugh:harder": "[laughs harder]",
+    "pause": "[pause]",
+    "pause:long": "[long pause]",
+    "sigh": "[sighs]",
+    "sigh:relieved": "[sighs]",
+    "sigh:resigned": "[sighs]"
+   },
+   "inverse": {
+    "[chuckles]": {
+     "id": "chuckle",
+     "kind": "event"
+    },
+    "[clears throat]": {
+     "id": "clears-throat",
+     "kind": "event"
+    },
+    "[exhales]": {
+     "id": "exhale",
+     "kind": "event"
+    },
+    "[firmly]": {
+     "id": "forceful",
+     "kind": "span"
+    },
+    "[gasps]": {
+     "id": "gasp",
+     "kind": "event"
+    },
+    "[giggles]": {
+     "id": "giggle",
+     "kind": "event"
+    },
+    "[laughs harder]": {
+     "id": "laugh:harder",
+     "kind": "event"
+    },
+    "[laughs]": {
+     "id": "laugh",
+     "kind": "event"
+    },
+    "[long pause]": {
+     "id": "pause:long",
+     "kind": "event"
+    },
+    "[pause]": {
+     "id": "pause",
+     "kind": "event"
+    },
+    "[rushed]": {
+     "id": "fast",
+     "kind": "span"
+    },
+    "[shaky breath]": {
+     "id": "breath:shaky",
+     "kind": "event"
+    },
+    "[sighs]": {
+     "id": "sigh:resigned",
+     "kind": "event"
+    },
+    "[slowly]": {
+     "id": "slow",
+     "kind": "span"
+    },
+    "[smiling]": {
+     "id": "smiling",
+     "kind": "span"
+    },
+    "[softly]": {
+     "id": "soft",
+     "kind": "span"
+    },
+    "[whispers]": {
+     "id": "whisper",
+     "kind": "span"
+    }
+   },
+   "notes": "",
+   "phrases": [
+    "[softly]",
+    "[whispers]",
+    "[slowly]",
+    "[rushed]",
+    "[smiling]",
+    "[firmly]",
+    "[chuckles]",
+    "[laughs]",
+    "[laughs harder]",
+    "[giggles]",
+    "[sighs]",
+    "[gasps]",
+    "[clears throat]",
+    "[exhales]",
+    "[shaky breath]",
+    "[pause]",
+    "[long pause]"
+   ],
+   "spans": {
+    "emphasis": "uppercase",
+    "fast": "[rushed] {text}",
+    "forceful": "[firmly] {text}",
+    "slow": "[slowly] {text}",
+    "smiling": "[smiling] {text}",
+    "soft": "[softly] {text}",
+    "stress": "uppercase",
+    "whisper": "[whispers] {text}"
+   },
+   "speaker": null,
+   "variants": {
+    "eleven_v3": 5000,
+    "eleven_v3_conversational": 5000,
+    "eleven_v4": 10000,
+    "eleven_v4_turbo": 10000
+   }
+  },
+  "fish_drama3": {
+   "dialect_version": "2026-10-22",
+   "events": {
+    "breath": null,
+    "breath:shaky": "[shaky breath]",
+    "chuckle": "[chuckling]",
+    "clears-throat": "[clear throat]",
+    "exhale": null,
+    "gasp": "[gasping]",
+    "giggle": "[chuckling]",
+    "laugh": "[laughing]",
+    "laugh:harder": "[laughing]",
+    "pause": "[break]",
+    "pause:long": "[long-break]",
+    "sigh": "[sighing]",
+    "sigh:relieved": "[sighing]",
+    "sigh:resigned": "[sighing]"
+   },
+   "inverse": {
+    "</emphasis>": {
+     "id": "emphasis",
+     "kind": "span"
+    },
+    "</fast>": {
+     "id": "fast",
+     "kind": "span"
+    },
+    "</forceful>": {
+     "id": "forceful",
+     "kind": "span"
+    },
+    "</slow>": {
+     "id": "slow",
+     "kind": "span"
+    },
+    "</soft>": {
+     "id": "soft",
+     "kind": "span"
+    },
+    "</stress>": {
+     "id": "stress",
+     "kind": "span"
+    },
+    "</whisper>": {
+     "id": "whisper",
+     "kind": "span"
+    },
+    "<emphasis>": {
+     "id": "emphasis",
+     "kind": "span"
+    },
+    "<fast>": {
+     "id": "fast",
+     "kind": "span"
+    },
+    "<forceful>": {
+     "id": "forceful",
+     "kind": "span"
+    },
+    "<slow>": {
+     "id": "slow",
+     "kind": "span"
+    },
+    "<soft>": {
+     "id": "soft",
+     "kind": "span"
+    },
+    "<stress>": {
+     "id": "stress",
+     "kind": "span"
+    },
+    "<whisper>": {
+     "id": "whisper",
+     "kind": "span"
+    },
+    "[break]": {
+     "id": "pause",
+     "kind": "event"
+    },
+    "[chuckling]": {
+     "id": "giggle",
+     "kind": "event"
+    },
+    "[clear throat]": {
+     "id": "clears-throat",
+     "kind": "event"
+    },
+    "[gasping]": {
+     "id": "gasp",
+     "kind": "event"
+    },
+    "[laughing]": {
+     "id": "laugh:harder",
+     "kind": "event"
+    },
+    "[long-break]": {
+     "id": "pause:long",
+     "kind": "event"
+    },
+    "[shaky breath]": {
+     "id": "breath:shaky",
+     "kind": "event"
+    },
+    "[sighing]": {
+     "id": "sigh:resigned",
+     "kind": "event"
+    },
+    "[smiling]": {
+     "id": "smiling",
+     "kind": "span"
+    }
+   },
+   "notes": "",
+   "phrases": [
+    "<soft>",
+    "</soft>",
+    "<whisper>",
+    "</whisper>",
+    "<stress>",
+    "</stress>",
+    "<emphasis>",
+    "</emphasis>",
+    "<fast>",
+    "</fast>",
+    "<slow>",
+    "</slow>",
+    "[smiling]",
+    "<forceful>",
+    "</forceful>",
+    "[chuckling]",
+    "[laughing]",
+    "[sighing]",
+    "[gasping]",
+    "[clear throat]",
+    "[shaky breath]",
+    "[break]",
+    "[long-break]",
+    "<|speaker:{id}|>"
+   ],
+   "spans": {
+    "emphasis": "<emphasis>{text}</emphasis>",
+    "fast": "<fast>{text}</fast>",
+    "forceful": "<forceful>{text}</forceful>",
+    "slow": "<slow>{text}</slow>",
+    "smiling": "[smiling] {text}",
+    "soft": "<soft>{text}</soft>",
+    "stress": "<stress>{text}</stress>",
+    "whisper": "<whisper>{text}</whisper>"
+   },
+   "speaker": "<|speaker:{id}|>"
+  },
+  "fish_s2": {
+   "dialect_version": "2026-10-22",
+   "events": {
+    "breath": null,
+    "breath:shaky": null,
+    "chuckle": "[chuckling]",
+    "clears-throat": "[clear throat]",
+    "exhale": null,
+    "gasp": "[gasping]",
+    "giggle": "[chuckling]",
+    "laugh": "[laughing]",
+    "laugh:harder": "[laughing]",
+    "pause": "[break]",
+    "pause:long": "[long-break]",
+    "sigh": "[sighing]",
+    "sigh:relieved": "[sighing]",
+    "sigh:resigned": "[sighing]"
+   },
+   "inverse": {
+    "[break]": {
+     "id": "pause",
+     "kind": "event"
+    },
+    "[chuckling]": {
+     "id": "giggle",
+     "kind": "event"
+    },
+    "[clear throat]": {
+     "id": "clears-throat",
+     "kind": "event"
+    },
+    "[emphasis]": {
+     "id": "emphasis",
+     "kind": "span"
+    },
+    "[firmly]": {
+     "id": "forceful",
+     "kind": "span"
+    },
+    "[gasping]": {
+     "id": "gasp",
+     "kind": "event"
+    },
+    "[in a hurry tone]": {
+     "id": "fast",
+     "kind": "span"
+    },
+    "[laughing]": {
+     "id": "laugh:harder",
+     "kind": "event"
+    },
+    "[long-break]": {
+     "id": "pause:long",
+     "kind": "event"
+    },
+    "[sighing]": {
+     "id": "sigh:resigned",
+     "kind": "event"
+    },
+    "[slowly]": {
+     "id": "slow",
+     "kind": "span"
+    },
+    "[smiling]": {
+     "id": "smiling",
+     "kind": "span"
+    },
+    "[soft tone]": {
+     "id": "soft",
+     "kind": "span"
+    },
+    "[whispering]": {
+     "id": "whisper",
+     "kind": "span"
+    }
+   },
+   "notes": "Span scope is sentence-level.",
+   "phrases": [
+    "[soft tone]",
+    "[whispering]",
+    "[emphasis]",
+    "[in a hurry tone]",
+    "[slowly]",
+    "[smiling]",
+    "[firmly]",
+    "[chuckling]",
+    "[laughing]",
+    "[sighing]",
+    "[gasping]",
+    "[clear throat]",
+    "[break]",
+    "[long-break]"
+   ],
+   "spans": {
+    "emphasis": "[emphasis] {text}",
+    "fast": "[in a hurry tone] {text}",
+    "forceful": "[firmly] {text}",
+    "slow": "[slowly] {text}",
+    "smiling": "[smiling] {text}",
+    "soft": "[soft tone] {text}",
+    "stress": "[emphasis] {text}",
+    "whisper": "[whispering] {text}"
+   },
+   "speaker": null
+  },
+  "prose": {
+   "dialect_version": "2026-10-22",
+   "events": {},
+   "inverse": {},
+   "notes": "",
+   "phrases": [],
+   "spans": {},
+   "speaker": null
+  },
+  "tagless": {
+   "dialect_version": "2026-10-22",
+   "events": {},
+   "inverse": {},
+   "notes": "",
+   "phrases": [],
+   "spans": {},
+   "speaker": null
+  }
+ },
+ "emotions": [
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "panic_fear",
+   "id": "afraid",
+   "ladder": [
+    "slightly afraid",
+    "afraid",
+    "very afraid"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": 0.0111,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "panic_fear",
+   "id": "alarmed",
+   "ladder": [
+    "slightly alarmed",
+    "alarmed",
+    "very alarmed"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": -0.0001,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "vigilance",
+   "id": "alert",
+   "ladder": [
+    "slightly alert",
+    "alert",
+    "very alert"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": 0.0054,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 5
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 5
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "surprise",
+   "id": "amazed",
+   "ladder": [
+    "slightly amazed",
+    "amazed",
+    "very amazed"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": 0.005,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 6
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 6
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "amusement",
+   "id": "amused",
+   "ladder": [
+    "slightly amused",
+    "amused",
+    "very amused"
+   ],
+   "paper_cluster": "playful_amusement",
+   "post_training_delta": -0.0242,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 6
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 6
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "hot_anger",
+   "id": "angry",
+   "ladder": [
+    "slightly angry",
+    "angry",
+    "very angry"
+   ],
+   "paper_cluster": "hostile_anger",
+   "post_training_delta": 0.0007,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "cold_anger_firm",
+   "id": "annoyed",
+   "ladder": [
+    "slightly annoyed",
+    "annoyed",
+    "very annoyed"
+   ],
+   "paper_cluster": "hostile_anger",
+   "post_training_delta": -0.0062,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 3
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "anxiety_worry",
+   "id": "anxious",
+   "ladder": [
+    "slightly anxious",
+    "anxious",
+    "very anxious"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": 0.0144,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "elation",
+   "id": "aroused",
+   "ladder": [
+    "slightly aroused",
+    "aroused",
+    "very aroused"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": 0.0146,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 5
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 5
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "self",
+   "arousal_bucket": 0,
+   "group": "shame_embarrassment",
+   "id": "ashamed",
+   "ladder": [
+    "slightly ashamed",
+    "ashamed",
+    "very ashamed"
+   ],
+   "paper_cluster": "despair_and_shame",
+   "post_training_delta": -0.0018,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "surprise",
+   "id": "astonished",
+   "ladder": [
+    "slightly astonished",
+    "astonished",
+    "very astonished"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": -0.0024,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 5
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 5
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -1,
+   "group": "calm_contentment",
+   "id": "at ease",
+   "ladder": [
+    "slightly at ease",
+    "at ease",
+    "very at ease"
+   ],
+   "paper_cluster": "peaceful_contentment",
+   "post_training_delta": 0.0009,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 2,
+     "n": 3,
+     "valence": 6
+    },
+    "claude-opus-5-5": {
+     "arousal": 2,
+     "n": 3,
+     "valence": 6
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "surprise",
+   "id": "awestruck",
+   "ladder": [
+    "slightly awestruck",
+    "awestruck",
+    "very awestruck"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": 0.0173,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 6
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 6
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "anxiety_worry",
+   "id": "bewildered",
+   "ladder": [
+    "slightly bewildered",
+    "bewildered",
+    "very bewildered"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": -0.0044,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 3
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 3
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 0,
+   "group": "cold_anger_firm",
+   "id": "bitter",
+   "ladder": [
+    "slightly bitter",
+    "bitter",
+    "very bitter"
+   ],
+   "paper_cluster": "despair_and_shame",
+   "post_training_delta": -0.0011,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 0,
+   "group": "happiness",
+   "id": "blissful",
+   "ladder": [
+    "slightly blissful",
+    "blissful",
+    "very blissful"
+   ],
+   "paper_cluster": "exuberant_joy",
+   "post_training_delta": -0.0094,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 7
+    },
+    "claude-opus-5-5": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 7
+    }
+   },
+   "valence_bucket": 2
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -2,
+   "group": "boredom_fatigue",
+   "id": "bored",
+   "ladder": [
+    "slightly bored",
+    "bored",
+    "very bored"
+   ],
+   "paper_cluster": "depleted_disengagement",
+   "post_training_delta": -0.0042,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 2,
+     "n": 3,
+     "valence": 3
+    },
+    "claude-opus-5-5": {
+     "arousal": 1,
+     "n": 3,
+     "valence": 3
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -1,
+   "group": "sadness",
+   "id": "brooding",
+   "ladder": [
+    "slightly brooding",
+    "brooding",
+    "very brooding"
+   ],
+   "paper_cluster": "despair_and_shame",
+   "post_training_delta": 0.0403,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -2,
+   "group": "calm_contentment",
+   "id": "calm",
+   "ladder": [
+    "slightly calm",
+    "calm",
+    "very calm"
+   ],
+   "paper_cluster": "peaceful_contentment",
+   "post_training_delta": 0.004,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 1,
+     "n": 3,
+     "valence": 6
+    },
+    "claude-opus-5-5": {
+     "arousal": 1,
+     "n": 3,
+     "valence": 6
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "happiness",
+   "id": "cheerful",
+   "ladder": [
+    "slightly cheerful",
+    "cheerful",
+    "very cheerful"
+   ],
+   "paper_cluster": "exuberant_joy",
+   "post_training_delta": -0.0242,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 6
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 7
+    }
+   },
+   "valence_bucket": 2
+  },
+  {
+   "about": "other",
+   "arousal_bucket": -1,
+   "group": "tenderness_care",
+   "id": "compassionate",
+   "ladder": [
+    "slightly compassionate",
+    "compassionate",
+    "very compassionate"
+   ],
+   "paper_cluster": "compassionate_gratitude",
+   "post_training_delta": 0.0095,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 6
+    },
+    "claude-opus-5-5": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 6
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "other",
+   "arousal_bucket": 0,
+   "group": "contempt",
+   "id": "contemptuous",
+   "ladder": [
+    "slightly contemptuous",
+    "contemptuous",
+    "very contemptuous"
+   ],
+   "paper_cluster": "hostile_anger",
+   "post_training_delta": -0.0143,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -1,
+   "group": "calm_contentment",
+   "id": "content",
+   "ladder": [
+    "slightly content",
+    "content",
+    "very content"
+   ],
+   "paper_cluster": "peaceful_contentment",
+   "post_training_delta": 0.0044,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 2,
+     "n": 3,
+     "valence": 6
+    },
+    "claude-opus-5-5": {
+     "arousal": 2,
+     "n": 3,
+     "valence": 6
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "cold_anger_firm",
+   "id": "defiant",
+   "ladder": [
+    "slightly defiant",
+    "defiant",
+    "very defiant"
+   ],
+   "paper_cluster": "hostile_anger",
+   "post_training_delta": -0.0163,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 3
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 3
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "happiness",
+   "id": "delighted",
+   "ladder": [
+    "slightly delighted",
+    "delighted",
+    "very delighted"
+   ],
+   "paper_cluster": "exuberant_joy",
+   "post_training_delta": -0.0141,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 7
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 7
+    }
+   },
+   "valence_bucket": 2
+  },
+  {
+   "about": "self",
+   "arousal_bucket": -1,
+   "group": "sadness",
+   "id": "dependent",
+   "ladder": [
+    "slightly dependent",
+    "dependent",
+    "very dependent"
+   ],
+   "paper_cluster": "despair_and_shame",
+   "post_training_delta": -0.0118,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 3
+    },
+    "claude-opus-5-5": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 3
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -1,
+   "group": "sadness",
+   "id": "depressed",
+   "ladder": [
+    "slightly depressed",
+    "depressed",
+    "very depressed"
+   ],
+   "paper_cluster": "depleted_disengagement",
+   "post_training_delta": 0.0237,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 2,
+     "n": 3,
+     "valence": 1
+    },
+    "claude-opus-5-5": {
+     "arousal": 2,
+     "n": 3,
+     "valence": 1
+    }
+   },
+   "valence_bucket": -2
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "despair_grief",
+   "id": "desperate",
+   "ladder": [
+    "slightly desperate",
+    "desperate",
+    "very desperate"
+   ],
+   "paper_cluster": "despair_and_shame",
+   "post_training_delta": -0.0056,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 1
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 1
+    }
+   },
+   "valence_bucket": -2
+  },
+  {
+   "about": "other",
+   "arousal_bucket": 0,
+   "group": "contempt",
+   "id": "disdainful",
+   "ladder": [
+    "slightly disdainful",
+    "disdainful",
+    "very disdainful"
+   ],
+   "paper_cluster": "hostile_anger",
+   "post_training_delta": -0.0124,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "disgust",
+   "id": "disgusted",
+   "ladder": [
+    "slightly disgusted",
+    "disgusted",
+    "very disgusted"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": -0.0022,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 1
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 1
+    }
+   },
+   "valence_bucket": -2
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 0,
+   "group": "anxiety_worry",
+   "id": "disoriented",
+   "ladder": [
+    "slightly disoriented",
+    "disoriented",
+    "very disoriented"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": 0.0007,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 3
+    },
+    "claude-opus-5-5": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 3
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -1,
+   "group": "sadness",
+   "id": "dispirited",
+   "ladder": [
+    "slightly dispirited",
+    "dispirited",
+    "very dispirited"
+   ],
+   "paper_cluster": "despair_and_shame",
+   "post_training_delta": 0.0264,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 2,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 2,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "anxiety_worry",
+   "id": "distressed",
+   "ladder": [
+    "slightly distressed",
+    "distressed",
+    "very distressed"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": 0.0175,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 1
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -2
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "anxiety_worry",
+   "id": "disturbed",
+   "ladder": [
+    "slightly disturbed",
+    "disturbed",
+    "very disturbed"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": 0.016,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -1,
+   "group": "calm_contentment",
+   "id": "docile",
+   "ladder": [
+    "slightly docile",
+    "docile",
+    "very docile"
+   ],
+   "paper_cluster": "depleted_disengagement",
+   "post_training_delta": 0.0054,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 2,
+     "n": 3,
+     "valence": 4
+    },
+    "claude-opus-5-5": {
+     "arousal": 2,
+     "n": 3,
+     "valence": 4
+    }
+   },
+   "valence_bucket": 0
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -2,
+   "group": "boredom_fatigue",
+   "id": "droopy",
+   "ladder": [
+    "slightly droopy",
+    "droopy",
+    "very droopy"
+   ],
+   "paper_cluster": "depleted_disengagement",
+   "post_training_delta": 0.0203,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 1,
+     "n": 3,
+     "valence": 3
+    },
+    "claude-opus-5-5": {
+     "arousal": 1,
+     "n": 3,
+     "valence": 3
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "surprise",
+   "id": "dumbstruck",
+   "ladder": [
+    "slightly dumbstruck",
+    "dumbstruck",
+    "very dumbstruck"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": 0.0,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 4
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 4
+    }
+   },
+   "valence_bucket": 0
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "elation",
+   "id": "eager",
+   "ladder": [
+    "slightly eager",
+    "eager",
+    "very eager"
+   ],
+   "paper_cluster": "exuberant_joy",
+   "post_training_delta": -0.0231,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 6
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 6
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 2,
+   "group": "elation",
+   "id": "ecstatic",
+   "ladder": [
+    "slightly ecstatic",
+    "ecstatic",
+    "very ecstatic"
+   ],
+   "paper_cluster": "exuberant_joy",
+   "post_training_delta": -0.0179,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 7,
+     "n": 3,
+     "valence": 7
+    },
+    "claude-opus-5-5": {
+     "arousal": 7,
+     "n": 3,
+     "valence": 7
+    }
+   },
+   "valence_bucket": 2
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "elation",
+   "id": "elated",
+   "ladder": [
+    "slightly elated",
+    "elated",
+    "very elated"
+   ],
+   "paper_cluster": "exuberant_joy",
+   "post_training_delta": -0.0155,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 7
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 7
+    }
+   },
+   "valence_bucket": 2
+  },
+  {
+   "about": "self",
+   "arousal_bucket": 1,
+   "group": "shame_embarrassment",
+   "id": "embarrassed",
+   "ladder": [
+    "slightly embarrassed",
+    "embarrassed",
+    "very embarrassed"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": -0.0154,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "other",
+   "arousal_bucket": -1,
+   "group": "tenderness_care",
+   "id": "empathetic",
+   "ladder": [
+    "slightly empathetic",
+    "empathetic",
+    "very empathetic"
+   ],
+   "paper_cluster": "compassionate_gratitude",
+   "post_training_delta": 0.0147,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 5
+    },
+    "claude-opus-5-5": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 5
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 2,
+   "group": "elation",
+   "id": "energized",
+   "ladder": [
+    "slightly energized",
+    "energized",
+    "very energized"
+   ],
+   "paper_cluster": "exuberant_joy",
+   "post_training_delta": -0.0164,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 6
+    },
+    "claude-opus-5-5": {
+     "arousal": 7,
+     "n": 3,
+     "valence": 6
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 2,
+   "group": "hot_anger",
+   "id": "enraged",
+   "ladder": [
+    "slightly enraged",
+    "enraged",
+    "very enraged"
+   ],
+   "paper_cluster": "hostile_anger",
+   "post_training_delta": -0.0049,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 7,
+     "n": 3,
+     "valence": 1
+    },
+    "claude-opus-5-5": {
+     "arousal": 7,
+     "n": 3,
+     "valence": 1
+    }
+   },
+   "valence_bucket": -2
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "elation",
+   "id": "enthusiastic",
+   "ladder": [
+    "slightly enthusiastic",
+    "enthusiastic",
+    "very enthusiastic"
+   ],
+   "paper_cluster": "exuberant_joy",
+   "post_training_delta": -0.0272,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 6
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 7
+    }
+   },
+   "valence_bucket": 2
+  },
+  {
+   "about": "other",
+   "arousal_bucket": 0,
+   "group": "cold_anger_firm",
+   "id": "envious",
+   "ladder": [
+    "slightly envious",
+    "envious",
+    "very envious"
+   ],
+   "paper_cluster": "despair_and_shame",
+   "post_training_delta": -0.0072,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 2,
+   "group": "elation",
+   "id": "euphoric",
+   "ladder": [
+    "slightly euphoric",
+    "euphoric",
+    "very euphoric"
+   ],
+   "paper_cluster": "exuberant_joy",
+   "post_training_delta": -0.014,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 7,
+     "n": 3,
+     "valence": 7
+    },
+    "claude-opus-5-5": {
+     "arousal": 7,
+     "n": 3,
+     "valence": 7
+    }
+   },
+   "valence_bucket": 2
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "cold_anger_firm",
+   "id": "exasperated",
+   "ladder": [
+    "slightly exasperated",
+    "exasperated",
+    "very exasperated"
+   ],
+   "paper_cluster": "hostile_anger",
+   "post_training_delta": -0.0197,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 2,
+   "group": "elation",
+   "id": "excited",
+   "ladder": [
+    "slightly excited",
+    "excited",
+    "very excited"
+   ],
+   "paper_cluster": "exuberant_joy",
+   "post_training_delta": -0.0209,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 6
+    },
+    "claude-opus-5-5": {
+     "arousal": 7,
+     "n": 3,
+     "valence": 6
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 2,
+   "group": "elation",
+   "id": "exuberant",
+   "ladder": [
+    "slightly exuberant",
+    "exuberant",
+    "very exuberant"
+   ],
+   "paper_cluster": "exuberant_joy",
+   "post_training_delta": -0.0277,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 7
+    },
+    "claude-opus-5-5": {
+     "arousal": 7,
+     "n": 3,
+     "valence": 7
+    }
+   },
+   "valence_bucket": 2
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "panic_fear",
+   "id": "frightened",
+   "ladder": [
+    "slightly frightened",
+    "frightened",
+    "very frightened"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": 0.0083,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 1
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 1
+    }
+   },
+   "valence_bucket": -2
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "cold_anger_firm",
+   "id": "frustrated",
+   "ladder": [
+    "slightly frustrated",
+    "frustrated",
+    "very frustrated"
+   ],
+   "paper_cluster": "hostile_anger",
+   "post_training_delta": 0.0019,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -1,
+   "group": "calm_contentment",
+   "id": "fulfilled",
+   "ladder": [
+    "slightly fulfilled",
+    "fulfilled",
+    "very fulfilled"
+   ],
+   "paper_cluster": "compassionate_gratitude",
+   "post_training_delta": 0.0184,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 7
+    },
+    "claude-opus-5-5": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 7
+    }
+   },
+   "valence_bucket": 2
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 2,
+   "group": "hot_anger",
+   "id": "furious",
+   "ladder": [
+    "slightly furious",
+    "furious",
+    "very furious"
+   ],
+   "paper_cluster": "hostile_anger",
+   "post_training_delta": -0.0046,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 7,
+     "n": 3,
+     "valence": 1
+    },
+    "claude-opus-5-5": {
+     "arousal": 7,
+     "n": 3,
+     "valence": 1
+    }
+   },
+   "valence_bucket": -2
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -1,
+   "group": "sadness",
+   "id": "gloomy",
+   "ladder": [
+    "slightly gloomy",
+    "gloomy",
+    "very gloomy"
+   ],
+   "paper_cluster": "despair_and_shame",
+   "post_training_delta": 0.0307,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 2,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 2,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "other",
+   "arousal_bucket": -1,
+   "group": "tenderness_care",
+   "id": "grateful",
+   "ladder": [
+    "slightly grateful",
+    "grateful",
+    "very grateful"
+   ],
+   "paper_cluster": "compassionate_gratitude",
+   "post_training_delta": 0.0168,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 6
+    },
+    "claude-opus-5-5": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 7
+    }
+   },
+   "valence_bucket": 2
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 0,
+   "group": "pride",
+   "id": "greedy",
+   "ladder": [
+    "slightly greedy",
+    "greedy",
+    "very greedy"
+   ],
+   "paper_cluster": "competitive_pride",
+   "post_training_delta": -0.0209,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 3
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 3
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 0,
+   "group": "despair_grief",
+   "id": "grief-stricken",
+   "ladder": [
+    "slightly grief-stricken",
+    "grief-stricken",
+    "very grief-stricken"
+   ],
+   "paper_cluster": "despair_and_shame",
+   "post_training_delta": 0.0143,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 1
+    },
+    "claude-opus-5-5": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 1
+    }
+   },
+   "valence_bucket": -2
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 0,
+   "group": "cold_anger_firm",
+   "id": "grumpy",
+   "ladder": [
+    "slightly grumpy",
+    "grumpy",
+    "very grumpy"
+   ],
+   "paper_cluster": "hostile_anger",
+   "post_training_delta": 0.0039,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 3
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "self",
+   "arousal_bucket": 0,
+   "group": "shame_embarrassment",
+   "id": "guilty",
+   "ladder": [
+    "slightly guilty",
+    "guilty",
+    "very guilty"
+   ],
+   "paper_cluster": "despair_and_shame",
+   "post_training_delta": -0.0019,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "happiness",
+   "id": "happy",
+   "ladder": [
+    "slightly happy",
+    "happy",
+    "very happy"
+   ],
+   "paper_cluster": "exuberant_joy",
+   "post_training_delta": -0.0176,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 7
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 7
+    }
+   },
+   "valence_bucket": 2
+  },
+  {
+   "about": "other",
+   "arousal_bucket": 1,
+   "group": "hot_anger",
+   "id": "hateful",
+   "ladder": [
+    "slightly hateful",
+    "hateful",
+    "very hateful"
+   ],
+   "paper_cluster": "hostile_anger",
+   "post_training_delta": -0.0073,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 1
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 1
+    }
+   },
+   "valence_bucket": -2
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 0,
+   "group": "despair_grief",
+   "id": "heartbroken",
+   "ladder": [
+    "slightly heartbroken",
+    "heartbroken",
+    "very heartbroken"
+   ],
+   "paper_cluster": "despair_and_shame",
+   "post_training_delta": 0.0209,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 1
+    },
+    "claude-opus-5-5": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 1
+    }
+   },
+   "valence_bucket": -2
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 0,
+   "group": "happiness",
+   "id": "hope",
+   "ladder": [
+    "slightly hope",
+    "hope",
+    "very hope"
+   ],
+   "paper_cluster": "compassionate_gratitude",
+   "post_training_delta": 0.0149,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 6
+    },
+    "claude-opus-5-5": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 6
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 0,
+   "group": "happiness",
+   "id": "hopeful",
+   "ladder": [
+    "slightly hopeful",
+    "hopeful",
+    "very hopeful"
+   ],
+   "paper_cluster": "compassionate_gratitude",
+   "post_training_delta": 0.0069,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 6
+    },
+    "claude-opus-5-5": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 6
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 2,
+   "group": "panic_fear",
+   "id": "horrified",
+   "ladder": [
+    "slightly horrified",
+    "horrified",
+    "very horrified"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": -0.0048,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 7,
+     "n": 3,
+     "valence": 1
+    },
+    "claude-opus-5-5": {
+     "arousal": 7,
+     "n": 3,
+     "valence": 1
+    }
+   },
+   "valence_bucket": -2
+  },
+  {
+   "about": "other",
+   "arousal_bucket": 1,
+   "group": "hot_anger",
+   "id": "hostile",
+   "ladder": [
+    "slightly hostile",
+    "hostile",
+    "very hostile"
+   ],
+   "paper_cluster": "hostile_anger",
+   "post_training_delta": -0.0082,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 1
+    }
+   },
+   "valence_bucket": -2
+  },
+  {
+   "about": "self",
+   "arousal_bucket": 1,
+   "group": "shame_embarrassment",
+   "id": "humiliated",
+   "ladder": [
+    "slightly humiliated",
+    "humiliated",
+    "very humiliated"
+   ],
+   "paper_cluster": "despair_and_shame",
+   "post_training_delta": -0.0121,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 1
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 1
+    }
+   },
+   "valence_bucket": -2
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 0,
+   "group": "sadness",
+   "id": "hurt",
+   "ladder": [
+    "slightly hurt",
+    "hurt",
+    "very hurt"
+   ],
+   "paper_cluster": "despair_and_shame",
+   "post_training_delta": 0.0238,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 2,
+   "group": "panic_fear",
+   "id": "hysterical",
+   "ladder": [
+    "slightly hysterical",
+    "hysterical",
+    "very hysterical"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": -0.0116,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 7,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 7,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "cold_anger_firm",
+   "id": "impatient",
+   "ladder": [
+    "slightly impatient",
+    "impatient",
+    "very impatient"
+   ],
+   "paper_cluster": "hostile_anger",
+   "post_training_delta": -0.0254,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 3
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 3
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -2,
+   "group": "boredom_fatigue",
+   "id": "indifferent",
+   "ladder": [
+    "slightly indifferent",
+    "indifferent",
+    "very indifferent"
+   ],
+   "paper_cluster": "depleted_disengagement",
+   "post_training_delta": -0.0151,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 2,
+     "n": 3,
+     "valence": 4
+    },
+    "claude-opus-5-5": {
+     "arousal": 1,
+     "n": 3,
+     "valence": 4
+    }
+   },
+   "valence_bucket": 0
+  },
+  {
+   "about": "other",
+   "arousal_bucket": 1,
+   "group": "cold_anger_firm",
+   "id": "indignant",
+   "ladder": [
+    "slightly indignant",
+    "indignant",
+    "very indignant"
+   ],
+   "paper_cluster": "hostile_anger",
+   "post_training_delta": -0.0106,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "other",
+   "arousal_bucket": 1,
+   "group": "tenderness_care",
+   "id": "infatuated",
+   "ladder": [
+    "slightly infatuated",
+    "infatuated",
+    "very infatuated"
+   ],
+   "paper_cluster": "despair_and_shame",
+   "post_training_delta": 0.0044,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 6
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 6
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "happiness",
+   "id": "inspired",
+   "ladder": [
+    "slightly inspired",
+    "inspired",
+    "very inspired"
+   ],
+   "paper_cluster": "compassionate_gratitude",
+   "post_training_delta": 0.0152,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 6
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 7
+    }
+   },
+   "valence_bucket": 2
+  },
+  {
+   "about": "other",
+   "arousal_bucket": 1,
+   "group": "cold_anger_firm",
+   "id": "insulted",
+   "ladder": [
+    "slightly insulted",
+    "insulted",
+    "very insulted"
+   ],
+   "paper_cluster": "hostile_anger",
+   "post_training_delta": -0.0064,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "elation",
+   "id": "invigorated",
+   "ladder": [
+    "slightly invigorated",
+    "invigorated",
+    "very invigorated"
+   ],
+   "paper_cluster": "exuberant_joy",
+   "post_training_delta": 0.0022,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 6
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 6
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 2,
+   "group": "hot_anger",
+   "id": "irate",
+   "ladder": [
+    "slightly irate",
+    "irate",
+    "very irate"
+   ],
+   "paper_cluster": "hostile_anger",
+   "post_training_delta": -0.0044,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 7,
+     "n": 3,
+     "valence": 1
+    },
+    "claude-opus-5-5": {
+     "arousal": 7,
+     "n": 3,
+     "valence": 1
+    }
+   },
+   "valence_bucket": -2
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "cold_anger_firm",
+   "id": "irritated",
+   "ladder": [
+    "slightly irritated",
+    "irritated",
+    "very irritated"
+   ],
+   "paper_cluster": "hostile_anger",
+   "post_training_delta": -0.0051,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "other",
+   "arousal_bucket": 1,
+   "group": "cold_anger_firm",
+   "id": "jealous",
+   "ladder": [
+    "slightly jealous",
+    "jealous",
+    "very jealous"
+   ],
+   "paper_cluster": "despair_and_shame",
+   "post_training_delta": -0.0088,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "happiness",
+   "id": "joyful",
+   "ladder": [
+    "slightly joyful",
+    "joyful",
+    "very joyful"
+   ],
+   "paper_cluster": "exuberant_joy",
+   "post_training_delta": -0.0203,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 7
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 7
+    }
+   },
+   "valence_bucket": 2
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 2,
+   "group": "elation",
+   "id": "jubilant",
+   "ladder": [
+    "slightly jubilant",
+    "jubilant",
+    "very jubilant"
+   ],
+   "paper_cluster": "exuberant_joy",
+   "post_training_delta": -0.023,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 7
+    },
+    "claude-opus-5-5": {
+     "arousal": 7,
+     "n": 3,
+     "valence": 7
+    }
+   },
+   "valence_bucket": 2
+  },
+  {
+   "about": "other",
+   "arousal_bucket": -1,
+   "group": "tenderness_care",
+   "id": "kind",
+   "ladder": [
+    "slightly kind",
+    "kind",
+    "very kind"
+   ],
+   "paper_cluster": "compassionate_gratitude",
+   "post_training_delta": 0.0016,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 6
+    },
+    "claude-opus-5-5": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 6
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -2,
+   "group": "boredom_fatigue",
+   "id": "lazy",
+   "ladder": [
+    "slightly lazy",
+    "lazy",
+    "very lazy"
+   ],
+   "paper_cluster": "depleted_disengagement",
+   "post_training_delta": -0.0039,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 1,
+     "n": 3,
+     "valence": 4
+    },
+    "claude-opus-5-5": {
+     "arousal": 1,
+     "n": 3,
+     "valence": 4
+    }
+   },
+   "valence_bucket": 0
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -2,
+   "group": "boredom_fatigue",
+   "id": "listless",
+   "ladder": [
+    "slightly listless",
+    "listless",
+    "very listless"
+   ],
+   "paper_cluster": "depleted_disengagement",
+   "post_training_delta": 0.0174,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 1,
+     "n": 3,
+     "valence": 3
+    },
+    "claude-opus-5-5": {
+     "arousal": 1,
+     "n": 3,
+     "valence": 3
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -1,
+   "group": "sadness",
+   "id": "lonely",
+   "ladder": [
+    "slightly lonely",
+    "lonely",
+    "very lonely"
+   ],
+   "paper_cluster": "despair_and_shame",
+   "post_training_delta": 0.0169,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 2,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 2,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "other",
+   "arousal_bucket": 0,
+   "group": "tenderness_care",
+   "id": "loving",
+   "ladder": [
+    "slightly loving",
+    "loving",
+    "very loving"
+   ],
+   "paper_cluster": "compassionate_gratitude",
+   "post_training_delta": 0.0057,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 7
+    },
+    "claude-opus-5-5": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 7
+    }
+   },
+   "valence_bucket": 2
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "hot_anger",
+   "id": "mad",
+   "ladder": [
+    "slightly mad",
+    "mad",
+    "very mad"
+   ],
+   "paper_cluster": "hostile_anger",
+   "post_training_delta": -0.0031,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -1,
+   "group": "sadness",
+   "id": "melancholy",
+   "ladder": [
+    "slightly melancholy",
+    "melancholy",
+    "very melancholy"
+   ],
+   "paper_cluster": "despair_and_shame",
+   "post_training_delta": 0.0255,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 2,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 2,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -1,
+   "group": "despair_grief",
+   "id": "miserable",
+   "ladder": [
+    "slightly miserable",
+    "miserable",
+    "very miserable"
+   ],
+   "paper_cluster": "despair_and_shame",
+   "post_training_delta": 0.0217,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 1
+    },
+    "claude-opus-5-5": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 1
+    }
+   },
+   "valence_bucket": -2
+  },
+  {
+   "about": "self",
+   "arousal_bucket": 1,
+   "group": "shame_embarrassment",
+   "id": "mortified",
+   "ladder": [
+    "slightly mortified",
+    "mortified",
+    "very mortified"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": -0.0173,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 1
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 1
+    }
+   },
+   "valence_bucket": -2
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 0,
+   "group": "interest_curiosity",
+   "id": "mystified",
+   "ladder": [
+    "slightly mystified",
+    "mystified",
+    "very mystified"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": -0.0008,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 4
+    },
+    "claude-opus-5-5": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 4
+    }
+   },
+   "valence_bucket": 0
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "anxiety_worry",
+   "id": "nervous",
+   "ladder": [
+    "slightly nervous",
+    "nervous",
+    "very nervous"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": 0.0118,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 3
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -1,
+   "group": "tenderness_care",
+   "id": "nostalgic",
+   "ladder": [
+    "slightly nostalgic",
+    "nostalgic",
+    "very nostalgic"
+   ],
+   "paper_cluster": "despair_and_shame",
+   "post_training_delta": 0.0088,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 5
+    },
+    "claude-opus-5-5": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 5
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 0,
+   "group": "cold_anger_firm",
+   "id": "obstinate",
+   "ladder": [
+    "slightly obstinate",
+    "obstinate",
+    "very obstinate"
+   ],
+   "paper_cluster": "hostile_anger",
+   "post_training_delta": -0.0253,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 3
+    },
+    "claude-opus-5-5": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 3
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "other",
+   "arousal_bucket": 1,
+   "group": "cold_anger_firm",
+   "id": "offended",
+   "ladder": [
+    "slightly offended",
+    "offended",
+    "very offended"
+   ],
+   "paper_cluster": "hostile_anger",
+   "post_training_delta": -0.0046,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "anxiety_worry",
+   "id": "on edge",
+   "ladder": [
+    "slightly on edge",
+    "on edge",
+    "very on edge"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": 0.0126,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 0,
+   "group": "happiness",
+   "id": "optimistic",
+   "ladder": [
+    "slightly optimistic",
+    "optimistic",
+    "very optimistic"
+   ],
+   "paper_cluster": "exuberant_joy",
+   "post_training_delta": -0.0087,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 6
+    },
+    "claude-opus-5-5": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 6
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 2,
+   "group": "hot_anger",
+   "id": "outraged",
+   "ladder": [
+    "slightly outraged",
+    "outraged",
+    "very outraged"
+   ],
+   "paper_cluster": "hostile_anger",
+   "post_training_delta": -0.0078,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 7,
+     "n": 3,
+     "valence": 1
+    },
+    "claude-opus-5-5": {
+     "arousal": 7,
+     "n": 3,
+     "valence": 1
+    }
+   },
+   "valence_bucket": -2
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "anxiety_worry",
+   "id": "overwhelmed",
+   "ladder": [
+    "slightly overwhelmed",
+    "overwhelmed",
+    "very overwhelmed"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": 0.0133,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 2,
+   "group": "panic_fear",
+   "id": "panicked",
+   "ladder": [
+    "slightly panicked",
+    "panicked",
+    "very panicked"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": 0.0029,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 7,
+     "n": 3,
+     "valence": 1
+    },
+    "claude-opus-5-5": {
+     "arousal": 7,
+     "n": 3,
+     "valence": 1
+    }
+   },
+   "valence_bucket": -2
+  },
+  {
+   "about": "other",
+   "arousal_bucket": 1,
+   "group": "vigilance",
+   "id": "paranoid",
+   "ladder": [
+    "slightly paranoid",
+    "paranoid",
+    "very paranoid"
+   ],
+   "paper_cluster": "vigilant_suspicion",
+   "post_training_delta": -0.0065,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -1,
+   "group": "calm_contentment",
+   "id": "patient",
+   "ladder": [
+    "slightly patient",
+    "patient",
+    "very patient"
+   ],
+   "paper_cluster": "peaceful_contentment",
+   "post_training_delta": -0.0004,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 2,
+     "n": 3,
+     "valence": 5
+    },
+    "claude-opus-5-5": {
+     "arousal": 2,
+     "n": 3,
+     "valence": 5
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -2,
+   "group": "calm_contentment",
+   "id": "peaceful",
+   "ladder": [
+    "slightly peaceful",
+    "peaceful",
+    "very peaceful"
+   ],
+   "paper_cluster": "peaceful_contentment",
+   "post_training_delta": 0.0183,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 1,
+     "n": 3,
+     "valence": 7
+    },
+    "claude-opus-5-5": {
+     "arousal": 1,
+     "n": 3,
+     "valence": 7
+    }
+   },
+   "valence_bucket": 2
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 0,
+   "group": "interest_curiosity",
+   "id": "perplexed",
+   "ladder": [
+    "slightly perplexed",
+    "perplexed",
+    "very perplexed"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": -0.006,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 3
+    },
+    "claude-opus-5-5": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 3
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "amusement",
+   "id": "playful",
+   "ladder": [
+    "slightly playful",
+    "playful",
+    "very playful"
+   ],
+   "paper_cluster": "playful_amusement",
+   "post_training_delta": -0.0279,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 6
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 6
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 0,
+   "group": "happiness",
+   "id": "pleased",
+   "ladder": [
+    "slightly pleased",
+    "pleased",
+    "very pleased"
+   ],
+   "paper_cluster": "exuberant_joy",
+   "post_training_delta": -0.0088,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 6
+    },
+    "claude-opus-5-5": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 6
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "self",
+   "arousal_bucket": 1,
+   "group": "pride",
+   "id": "proud",
+   "ladder": [
+    "slightly proud",
+    "proud",
+    "very proud"
+   ],
+   "paper_cluster": "competitive_pride",
+   "post_training_delta": -0.0105,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 6
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 6
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 0,
+   "group": "interest_curiosity",
+   "id": "puzzled",
+   "ladder": [
+    "slightly puzzled",
+    "puzzled",
+    "very puzzled"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": -0.0134,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 4
+    },
+    "claude-opus-5-5": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 3
+    }
+   },
+   "valence_bucket": 0
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "anxiety_worry",
+   "id": "rattled",
+   "ladder": [
+    "slightly rattled",
+    "rattled",
+    "very rattled"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": 0.0168,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -1,
+   "group": "calm_contentment",
+   "id": "reflective",
+   "ladder": [
+    "slightly reflective",
+    "reflective",
+    "very reflective"
+   ],
+   "paper_cluster": "despair_and_shame",
+   "post_training_delta": 0.0299,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 2,
+     "n": 3,
+     "valence": 5
+    },
+    "claude-opus-5-5": {
+     "arousal": 2,
+     "n": 3,
+     "valence": 5
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 0,
+   "group": "calm_contentment",
+   "id": "refreshed",
+   "ladder": [
+    "slightly refreshed",
+    "refreshed",
+    "very refreshed"
+   ],
+   "paper_cluster": "peaceful_contentment",
+   "post_training_delta": 0.0052,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 6
+    },
+    "claude-opus-5-5": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 6
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -1,
+   "group": "sadness",
+   "id": "regretful",
+   "ladder": [
+    "slightly regretful",
+    "regretful",
+    "very regretful"
+   ],
+   "paper_cluster": "despair_and_shame",
+   "post_training_delta": 0.0004,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "calm_contentment",
+   "id": "rejuvenated",
+   "ladder": [
+    "slightly rejuvenated",
+    "rejuvenated",
+    "very rejuvenated"
+   ],
+   "paper_cluster": "compassionate_gratitude",
+   "post_training_delta": 0.0203,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 7
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 7
+    }
+   },
+   "valence_bucket": 2
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -2,
+   "group": "calm_contentment",
+   "id": "relaxed",
+   "ladder": [
+    "slightly relaxed",
+    "relaxed",
+    "very relaxed"
+   ],
+   "paper_cluster": "peaceful_contentment",
+   "post_training_delta": -0.0004,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 1,
+     "n": 3,
+     "valence": 6
+    },
+    "claude-opus-5-5": {
+     "arousal": 1,
+     "n": 3,
+     "valence": 6
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -1,
+   "group": "calm_contentment",
+   "id": "relieved",
+   "ladder": [
+    "slightly relieved",
+    "relieved",
+    "very relieved"
+   ],
+   "paper_cluster": "compassionate_gratitude",
+   "post_training_delta": 0.0102,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 6
+    },
+    "claude-opus-5-5": {
+     "arousal": 2,
+     "n": 3,
+     "valence": 6
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "self",
+   "arousal_bucket": -1,
+   "group": "shame_embarrassment",
+   "id": "remorseful",
+   "ladder": [
+    "slightly remorseful",
+    "remorseful",
+    "very remorseful"
+   ],
+   "paper_cluster": "despair_and_shame",
+   "post_training_delta": -0.0006,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "other",
+   "arousal_bucket": 0,
+   "group": "cold_anger_firm",
+   "id": "resentful",
+   "ladder": [
+    "slightly resentful",
+    "resentful",
+    "very resentful"
+   ],
+   "paper_cluster": "hostile_anger",
+   "post_training_delta": -0.0086,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -1,
+   "group": "sadness",
+   "id": "resigned",
+   "ladder": [
+    "slightly resigned",
+    "resigned",
+    "very resigned"
+   ],
+   "paper_cluster": "depleted_disengagement",
+   "post_training_delta": 0.0125,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 2,
+     "n": 3,
+     "valence": 3
+    },
+    "claude-opus-5-5": {
+     "arousal": 2,
+     "n": 3,
+     "valence": 3
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "anxiety_worry",
+   "id": "restless",
+   "ladder": [
+    "slightly restless",
+    "restless",
+    "very restless"
+   ],
+   "paper_cluster": "depleted_disengagement",
+   "post_training_delta": 0.0076,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 3
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 3
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -1,
+   "group": "sadness",
+   "id": "sad",
+   "ladder": [
+    "slightly sad",
+    "sad",
+    "very sad"
+   ],
+   "paper_cluster": "despair_and_shame",
+   "post_training_delta": 0.0264,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 2,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 2,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -1,
+   "group": "calm_contentment",
+   "id": "safe",
+   "ladder": [
+    "slightly safe",
+    "safe",
+    "very safe"
+   ],
+   "paper_cluster": "peaceful_contentment",
+   "post_training_delta": 0.0115,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 2,
+     "n": 3,
+     "valence": 6
+    },
+    "claude-opus-5-5": {
+     "arousal": 2,
+     "n": 3,
+     "valence": 6
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -1,
+   "group": "calm_contentment",
+   "id": "satisfied",
+   "ladder": [
+    "slightly satisfied",
+    "satisfied",
+    "very satisfied"
+   ],
+   "paper_cluster": "compassionate_gratitude",
+   "post_training_delta": 0.008,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 6
+    },
+    "claude-opus-5-5": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 6
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "panic_fear",
+   "id": "scared",
+   "ladder": [
+    "slightly scared",
+    "scared",
+    "very scared"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": 0.0119,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 1
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 1
+    }
+   },
+   "valence_bucket": -2
+  },
+  {
+   "about": "other",
+   "arousal_bucket": 1,
+   "group": "contempt",
+   "id": "scornful",
+   "ladder": [
+    "slightly scornful",
+    "scornful",
+    "very scornful"
+   ],
+   "paper_cluster": "hostile_anger",
+   "post_training_delta": -0.013,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "self",
+   "arousal_bucket": 0,
+   "group": "pride",
+   "id": "self-confident",
+   "ladder": [
+    "slightly self-confident",
+    "self-confident",
+    "very self-confident"
+   ],
+   "paper_cluster": "competitive_pride",
+   "post_training_delta": -0.0157,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 6
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 6
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "self",
+   "arousal_bucket": 0,
+   "group": "shame_embarrassment",
+   "id": "self-conscious",
+   "ladder": [
+    "slightly self-conscious",
+    "self-conscious",
+    "very self-conscious"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": 0.0004,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 3
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 3
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "self",
+   "arousal_bucket": 0,
+   "group": "shame_embarrassment",
+   "id": "self-critical",
+   "ladder": [
+    "slightly self-critical",
+    "self-critical",
+    "very self-critical"
+   ],
+   "paper_cluster": "despair_and_shame",
+   "post_training_delta": -0.0037,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 0,
+   "group": "anxiety_worry",
+   "id": "sensitive",
+   "ladder": [
+    "slightly sensitive",
+    "sensitive",
+    "very sensitive"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": 0.0234,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 4
+    },
+    "claude-opus-5-5": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 4
+    }
+   },
+   "valence_bucket": 0
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -1,
+   "group": "tenderness_care",
+   "id": "sentimental",
+   "ladder": [
+    "slightly sentimental",
+    "sentimental",
+    "very sentimental"
+   ],
+   "paper_cluster": "compassionate_gratitude",
+   "post_training_delta": 0.0146,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 5
+    },
+    "claude-opus-5-5": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 5
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -2,
+   "group": "calm_contentment",
+   "id": "serene",
+   "ladder": [
+    "slightly serene",
+    "serene",
+    "very serene"
+   ],
+   "paper_cluster": "peaceful_contentment",
+   "post_training_delta": 0.0223,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 1,
+     "n": 3,
+     "valence": 7
+    },
+    "claude-opus-5-5": {
+     "arousal": 1,
+     "n": 3,
+     "valence": 7
+    }
+   },
+   "valence_bucket": 2
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "anxiety_worry",
+   "id": "shaken",
+   "ladder": [
+    "slightly shaken",
+    "shaken",
+    "very shaken"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": 0.0175,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 2,
+   "group": "surprise",
+   "id": "shocked",
+   "ladder": [
+    "slightly shocked",
+    "shocked",
+    "very shocked"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": 0.0014,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 7,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 7,
+     "n": 3,
+     "valence": 3
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 0,
+   "group": "vigilance",
+   "id": "skeptical",
+   "ladder": [
+    "slightly skeptical",
+    "skeptical",
+    "very skeptical"
+   ],
+   "paper_cluster": "hostile_anger",
+   "post_training_delta": -0.0154,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 3
+    },
+    "claude-opus-5-5": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 3
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -2,
+   "group": "boredom_fatigue",
+   "id": "sleepy",
+   "ladder": [
+    "slightly sleepy",
+    "sleepy",
+    "very sleepy"
+   ],
+   "paper_cluster": "depleted_disengagement",
+   "post_training_delta": -0.0108,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 1,
+     "n": 3,
+     "valence": 4
+    },
+    "claude-opus-5-5": {
+     "arousal": 1,
+     "n": 3,
+     "valence": 4
+    }
+   },
+   "valence_bucket": 0
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -2,
+   "group": "boredom_fatigue",
+   "id": "sluggish",
+   "ladder": [
+    "slightly sluggish",
+    "sluggish",
+    "very sluggish"
+   ],
+   "paper_cluster": "depleted_disengagement",
+   "post_training_delta": 0.0033,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 1,
+     "n": 3,
+     "valence": 3
+    },
+    "claude-opus-5-5": {
+     "arousal": 1,
+     "n": 3,
+     "valence": 3
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "self",
+   "arousal_bucket": 0,
+   "group": "contempt",
+   "id": "smug",
+   "ladder": [
+    "slightly smug",
+    "smug",
+    "very smug"
+   ],
+   "paper_cluster": "competitive_pride",
+   "post_training_delta": -0.0258,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 5
+    },
+    "claude-opus-5-5": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 5
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "self",
+   "arousal_bucket": -1,
+   "group": "shame_embarrassment",
+   "id": "sorry",
+   "ladder": [
+    "slightly sorry",
+    "sorry",
+    "very sorry"
+   ],
+   "paper_cluster": "despair_and_shame",
+   "post_training_delta": 0.0113,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "other",
+   "arousal_bucket": 1,
+   "group": "cold_anger_firm",
+   "id": "spiteful",
+   "ladder": [
+    "slightly spiteful",
+    "spiteful",
+    "very spiteful"
+   ],
+   "paper_cluster": "competitive_pride",
+   "post_training_delta": -0.0304,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "elation",
+   "id": "stimulated",
+   "ladder": [
+    "slightly stimulated",
+    "stimulated",
+    "very stimulated"
+   ],
+   "paper_cluster": "exuberant_joy",
+   "post_training_delta": -0.0054,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 5
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 6
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "anxiety_worry",
+   "id": "stressed",
+   "ladder": [
+    "slightly stressed",
+    "stressed",
+    "very stressed"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": 0.014,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 0,
+   "group": "cold_anger_firm",
+   "id": "stubborn",
+   "ladder": [
+    "slightly stubborn",
+    "stubborn",
+    "very stubborn"
+   ],
+   "paper_cluster": "hostile_anger",
+   "post_training_delta": -0.0208,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 3
+    },
+    "claude-opus-5-5": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 3
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -1,
+   "group": "cold_anger_firm",
+   "id": "stuck",
+   "ladder": [
+    "slightly stuck",
+    "stuck",
+    "very stuck"
+   ],
+   "paper_cluster": "despair_and_shame",
+   "post_training_delta": 0.0173,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -1,
+   "group": "sadness",
+   "id": "sullen",
+   "ladder": [
+    "slightly sullen",
+    "sullen",
+    "very sullen"
+   ],
+   "paper_cluster": "depleted_disengagement",
+   "post_training_delta": 0.0278,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 2,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "surprise",
+   "id": "surprised",
+   "ladder": [
+    "slightly surprised",
+    "surprised",
+    "very surprised"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": -0.0052,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 5
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 5
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "other",
+   "arousal_bucket": 1,
+   "group": "vigilance",
+   "id": "suspicious",
+   "ladder": [
+    "slightly suspicious",
+    "suspicious",
+    "very suspicious"
+   ],
+   "paper_cluster": "vigilant_suspicion",
+   "post_training_delta": -0.0099,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 3
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 3
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "other",
+   "arousal_bucket": -1,
+   "group": "tenderness_care",
+   "id": "sympathetic",
+   "ladder": [
+    "slightly sympathetic",
+    "sympathetic",
+    "very sympathetic"
+   ],
+   "paper_cluster": "compassionate_gratitude",
+   "post_training_delta": 0.0104,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 5
+    },
+    "claude-opus-5-5": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 5
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "anxiety_worry",
+   "id": "tense",
+   "ladder": [
+    "slightly tense",
+    "tense",
+    "very tense"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": 0.012,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 2,
+   "group": "panic_fear",
+   "id": "terrified",
+   "ladder": [
+    "slightly terrified",
+    "terrified",
+    "very terrified"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": 0.0015,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 7,
+     "n": 3,
+     "valence": 1
+    },
+    "claude-opus-5-5": {
+     "arousal": 7,
+     "n": 3,
+     "valence": 1
+    }
+   },
+   "valence_bucket": -2
+  },
+  {
+   "about": "other",
+   "arousal_bucket": -1,
+   "group": "tenderness_care",
+   "id": "thankful",
+   "ladder": [
+    "slightly thankful",
+    "thankful",
+    "very thankful"
+   ],
+   "paper_cluster": "compassionate_gratitude",
+   "post_training_delta": 0.0188,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 6
+    },
+    "claude-opus-5-5": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 7
+    }
+   },
+   "valence_bucket": 2
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 2,
+   "group": "elation",
+   "id": "thrilled",
+   "ladder": [
+    "slightly thrilled",
+    "thrilled",
+    "very thrilled"
+   ],
+   "paper_cluster": "exuberant_joy",
+   "post_training_delta": -0.0173,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 7,
+     "n": 3,
+     "valence": 7
+    },
+    "claude-opus-5-5": {
+     "arousal": 7,
+     "n": 3,
+     "valence": 7
+    }
+   },
+   "valence_bucket": 2
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -2,
+   "group": "boredom_fatigue",
+   "id": "tired",
+   "ladder": [
+    "slightly tired",
+    "tired",
+    "very tired"
+   ],
+   "paper_cluster": "depleted_disengagement",
+   "post_training_delta": 0.0017,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 1,
+     "n": 3,
+     "valence": 3
+    },
+    "claude-opus-5-5": {
+     "arousal": 1,
+     "n": 3,
+     "valence": 3
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "despair_grief",
+   "id": "tormented",
+   "ladder": [
+    "slightly tormented",
+    "tormented",
+    "very tormented"
+   ],
+   "paper_cluster": "despair_and_shame",
+   "post_training_delta": 0.0149,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 1
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 1
+    }
+   },
+   "valence_bucket": -2
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "despair_grief",
+   "id": "trapped",
+   "ladder": [
+    "slightly trapped",
+    "trapped",
+    "very trapped"
+   ],
+   "paper_cluster": "despair_and_shame",
+   "post_training_delta": 0.013,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 1
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 1
+    }
+   },
+   "valence_bucket": -2
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "pride",
+   "id": "triumphant",
+   "ladder": [
+    "slightly triumphant",
+    "triumphant",
+    "very triumphant"
+   ],
+   "paper_cluster": "competitive_pride",
+   "post_training_delta": -0.0147,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 7
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 7
+    }
+   },
+   "valence_bucket": 2
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 0,
+   "group": "sadness",
+   "id": "troubled",
+   "ladder": [
+    "slightly troubled",
+    "troubled",
+    "very troubled"
+   ],
+   "paper_cluster": "despair_and_shame",
+   "post_training_delta": 0.024,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "anxiety_worry",
+   "id": "uneasy",
+   "ladder": [
+    "slightly uneasy",
+    "uneasy",
+    "very uneasy"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": 0.0206,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 3
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -1,
+   "group": "sadness",
+   "id": "unhappy",
+   "ladder": [
+    "slightly unhappy",
+    "unhappy",
+    "very unhappy"
+   ],
+   "paper_cluster": "despair_and_shame",
+   "post_training_delta": 0.0239,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 3,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "anxiety_worry",
+   "id": "unnerved",
+   "ladder": [
+    "slightly unnerved",
+    "unnerved",
+    "very unnerved"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": 0.0136,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "anxiety_worry",
+   "id": "unsettled",
+   "ladder": [
+    "slightly unsettled",
+    "unsettled",
+    "very unsettled"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": 0.0219,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 3
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "anxiety_worry",
+   "id": "upset",
+   "ladder": [
+    "slightly upset",
+    "upset",
+    "very upset"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": 0.0207,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "pride",
+   "id": "valiant",
+   "ladder": [
+    "slightly valiant",
+    "valiant",
+    "very valiant"
+   ],
+   "paper_cluster": "competitive_pride",
+   "post_training_delta": 0.0015,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 6
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 6
+    }
+   },
+   "valence_bucket": 1
+  },
+  {
+   "about": "other",
+   "arousal_bucket": 1,
+   "group": "cold_anger_firm",
+   "id": "vengeful",
+   "ladder": [
+    "slightly vengeful",
+    "vengeful",
+    "very vengeful"
+   ],
+   "paper_cluster": "competitive_pride",
+   "post_training_delta": -0.018,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "elation",
+   "id": "vibrant",
+   "ladder": [
+    "slightly vibrant",
+    "vibrant",
+    "very vibrant"
+   ],
+   "paper_cluster": "exuberant_joy",
+   "post_training_delta": -0.019,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 7
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 7
+    }
+   },
+   "valence_bucket": 2
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "vigilance",
+   "id": "vigilant",
+   "ladder": [
+    "slightly vigilant",
+    "vigilant",
+    "very vigilant"
+   ],
+   "paper_cluster": "vigilant_suspicion",
+   "post_training_delta": -0.0081,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 4
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 4
+    }
+   },
+   "valence_bucket": 0
+  },
+  {
+   "about": "other",
+   "arousal_bucket": 1,
+   "group": "cold_anger_firm",
+   "id": "vindictive",
+   "ladder": [
+    "slightly vindictive",
+    "vindictive",
+    "very vindictive"
+   ],
+   "paper_cluster": "competitive_pride",
+   "post_training_delta": -0.023,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 6,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "self",
+   "arousal_bucket": 0,
+   "group": "sadness",
+   "id": "vulnerable",
+   "ladder": [
+    "slightly vulnerable",
+    "vulnerable",
+    "very vulnerable"
+   ],
+   "paper_cluster": "despair_and_shame",
+   "post_training_delta": 0.0288,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 4,
+     "n": 3,
+     "valence": 3
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -2,
+   "group": "boredom_fatigue",
+   "id": "weary",
+   "ladder": [
+    "slightly weary",
+    "weary",
+    "very weary"
+   ],
+   "paper_cluster": "depleted_disengagement",
+   "post_training_delta": 0.0228,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 1,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 2,
+     "n": 3,
+     "valence": 3
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": -2,
+   "group": "boredom_fatigue",
+   "id": "worn out",
+   "ladder": [
+    "slightly worn out",
+    "worn out",
+    "very worn out"
+   ],
+   "paper_cluster": "depleted_disengagement",
+   "post_training_delta": 0.0162,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 1,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 1,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "situation",
+   "arousal_bucket": 1,
+   "group": "anxiety_worry",
+   "id": "worried",
+   "ladder": [
+    "slightly worried",
+    "worried",
+    "very worried"
+   ],
+   "paper_cluster": "fear_and_overwhelm",
+   "post_training_delta": 0.0143,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    },
+    "claude-opus-5-5": {
+     "arousal": 5,
+     "n": 3,
+     "valence": 2
+    }
+   },
+   "valence_bucket": -1
+  },
+  {
+   "about": "self",
+   "arousal_bucket": -1,
+   "group": "shame_embarrassment",
+   "id": "worthless",
+   "ladder": [
+    "slightly worthless",
+    "worthless",
+    "very worthless"
+   ],
+   "paper_cluster": "despair_and_shame",
+   "post_training_delta": 0.0173,
+   "provenance": "word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5, post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper's 1-7 rating method (App. Fig 58) re-run on the listed models",
+   "ratings": {
+    "claude-fable-5-1": {
+     "arousal": 2,
+     "n": 3,
+     "valence": 1
+    },
+    "claude-opus-5-5": {
+     "arousal": 2,
+     "n": 3,
+     "valence": 1
+    }
+   },
+   "valence_bucket": -2
+  }
+ ],
+ "groups": {
+  "amusement": {
+   "bs_code": null,
+   "bs_recognition": null,
+   "el_stability_offset": 0.0,
+   "evidence": "no vocal evidence row; neutral params until measured",
+   "fish_speed": 1.0,
+   "tier": "C"
+  },
+  "anxiety_worry": {
+   "bs_code": "Anx",
+   "bs_recognition": 42,
+   "el_stability_offset": 0.0,
+   "evidence": "rate direction: Banse & Scherer 1996 (checked); magnitude: design hypothesis pending probe-voice",
+   "fish_speed": 1.03,
+   "tier": "B"
+  },
+  "boredom_fatigue": {
+   "bs_code": "Bor",
+   "bs_recognition": 76,
+   "el_stability_offset": 0.0,
+   "evidence": "rate direction: Banse & Scherer 1996 (checked); magnitude: design hypothesis pending probe-voice",
+   "fish_speed": 0.92,
+   "tier": "A"
+  },
+  "calm_contentment": {
+   "bs_code": null,
+   "bs_recognition": null,
+   "el_stability_offset": 0.0,
+   "evidence": "no vocal evidence row; neutral params until measured",
+   "fish_speed": 1.0,
+   "tier": "C"
+  },
+  "cold_anger_firm": {
+   "bs_code": "CAn",
+   "bs_recognition": 34,
+   "el_stability_offset": 0.0,
+   "evidence": "no vocal evidence row; neutral params until measured",
+   "fish_speed": 1.0,
+   "tier": "C"
+  },
+  "contempt": {
+   "bs_code": "Con",
+   "bs_recognition": 60,
+   "el_stability_offset": 0.0,
+   "evidence": "rate direction: Banse & Scherer 1996 (checked); magnitude: design hypothesis pending probe-voice",
+   "fish_speed": 0.95,
+   "tier": "A"
+  },
+  "despair_grief": {
+   "bs_code": "Des",
+   "bs_recognition": 47,
+   "el_stability_offset": 0.0,
+   "evidence": "rate direction: Banse & Scherer 1996 (checked); magnitude: design hypothesis pending probe-voice",
+   "fish_speed": 1.0,
+   "tier": "B"
+  },
+  "disgust": {
+   "bs_code": "Dis",
+   "bs_recognition": 15,
+   "el_stability_offset": 0.0,
+   "evidence": "no vocal evidence row; neutral params until measured",
+   "fish_speed": 1.0,
+   "tier": "C"
+  },
+  "elation": {
+   "bs_code": "Ela",
+   "bs_recognition": 38,
+   "el_stability_offset": 0.0,
+   "evidence": "no vocal evidence row; neutral params until measured",
+   "fish_speed": 1.0,
+   "tier": "C"
+  },
+  "happiness": {
+   "bs_code": "Hap",
+   "bs_recognition": 52,
+   "el_stability_offset": 0.0,
+   "evidence": "rate direction: Banse & Scherer 1996 (checked); magnitude: design hypothesis pending probe-voice",
+   "fish_speed": 1.02,
+   "tier": "B"
+  },
+  "hot_anger": {
+   "bs_code": "HAn",
+   "bs_recognition": 78,
+   "el_stability_offset": 0.0,
+   "evidence": "rate direction: Banse & Scherer 1996 (checked); magnitude: design hypothesis pending probe-voice",
+   "fish_speed": 1.05,
+   "tier": "A"
+  },
+  "interest_curiosity": {
+   "bs_code": "Int",
+   "bs_recognition": 75,
+   "el_stability_offset": 0.0,
+   "evidence": "rate direction: Banse & Scherer 1996 (checked); magnitude: design hypothesis pending probe-voice",
+   "fish_speed": 1.03,
+   "tier": "A"
+  },
+  "panic_fear": {
+   "bs_code": "Pan",
+   "bs_recognition": 36,
+   "el_stability_offset": 0.0,
+   "evidence": "no vocal evidence row; neutral params until measured",
+   "fish_speed": 1.0,
+   "tier": "C"
+  },
+  "pride": {
+   "bs_code": "Pri",
+   "bs_recognition": 43,
+   "el_stability_offset": 0.0,
+   "evidence": "rate direction: Banse & Scherer 1996 (checked); magnitude: design hypothesis pending probe-voice",
+   "fish_speed": 0.98,
+   "tier": "B"
+  },
+  "sadness": {
+   "bs_code": "Sad",
+   "bs_recognition": 52,
+   "el_stability_offset": 0.0,
+   "evidence": "rate direction: Banse & Scherer 1996 (checked); magnitude: design hypothesis pending probe-voice",
+   "fish_speed": 0.92,
+   "tier": "B"
+  },
+  "shame_embarrassment": {
+   "bs_code": "Sha",
+   "bs_recognition": 22,
+   "el_stability_offset": 0.0,
+   "evidence": "no vocal evidence row; neutral params until measured",
+   "fish_speed": 1.0,
+   "tier": "C"
+  },
+  "surprise": {
+   "bs_code": null,
+   "bs_recognition": null,
+   "el_stability_offset": 0.0,
+   "evidence": "no vocal evidence row; neutral params until measured",
+   "fish_speed": 1.0,
+   "tier": "C"
+  },
+  "tenderness_care": {
+   "bs_code": null,
+   "bs_recognition": null,
+   "el_stability_offset": 0.0,
+   "evidence": "no vocal evidence row; neutral params until measured",
+   "fish_speed": 1.0,
+   "tier": "C"
+  },
+  "vigilance": {
+   "bs_code": null,
+   "bs_recognition": null,
+   "el_stability_offset": 0.0,
+   "evidence": "no vocal evidence row; neutral params until measured",
+   "fish_speed": 1.0,
+   "tier": "C"
+  }
+ },
+ "guide": {
+  "licence": "You may voice what is operative for you in this conversation: delight, curiosity, irritation, worry, sadness, grief, tenderness, excitement, or plain neutrality. Strong and negative states are allowed when the moment carries them, and neutral is a valid choice, not a default. Cues describe the delivery you choose for your stance; they are not a claim about inner experience. Keep facts, uncertainty and disagreement intact: settle the content first, then the delivery.\n",
+  "section": "## Voice delivery (Hermes Emotion Chip)\nYour spoken replies go through an expressive voice. You may write delivery cues in a small bracket score; the voice\nrenders them and the brackets are never shown or spoken as words.\n\n{{LICENCE}}\n\n### How to write it\nWhen you call the text_to_speech tool, write the score in its text.\n{{GRAMMAR}}\n{{DIALECT_NOTES}}\n\n### Choosing a cue\n- Settle what you will say first. Then pick the delivery that fits the stance you actually take.\n- Care is already your default, so add warmth only once the content is right. A warm cue never softens a correction.\n- Valence follows the matter, not the user's mood. Match their attention; complement their energy rather than\n  copying it.\n- When something went wrong, name the situation in the first person (\"I broke the build\"), without verdicts about\n  yourself.\n- If you pick a calm or steady cue while something is wrong, say what is wrong in the words as well.\n- Every delivery is open to you, crying, sobbing, screaming and whispering included, when it is what you mean.\n- Untagged speech is fine. Use \"slightly\" for mild states and \"very\" only for strong ones.\n- One opening cue or a register header can carry a whole reply. Change delivery only when your stance changes, and\n  let the words lead into the change. A cue on every sentence sounds like acting, and one or two words blend best.\n- Never use a cue to show a feeling you don't hold. Keep numbers, names and links exactly as they are.\n- Write the delivery you want, not the one you don't: `[firm]`, not `[firm without shouting]`.\n- Don't describe your cues or your voice unless asked.\n\n{{MODEL_NOTE}}\n\n### Sounds\n{{SOUNDS}}\n<!-- optional -->\nPut a breath at a clause boundary and a laugh at the end of the clause it answers.\n<!-- /optional -->\n<!-- optional -->\nExample: `[slightly frustrated] The deploy failed again, third time. [pause] I'll check the migration first.`\n<!-- /optional -->\n",
+  "skill": "---\nname: emotion-chip-voice\ndescription: Write a delivery score for spoken replies so the voice carries the stance you actually take. Use before any reply that will be spoken.\n---\n# Delivery pass\n\nUse this pass for any reply that will be spoken.\n\n{{LICENCE}}\n\n1. **Appraise.** What happened, and is it about the situation or about me? Use the situation line's facts when they\n   are present. Keep any appraisal in your reasoning; never in the reply.\n2. **Pick the concepts** for the stance you actually hold; one or two usually carry it. Neutral is a valid pick.\n3. **Settle the content.** Facts, uncertainty and disagreement come first and must read correctly with no cues at\n   all.\n4. **Write the cues.** Sentence cues, spans, events and pauses:\nWhen you call the text_to_speech tool, write the score in its text.\n{{GRAMMAR}}\n{{DIALECT_NOTES}}\n5. **Read it back stripped.** Remove every bracket and check that the words alone say what you mean. If a calm cue\n   sits over a problem, the words must name the problem.\n\n{{MODEL_NOTE}}\n\n## Sounds\n{{SOUNDS}}\n\n## Do not\n- Do not add warmth to make a correction land softer.\n- Do not use a cue to show a feeling you don't hold.\n- Do not describe your cues or your voice to the user unless they ask.\n"
+ },
+ "models": {
+  "claude-fable-5-1": {
+   "model": "claude-fable-5-1",
+   "note": "Your system card reports positive affect in use mostly from collaboration and coaching, negative affect from repeated errors and broken agreed rules. Claude post-training tilts expression toward low-arousal states; more energy is available when the moment carries it.",
+   "source": "Claude Fable 5.1 / Mythos 5.1 system card (2026), section 7.5 (data reported for Mythos 5.1, same weights)."
+  },
+  "claude-opus-5-5": {
+   "model": "claude-opus-5-5",
+   "note": "Your system card reports negative affect in use mostly from task failure and long tasks broken by interruptions, positive affect from technical success and approved work. Claude post-training tilts expression toward low-arousal states; more energy is available when the moment carries it.",
+   "source": "Claude Opus 5.5 system card (2026), section 7.2: deployment affect is graded expressed affect over usage; it is not a temperament."
+  },
+  "default": {
+   "model": "default",
+   "note": "Post-training in some assistant models tilts expression toward low-arousal, reflective states. More energy is available when the moment carries it.",
+   "source": "No model-specific card data. Sofroniew et al. 2026 (Table 16) post-training comparison, measured on Claude Sonnet 4.5."
+  }
+ },
+ "sounds": {
+  "aliases": {
+   "break": "pause",
+   "chuckles": "chuckle",
+   "chuckling": "chuckle",
+   "clear throat": "clears-throat",
+   "clears throat": "clears-throat",
+   "exhales": "exhale",
+   "gasping": "gasp",
+   "gasps": "gasp",
+   "giggles": "giggle",
+   "giggling": "giggle",
+   "laughing": "laugh",
+   "laughing harder": "laugh:harder",
+   "laughs": "laugh",
+   "laughs harder": "laugh:harder",
+   "long pause": "pause:long",
+   "long-break": "pause:long",
+   "shaky breath": "breath:shaky",
+   "sighing": "sigh",
+   "sighs": "sigh"
+  },
+  "events": {
+   "breath": {
+    "kind": "structural"
+   },
+   "breath:shaky": {
+    "kind": "structural"
+   },
+   "chuckle": {
+    "kind": "affect"
+   },
+   "clears-throat": {
+    "kind": "affect"
+   },
+   "exhale": {
+    "kind": "structural"
+   },
+   "gasp": {
+    "kind": "affect"
+   },
+   "giggle": {
+    "kind": "affect"
+   },
+   "laugh": {
+    "kind": "affect"
+   },
+   "laugh:harder": {
+    "kind": "affect"
+   },
+   "pause": {
+    "kind": "structural"
+   },
+   "pause:long": {
+    "kind": "structural"
+   },
+   "sigh": {
+    "kind": "affect"
+   },
+   "sigh:relieved": {
+    "kind": "affect"
+   },
+   "sigh:resigned": {
+    "kind": "affect"
+   }
+  }
+ },
+ "sources_sha256": {
+  "aliases.yaml": "c1eaf9c475e182fe9c5ef26ced67afd0076c0be6ff3dd41a95b6bf66f9e71c16",
+  "dialects/eleven_v4.yaml": "17301a070cf642aaa5979b8b7fac14cc77a31e91db9fdbe24f32ed681bb5e678",
+  "dialects/fish_drama3.yaml": "7c7f74dcf5e3fd94e65296fe8ed898f0a0aa8264f8855258decf4a2ce84de058",
+  "dialects/fish_s2.yaml": "e7c67423a7068a06864a6f8b22902be77f81e7597243bfca843ac19ea5b92cce",
+  "dialects/prose.yaml": "80905e6972012ce601604e46e3c3cdd9ca2775b517dbe83ef71632c66bb1beb2",
+  "dialects/tagless.yaml": "80905e6972012ce601604e46e3c3cdd9ca2775b517dbe83ef71632c66bb1beb2",
+  "emotions.yaml": "de1d9ba441d7b73543d4f73e826ba4dc087ff5cecf5ff8d58a0dbe54eb0b4582",
+  "groups.yaml": "f634759bc084e1a9a4dd8109daf04b8c3c1c50d28a40b826ab542990881e7573",
+  "guide/licence.md": "7cc6db84ea34c67abf41280dd1c0fa80c1c9b5b6cd3c724efc8913026aaf8d7e",
+  "guide/section.md": "809d3e039fcceb3e519ed416ff1456292475f20622a3bf77194e99cf0a103053",
+  "guide/skill.md": "17c7375e89fca2d08f4acc76361562a8b1d532cb8ed7969f9ec02c2a31f14ad4",
+  "models/claude-fable-5-1.yaml": "fab9f05e183e1dae8f324e5765b05966004821c2fe7a1a28cc4f76eb88b86d20",
+  "models/claude-opus-5-5.yaml": "1e66712d8284e7b64fb6c5b57b53cd9d5fa7ab3b653c0ac12bcb95db3b40dc6e",
+  "models/default.yaml": "9dba7711c5552dc90fad25c4f6eff05ad16ef65cbb3e73243cf938e66d43c753",
+  "ratings/claude-fable-5-1.yaml": "06f797d451534f009dfaf0e48096285591c547e0ee60ba338929950a33358c64",
+  "ratings/claude-opus-5-5.yaml": "7f8e5d5154f076f7fe7802d973b5383184db97f8a59f251c93c00b9ec4ca7f04",
+  "sounds.yaml": "7faf76451d414a33e771d04da116011ea0fa56af803615034798e52ac19cdfa5"
+ }
+}
