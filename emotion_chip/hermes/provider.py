@@ -2,13 +2,16 @@
 from dataclasses import asdict
 from threading import RLock
 import time
+import importlib
 
+from ..data import load_data
 from ..model import Cue
+from ..policy import apply_policy
 from ..render import dialect_for, render
-from ..score import parse
+from ..score import header_cue, parse
 from ._compat import TTSProvider
 from .log import DeliveryLog
-from .settings import Settings, session_env
+from .settings import Settings, session_env, session_identity, sound_limit
 from .situation import Situation
 
 last_render = {}
@@ -28,12 +31,13 @@ class EmotionChipTTSProvider(TTSProvider):
     display_name = "Hermes Emotion Chip"
     voice_compatible = True
 
-    def __init__(self, settings=None, situation=None, *, env=None, clock=None, data_dir=None):
+    def __init__(self, settings=None, situation=None, *, env=None, clock=None, data_dir=None, tag_adapter=None):
         self.settings = settings or Settings()
         self.situation = situation or Situation({})
         self.env = env or session_env
         self.clock = clock or time.time
         self.log = DeliveryLog(self.settings, data_dir)
+        self.tag_adapter = tag_adapter
         self._lock = RLock()
         self._carried = {}
 
@@ -52,38 +56,56 @@ class EmotionChipTTSProvider(TTSProvider):
         return fish is not None and fish.is_available()
 
     def _prepare(self, text, model, speed, streaming=False):
-        effective = self.settings.fish_model(model)
-        dialect = dialect_for("fish", effective)
-        session_id = self.env("HERMES_SESSION_ID")
+        models = self.settings.resolve_fish_model(model)
+        dialect = dialect_for("fish", models.effective)
+        session_id = session_identity(self.env, self.situation)
         platform = self.env("HERMES_SESSION_PLATFORM")
-        sounds = self.settings.get("sounds_per_turn")
-        if platform in self.settings.get("business_platforms") or self.situation.get("quiet", False):
-            sounds = 0
-        options = {"sounds_per_turn": sounds, "allow_speakers": False}
-        score = parse(text)
-        words = [word for sentence in score.sentences for token in sentence.tokens
-                 if isinstance(token, Cue) for word in token.words]
+        options = {"sounds_per_turn": sound_limit(self.settings, self.situation, self.env), "allow_speakers": False}
+        notes = []
+        original_chars = len(text)
+        if dialect == "fish_s2":
+            try:
+                adapter = self.tag_adapter
+                if adapter is None:
+                    package = type(_fish()).__module__.rsplit(".", 1)[0]
+                    adapter = importlib.import_module(package + ".tags").adapt_tags
+                text = adapter(text, "S2")
+            except Exception:
+                notes.append("Fish adapt_tags unavailable; skipped pre-parse adaptation")
+        data = load_data()
+        score = parse(text, data)
+        opener = header_cue(score.header)
+        words = (list(opener.words) if opener else []) + [
+            word for sentence in score.sentences for token in sentence.tokens if isinstance(token, Cue) for word in token.words]
+        filtered, _ = apply_policy(score, data, options)
+        has_cue = any(isinstance(token, Cue) for sentence in filtered.sentences for token in sentence.tokens)
         now = self.clock()
         with self._lock:
             self._carried = {k: v for k, v in self._carried.items() if 0 <= now - v[1] <= 120}
             if streaming:
-                if not words and session_id and session_id in self._carried:
+                if not has_cue and filtered.header is None and session_id and session_id in self._carried:
                     options["params_from"] = self._carried[session_id][0]
             rendered = render(score, dialect, options)
-            if session_id:
+            if session_id and rendered.group is not None and "params_from" not in options:
                 self._carried[session_id] = (rendered.group, now)
-        final = max(0.5, min(2.0, (speed if speed else 1.0) * rendered.params["speed"]))
-        if score.header:
-            self.situation.set("register", "[[" + score.header.raw + "]]")
+        base = self.settings.host("tts.fish-audio.speed", 1.0) if speed is None else speed
+        if not isinstance(base, (int, float)) or isinstance(base, bool):
+            base = 1.0
+        final = max(0.5, min(2.0, base * rendered.params.get("speed", 1.0)))
+        if models.pinned and models.requested and models.pinned != models.requested:
+            notes.append(f"Fish pinned model wins: {models.pinned} over requested {models.requested}")
+        rendered.notes.extend(notes)
+        self.situation.update(session_id, lambda row: row.update(
+            {"register": "[[" + score.header.raw + "]]"} if score.header else {}), platform=platform or None)
         with last_render_lock:
             last_render.clear()
-            last_render.update(session_id=session_id, dialect=rendered.dialect, cue_words=words,
+            last_render.update(session_id=session_id, fish_model=models.effective, dialect=rendered.dialect, cue_words=words,
                                group=rendered.group, params=dict(rendered.params),
                                dropped=[asdict(d) for d in rendered.dropped], notes=list(rendered.notes))
         metadata = self.situation.session(session_id)
         metadata["platform"] = platform or metadata.get("platform", "")
-        self.log.append(session_id, metadata, rendered, words, len(text), now)
-        return rendered, effective, final
+        self.log.append(session_id, metadata, rendered, words, original_chars, now, models.effective)
+        return rendered, models.requested, final
 
     @staticmethod
     def _required_fish():

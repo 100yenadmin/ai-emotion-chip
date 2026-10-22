@@ -15,12 +15,12 @@ class DeliveryLog:
         self.settings = settings
         self.data_dir = data_dir or plugin_data_dir
 
-    def append(self, session_id, metadata, rendered, cue_words, chars, now):
+    def append(self, session_id, metadata, rendered, cue_words, chars, now, fish_model):
         if not self.settings.get("delivery_log"):
             return
         row = {"ts": datetime.fromtimestamp(now, timezone.utc).isoformat(),
                "session_id": session_id, "sender_id": metadata.get("sender_id", ""),
-               "platform": metadata.get("platform", ""), "dialect": rendered.dialect,
+               "fish_model": fish_model, "platform": metadata.get("platform", ""), "dialect": rendered.dialect,
                "cue_words": cue_words, "group": rendered.group, "params": rendered.params,
                "dropped_kinds": [d.kind for d in rendered.dropped], "chars": chars}
         encoded = json.dumps(row, ensure_ascii=False) + "\n"

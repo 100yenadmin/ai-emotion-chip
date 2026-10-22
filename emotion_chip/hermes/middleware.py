@@ -1,8 +1,12 @@
 """Compatibility rendering before Hermes cleans tool text; fail open."""
-from ..render import render
+from ..render import dialect_for, render
+from .settings import sound_limit, session_env
+from .situation import Situation
 
 
-def make_middleware(settings):
+def make_middleware(settings, situation=None, env=None):
+    situation = situation or Situation({})
+    env = env or session_env
     def tool_request(**kwargs):
         try:
             args = kwargs.get("args") or {}
@@ -14,10 +18,10 @@ def make_middleware(settings):
                 return None
             dialect = "tagless"
             if provider == "fish-audio":
-                dialect = "fish_s2"
+                dialect = dialect_for("fish", settings.fish_model(args.get("model")))
             elif provider == "elevenlabs" and settings.host("tts.elevenlabs.model_id", "").startswith(("eleven_v3", "eleven_v4")):
                 dialect = "eleven_v4"
-            text = render(args["text"], dialect, {"sounds_per_turn": settings.get("sounds_per_turn"),
+            text = render(args["text"], dialect, {"sounds_per_turn": sound_limit(settings, situation, env),
                                                 "allow_speakers": False}).text
             return {"args": {**args, "text": text}}
         except Exception:

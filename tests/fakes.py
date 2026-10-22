@@ -50,15 +50,19 @@ class FakeFish(TTSProvider):
 
     def __init__(self):
         self.calls = []
+        self.pinned_model = None
+        self.effective_models = []
 
     def is_available(self):
         return self.available
 
     def synthesize(self, text, output_path, **kwargs):
+        self.effective_models.append(self.pinned_model or kwargs.get("model") or "s2.1-pro")
         self.calls.append(("synthesize", text, kwargs))
         return output_path
 
     def stream(self, text, **kwargs):
+        self.effective_models.append(self.pinned_model or kwargs.get("model") or "s2.1-pro")
         self.calls.append(("stream", text, kwargs))
         return iter([b"pcm"])
 

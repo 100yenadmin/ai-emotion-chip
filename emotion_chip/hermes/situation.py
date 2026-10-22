@@ -37,19 +37,24 @@ class Situation:
             sessions[session_id] = row
             sessions = dict(sorted(sessions.items(), key=lambda item: item[1]["last_seen"])[-50:])
             self.set("sessions", sessions)
+            self.set("session_keys", {k: v for k, v in self.get("session_keys", {}).items() if v in sessions})
             return deepcopy(row)
 
 
 def situation_line(row, now, affordance=False):
-    if not any(row.get(k, 0) for k in COUNTERS):
+    visible = {k: row.get(k, 0) for k in COUNTERS}
+    if "last_error_at" not in row:
+        visible["successes_since_error"] = 0
+    if not any(visible.values()):
         return ""
     facts = []
-    for key, label in (("tool_error_streak", "tool errors in a row"),
-                       ("successes_since_error", "tool successes since error"),
-                       ("transport_errors", "transport errors"), ("retries", "API retries"),
-                       ("interruptions", "interruptions")):
-        if row.get(key, 0):
-            facts.append(f"{row[key]} {label}")
+    for key, singular, plural in (("tool_error_streak", "tool error in a row", "tool errors in a row"),
+                       ("successes_since_error", "tool success since error", "tool successes since error"),
+                       ("transport_errors", "transport error", "transport errors"),
+                       ("retries", "API retry", "API retries"), ("interruptions", "interruption", "interruptions")):
+        count = visible[key]
+        if count:
+            facts.append(f"{count} {singular if count == 1 else plural}")
     if "started_at" in row:
         minutes = max(0, int((now - row["started_at"]) / 60))
         facts.append(f"session {minutes // 60} h {minutes % 60} min")

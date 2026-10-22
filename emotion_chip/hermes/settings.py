@@ -1,5 +1,6 @@
 """Small injectable boundaries for host config, session context and plugin data."""
 import os
+from dataclasses import dataclass
 from pathlib import Path
 
 DEFAULTS = {
@@ -8,6 +9,28 @@ DEFAULTS = {
     "delivery_log": True,
 }
 FISH_MODELS = {"s2.1-pro", "s2.1-pro-free", "s2-pro", "drama-3", "s1", "drama-3-preview"}
+
+
+@dataclass(frozen=True)
+class FishModel:
+    pinned: str | None
+    requested: str | None
+    effective: str
+
+
+def canonical_fish_model(value):
+    return ("drama-3" if value == "drama-3-preview" else value) if isinstance(value, str) and value in FISH_MODELS else None
+
+
+def session_identity(env, situation):
+    session_id, key = env("HERMES_SESSION_ID"), env("HERMES_SESSION_KEY")
+    return session_id or situation.get("session_keys", {}).get(key) or ("key:" + key if key else "")
+
+
+def sound_limit(settings, situation, env):
+    if env("HERMES_SESSION_PLATFORM") in settings.get("business_platforms") or situation.get("quiet", False):
+        return 0
+    return settings.get("sounds_per_turn")
 
 
 def read_config(key, default=None):
@@ -43,16 +66,27 @@ class Settings:
 
     def get(self, key):
         default = DEFAULTS[key]
-        return self.ctx.get_config(key, default) if self.ctx is not None else default
+        value = self.ctx.get_config(key, default) if self.ctx is not None else default
+        if key == "signals":
+            value = value.strip().lower() if isinstance(value, str) else "off"
+            return value if value in {"facts", "facts+affordance"} else "off"
+        return value
 
     def host(self, key, default=None):
         return self.reader(key, default)
 
     def tts_provider(self):
-        return self.host("tts.provider", "edge")
+        return str(self.host("tts.provider", "edge")).strip().lower()
 
     def host_fish_model(self):
-        return self.host("tts.fish-audio.model", "s2.1-pro")
+        return self.resolve_fish_model().pinned
+
+    def resolve_fish_model(self, model=None):
+        missing = object()
+        explicit = self.ctx.get_config("fish_model", missing) if self.ctx is not None else missing
+        pinned = canonical_fish_model(self.host("tts.fish-audio.model"))
+        requested = canonical_fish_model(model) or canonical_fish_model(explicit)
+        return FishModel(pinned, requested, pinned or requested or "s2.1-pro")
 
     def fish_model(self, model=None):
-        return model if model in FISH_MODELS else self.get("fish_model")
+        return self.resolve_fish_model(model).effective

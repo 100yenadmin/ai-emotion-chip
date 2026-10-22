@@ -25,7 +25,11 @@ def model_key(model):
 
 def register_all(ctx, *, reader=None, data_dir=None, env=None, clock=None):
     settings = Settings(ctx, reader)
-    situation = Situation(ctx.state, clock)
+    try:
+        state = getattr(ctx, "state", None)
+    except Exception:
+        state = None
+    situation = Situation(state if state is not None else {}, clock)
     directory = data_dir or plugin_data_dir
     environment = env or session_env
     provider = EmotionChipTTSProvider(settings, situation, env=environment, clock=clock, data_dir=directory)
@@ -58,11 +62,11 @@ def register_all(ctx, *, reader=None, data_dir=None, env=None, clock=None):
                             if line.startswith("description:")), "")
         ctx.register_skill("emotion-chip-voice", path, description=description)
     if hasattr(ctx, "register_hook"):
-        hooks = Hooks(settings, situation)
+        hooks = Hooks(settings, situation, environment)
         for name in HOOKS:
             ctx.register_hook(name, getattr(hooks, name))
     if hasattr(ctx, "register_middleware"):
-        ctx.register_middleware("tool_request", make_middleware(settings))
+        ctx.register_middleware("tool_request", make_middleware(settings, situation, environment))
     if hasattr(ctx, "register_command"):
         ctx.register_command("chip", make_handler(settings, situation, environment),
                              description="Hermes Emotion Chip voice delivery",

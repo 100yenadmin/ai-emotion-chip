@@ -1,6 +1,7 @@
 """M1 fake operating paths and text-only Hermes API contracts."""
 import ast
 import os
+import re
 from concurrent.futures import ThreadPoolExecutor
 import importlib.util
 import json
@@ -11,7 +12,7 @@ import sys
 import pytest
 import yaml
 
-from emotion_chip.data import DIALECTS
+from emotion_chip.data import DIALECTS, load_data
 from emotion_chip.guide import build_prompt_section
 from emotion_chip.hermes import provider as provider_module
 from emotion_chip.hermes import log as log_module
@@ -94,15 +95,17 @@ print(sorted(set(calls)))
 
 
 def test_provider_fish_s2_and_drama(rig, runtime_data):
-    ctx, fish, *_ = rig
+    ctx, fish, host, *_ = rig
+    host.pop("tts.fish-audio.model")
     metadata = {}
-    result = ctx.provider.synthesize("[slightly frustrated] Again. [sigh] [pause] Checking.",
+    result = ctx.provider.synthesize("[slightly sad] Again. [sigh] [pause] Checking.",
                                      "out.mp3", voice="fixture", speed=1.2, result_metadata=metadata)
     kind, text, args = fish.calls[-1]
     assert result == "out.mp3" and kind == "synthesize"
-    assert text == "[slightly frustrated] Again. [sighing] [break] Checking."
-    factor = runtime_data.groups[runtime_data.lookup("frustrated")["group"]]["fish_speed"]
-    assert args == {"voice": "fixture", "model": "s2.1-pro", "speed": 1.2 * factor,
+    assert text == "[slightly sad] Again. [sighing] [break] Checking."
+    factor = runtime_data.groups[runtime_data.lookup("sad")["group"]]["fish_speed"]
+    assert factor != 1.0
+    assert args == {"voice": "fixture", "model": None, "speed": 1.2 * factor,
                     "format": "mp3", "result_metadata": metadata}
     assert args["result_metadata"] is metadata
     ctx.set_config("fish_model", "drama-3")
@@ -114,7 +117,7 @@ def test_provider_fish_s2_and_drama(rig, runtime_data):
     assert fish.calls[-1][2]["model"] == "drama-3"
 
 
-@pytest.mark.parametrize("base, expected", [(0, 0.92), (0.1, 0.5), (3, 2.0)])
+@pytest.mark.parametrize("base, expected", [(0, 0.5), (0.1, 0.5), (3, 2.0)])
 def test_speed_bounds(rig, base, expected):
     ctx, fish, *_ = rig
     ctx.provider.synthesize("[sad] Again.", "out.mp3", speed=base)
@@ -155,8 +158,14 @@ def test_stream_carry_session_and_expiry(rig):
     assert fish.calls[-1][2]["speed"] == 1.03
 
 
-def test_stream_concurrent_carry(rig):
+def test_stream_concurrent_carry(rig, monkeypatch):
     ctx, fish, *_ = rig
+    original = provider_module.render
+
+    def checked_render(*args, **kwargs):
+        assert ctx.provider._lock._is_owned(), "carry read/render/write must hold its lock"
+        return original(*args, **kwargs)
+    monkeypatch.setattr(provider_module, "render", checked_render)
     list(ctx.provider.stream("[sad] First."))
     with ThreadPoolExecutor(max_workers=3) as pool:
         list(pool.map(lambda i: list(ctx.provider.stream(f"Piece {i}.")), range(9)))
@@ -192,7 +201,7 @@ def test_fish_capabilities_and_delegation(rig, monkeypatch):
 
 
 @pytest.mark.parametrize("provider, model, expected", [
-    ("fish-audio", "drama-3", "[soft tone] here [sighing]"),
+    ("fish-audio", "drama-3", "<soft>here</soft> [sighing]"),
     ("elevenlabs", "eleven_v4", "[softly] here [sighs]"),
     ("elevenlabs", "eleven_v3_conversational", "[softly] here [sighs]"),
     ("elevenlabs", "eleven_multilingual_v2", "here"), ("edge", "", "here"),
@@ -203,7 +212,8 @@ def test_middleware_dialects(rig, provider, model, expected):
     args = {"text": "[soft: here] [sigh]", "output_path": "fixture.mp3"}
     assert ctx.middleware(tool_name="text_to_speech", args=args, future_key=1) == {
         "args": {"text": expected, "output_path": "fixture.mp3"}}
-    assert args["text"] == "[soft: here] [sigh]" and "<" not in expected
+    assert args["text"] == "[soft: here] [sigh]"
+    assert ("<soft>" in expected) == (provider == "fish-audio" and model == "drama-3")
 
 
 def test_middleware_noops_and_reader_error(rig):
@@ -305,7 +315,7 @@ def test_delivery_log_and_rotation(rig, monkeypatch):
     ctx.provider.synthesize(text, "out.mp3")
     path = directory / "delivery.jsonl"
     raw, row = path.read_text(), json.loads(path.read_text())
-    assert set(row) == {"ts", "session_id", "sender_id", "platform", "dialect", "cue_words", "group", "params", "dropped_kinds", "chars"}
+    assert set(row) == {"ts", "session_id", "sender_id", "platform", "dialect", "cue_words", "group", "params", "dropped_kinds", "chars", "fish_model"}
     assert "Private fixture phrase" not in raw and text not in raw and row["chars"] == len(text)
     assert row["sender_id"] == "fixture-sender" and row["platform"] == "telegram"
     assert row["cue_words"] == ["sad"] and row["group"] == "sadness" and row["params"] == {"speed": 0.92}
@@ -328,17 +338,21 @@ def test_delivery_log_off_creates_no_file(rig):
     assert not (directory / "delivery.jsonl").exists()
 
 
-def test_commands_why_and_register(rig):
+def test_commands_why_and_register(rig, runtime_data):
     ctx, *_ = rig
     assert ctx.command("register") == "No authored register recorded."
-    ctx.provider.synthesize("[[register: steady]] [curious] One. [sigh] [laugh] [speaker: 2]", "out.mp3")
+    ctx.provider.synthesize("[[register: calm]] [curious] One. [sigh] [laugh] [speaker: 2]", "out.mp3")
     why = ctx.command("why")
-    assert "fish_s2" in why and "curious" in why and "params:" in why
+    assert "fish_s2" in why and "curious" in why and "calm" in why and "params:" in why
+    authored = {"calm", "curious", "sigh", "laugh"}
+    for word in set(runtime_data.groups) | {r["id"] for r in runtime_data.emotions}:
+        if word not in authored:
+            assert not re.search(r"(?<![\w])" + re.escape(word) + r"(?![\w])", why)
     assert "laugh: sounds_per_turn" in why and "speaker 2: unsupported" in why
     assert "caps applied: sounds_per_turn" in why
     for unauthed in ("sad", "frustrated", "angry", "happy", "anxious", "bored"):
         assert unauthed not in why
-    assert ctx.command("register") == "[[register: steady]]"
+    assert ctx.command("register") == "[[register: calm]]"
     ctx.command("register clear")
     assert ctx.command("register") == "No authored register recorded."
     assert ctx.command("invalid").startswith("Usage: /chip")
@@ -408,8 +422,269 @@ def test_hermes_source_contract():
     manifest_source = ast.parse((root / "hermes_cli" / "plugins_manifest.py").read_text())
     known = _literal_assignment(manifest_source, "_KNOWN_MANIFEST_FIELDS")
     manifest = yaml.safe_load((Path(__file__).parents[1] / "plugin.yaml").read_text())
-    assert set(manifest) <= known and "requires_plugins" not in manifest
+    # Hermes 0.22.2 parser omits provides_middleware, although its validator requires it.
+    assert set(manifest) - known == {"provides_middleware"}
+    assert "requires_plugins" not in manifest
+    assert manifest["provides_middleware"] == ["tool_request"]
+    validator = ast.parse((root / "hermes_cli" / "plugin_validate.py").read_text())
+    assert any(isinstance(n, ast.Tuple) and len(n.elts) == 2
+               and all(isinstance(v, ast.Constant) for v in n.elts)
+               and ast.literal_eval(n) == ("middleware", "provides_middleware") for n in ast.walk(validator))
     assert set(manifest["provides_hooks"]) == set(HOOKS)
     assert manifest["manifest_version"] == 2 and manifest["requires_hermes"] == ">=0.22.2"
     assert {key: row["default"] for key, row in manifest["config_schema"].items()} == DEFAULTS
     assert not any(name in sys.modules for name in ("hermes_cli.plugins", "agent.tts_provider"))
+
+
+@pytest.mark.parametrize("pinned,requested,dialect,text", [
+    ("s2.1-pro", "drama-3", "fish_s2", "[soft tone] here"),
+    ("drama-3", "s2.1-pro", "fish_drama3", "<soft>here</soft>"),
+    ("drama-3-preview", "s2.1-pro", "fish_drama3", "<soft>here</soft>"),
+])
+def test_pinned_model_all_consumers(rig, pinned, requested, dialect, text):
+    ctx, fish, host, _, _, directory = rig
+    host["tts.fish-audio.model"] = pinned
+    fish.pinned_model = "drama-3" if pinned == "drama-3-preview" else pinned
+    ctx.set_config("fish_model", requested)
+    ctx.provider.synthesize("[soft: here]", "out.mp3")
+    list(ctx.provider.stream("[soft: here]"))
+    assert all(call[1] == text and call[2]["model"] == requested for call in fish.calls)
+    assert fish.effective_models == [fish.pinned_model] * 2
+    row = provider_module.last_render
+    assert row["fish_model"] == fish.pinned_model and row["dialect"] == dialect
+    assert any("pinned model wins" in note for note in row["notes"])
+    assert f"fish_model: {fish.pinned_model}" in ctx.command("status")
+    assert f"Dialect: {dialect}" in ctx.command("why")
+    assert fish.pinned_model in ctx.command("why")
+    assert ctx.section({"model": "default"}) == build_prompt_section(dialect, "default", load_data())
+    logged = json.loads((directory / "delivery.jsonl").read_text().splitlines()[-1])
+    assert logged["fish_model"] == fish.pinned_model and logged["dialect"] == dialect
+    host["tts.provider"] = "fish-audio"
+    assert ctx.middleware(tool_name="text_to_speech", args={"text": "[soft: here]"})["args"]["text"] == text
+
+
+def test_load_time_skill_uses_pinned_model(tmp_path):
+    from emotion_chip.guide import build_skill
+    ctx = FakeContext({"fish_model": "s2.1-pro"})
+    register_all(ctx, reader=lambda key, default=None: "drama-3" if key == "tts.fish-audio.model" else default,
+                 data_dir=lambda: tmp_path)
+    assert ctx.skill[0].read_text() == build_skill("fish_drama3", "default", load_data()) + "\n"
+
+
+@pytest.mark.parametrize("configured,call,expected", [
+    (None, None, None), ("invalid", "invalid", None), ("drama-3", None, "drama-3"),
+    ("drama-3", "s2-pro", "s2-pro"), ("drama-3-preview", None, "drama-3"),
+])
+def test_requested_model_and_wallet_default(rig, configured, call, expected):
+    ctx, fish, host, *_ = rig
+    host["tts.fish-audio.model"] = "invalid"
+    if configured is not None:
+        ctx.set_config("fish_model", configured)
+    ctx.provider.synthesize("Hello.", "out.mp3", model=call)
+    assert fish.calls[-1][2]["model"] == expected
+    assert provider_module.last_render["fish_model"] == (expected or "s2.1-pro")
+
+
+@pytest.mark.parametrize("host_speed,call,expected", [(1.3, None, 1.196), (1.3, 1.1, 1.012),
+                                                       ("1.3", None, .92), (False, None, .92)])
+def test_speed_host_base(rig, host_speed, call, expected):
+    ctx, fish, host, *_ = rig
+    host["tts.fish-audio.speed"] = host_speed
+    ctx.provider.synthesize("[sad] Again.", "out.mp3", speed=call)
+    assert fish.calls[-1][2]["speed"] == pytest.approx(expected)
+    list(ctx.provider.stream("[sad] Again.", speed=call))
+    assert fish.calls[-1][2]["speed"] == pytest.approx(expected)
+
+
+def test_tagless_speed(rig):
+    ctx, fish, host, *_ = rig
+    host["tts.fish-audio.model"] = "s1"
+    ctx.provider.synthesize("[sad] Again.", "out.mp3")
+    assert fish.calls[-1][1] == "Again." and fish.calls[-1][2]["speed"] == 1.0
+
+
+@pytest.mark.parametrize("hook", ["pre_llm_call", "on_session_start", None])
+def test_gateway_session_identity_and_carry(rig, hook):
+    ctx, fish, _, env, _, directory = rig
+    env.update(HERMES_SESSION_ID="", HERMES_SESSION_KEY="telegram:1")
+    if hook:
+        ctx.hooks[hook](session_id="real-session", sender_id="fixture-sender")
+    identity = "real-session" if hook else "key:telegram:1"
+    list(ctx.provider.stream("[[register: sad]] One."))
+    list(ctx.provider.stream("Two."))
+    assert fish.calls[-1][2]["speed"] == .92
+    assert provider_module.last_render["session_id"] == identity
+    assert "Dialect:" in ctx.command("why")
+    assert identity in ctx.command("status")
+    assert ctx.command("register") == "[[register: sad]]"
+    assert json.loads((directory / "delivery.jsonl").read_text().splitlines()[0])["session_id"] == identity
+    env["HERMES_SESSION_KEY"] = "telegram:2"
+    assert ctx.command("why") == "No render recorded for this session."
+    assert ctx.command("register") == "No authored register recorded."
+    list(ctx.provider.stream("Other."))
+    assert fish.calls[-1][2]["speed"] == 1.0
+    env["HERMES_SESSION_KEY"] = "telegram:1"
+    assert "Other" not in ctx.command("why")
+    assert ctx.command("register") == "[[register: sad]]"
+
+
+def test_session_key_map_pruned_and_id_priority(rig):
+    ctx, _, _, env, now, _ = rig
+    env["HERMES_SESSION_ID"] = ""
+    for i in range(55):
+        env["HERMES_SESSION_KEY"] = f"telegram:{i}"
+        now[0] += 1
+        ctx.hooks["pre_llm_call"](session_id=f"session-{i}")
+    assert len(ctx.state["session_keys"]) == 50
+    assert "telegram:0" not in ctx.state["session_keys"]
+    env["HERMES_SESSION_ID"] = "explicit-id"
+    ctx.provider.synthesize("Hi.", "out.mp3")
+    assert provider_module.last_render["session_id"] == "explicit-id"
+
+
+@pytest.mark.parametrize("raises", [False, True])
+def test_validator_context_without_state(tmp_path, raises):
+    class Probe(FakeContext):
+        def __getattribute__(self, key):
+            if raises and key == "state":
+                raise RuntimeError("probe has no state")
+            return super().__getattribute__(key)
+    ctx = Probe()
+    del ctx.state
+    register_all(ctx, reader=lambda key, default=None: default, data_dir=lambda: tmp_path)
+    assert ctx.command("status")
+
+
+@pytest.mark.parametrize("piece,expected", [("[sobbing] Two.", .92),
+    ("[[register: curious]] Two.", 1.03), ("[[register: unknown]] Two.", 1.0)])
+def test_carry_after_policy_and_header(rig, piece, expected):
+    ctx, fish, *_ = rig
+    list(ctx.provider.stream("[sad] One."))
+    list(ctx.provider.stream(piece))
+    assert fish.calls[-1][2]["speed"] == expected
+    list(ctx.provider.stream("Three."))
+    assert fish.calls[-1][2]["speed"] == (1.03 if expected == 1.03 else .92)
+
+
+def test_header_words_in_why_and_log(rig):
+    ctx, _, _, _, _, directory = rig
+    ctx.provider.synthesize("[[register: slightly sad; curious]] [calm] Hi.", "out.mp3")
+    words = ["sad", "curious", "calm"]
+    assert provider_module.last_render["cue_words"] == words
+    assert "authored cue words: sad, curious, calm" in ctx.command("why")
+    assert json.loads((directory / "delivery.jsonl").read_text())["cue_words"] == words
+
+
+@pytest.mark.parametrize("value,expected", [(False, "off"), (True, "off"), (None, "off"), ("no", "off"),
+    ("unknown", "off"), (" FACTS ", "facts"), (" Facts+Affordance ", "facts+affordance")])
+def test_normalized_signals(rig, value, expected):
+    ctx, *_ = rig
+    ctx.set_config("signals", value)
+    ctx.hooks["post_tool_call"](session_id="fixture-session", status="error")
+    line = ctx.hooks["pre_llm_call"](session_id="fixture-session")
+    assert bool(line) == (expected != "off")
+    assert f"signals: {expected}" in ctx.command("status")
+    if line:
+        assert ("Stopping and reporting is fine." in line["context"]) == (expected == "facts+affordance")
+
+
+@pytest.mark.parametrize("quiet,platform", [(True, "telegram"), (False, "slack"), (False, "email")])
+def test_middleware_quiet_and_business(rig, quiet, platform):
+    ctx, _, host, env, *_ = rig
+    host["tts.provider"] = "fish-audio"
+    env["HERMES_SESSION_PLATFORM"] = platform
+    if quiet:
+        ctx.command("quiet on")
+    result = ctx.middleware(tool_name="text_to_speech", args={"text": "[sad] Hi. [sigh]"})
+    assert result["args"]["text"] == "[sad] Hi."
+
+
+def test_counter_reset_and_truthful_success(rig):
+    ctx, *_ = rig
+    ctx.set_config("signals", "facts")
+    hooks = ctx.hooks
+    hooks["post_tool_call"](session_id="fixture-session", status="ok")
+    assert hooks["pre_llm_call"](session_id="fixture-session") is None
+    hooks["post_tool_call"](session_id="fixture-session", status="error")
+    assert ctx.state["sessions"]["fixture-session"]["successes_since_error"] == 0
+    hooks["post_tool_call"](session_id="fixture-session", status="ok")
+    assert "1 tool success since error" in hooks["pre_llm_call"](session_id="fixture-session")["context"]
+    hooks["post_tool_call"](session_id="fixture-session", status="error")
+    assert ctx.state["sessions"]["fixture-session"]["successes_since_error"] == 0
+
+
+@pytest.mark.parametrize("key,label", [("tool_error_streak", "tool error in a row"),
+    ("transport_errors", "transport error"), ("retries", "API retry"), ("interruptions", "interruption")])
+def test_singular_counter_labels(key, label):
+    line = situation_line({key: 1}, 10000)
+    assert f"1 {label}" in line and f"1 {label}s" not in line
+
+
+@pytest.mark.parametrize("name", [" FISH-AUDIO ", " EMOTION-CHIP ", " ELEVENLABS "])
+def test_tts_provider_normalization(rig, name):
+    ctx, _, host, *_ = rig
+    host["tts.provider"] = name
+    host["tts.elevenlabs.model_id"] = "eleven_v4"
+    assert ctx.provider.settings.tts_provider() == name.strip().lower()
+    assert bool(ctx.section({})) == (name.strip().lower() == "emotion-chip")
+    result = ctx.middleware(tool_name="text_to_speech", args={"text": "[soft: here]"})
+    assert (result is None) == (name.strip().lower() == "emotion-chip")
+
+
+def test_fish_paren_adapter_before_policy(rig, monkeypatch):
+    ctx, fish, *_ = rig
+    calls = []
+    def adapter(text, family):
+        calls.append((text, family))
+        return text.replace("(sobbing)", "[sobbing]").replace("(sighing)", "[sighing]")
+    # Resolve through the loaded provider's package; no Fish package is imported.
+    from types import SimpleNamespace
+    monkeypatch.setattr(importlib, "import_module", lambda name: SimpleNamespace(adapt_tags=adapter))
+    text = "(sobbing) Hi. (sighing) Next. (sighing) Last."
+    ctx.provider.synthesize(text, "out.mp3")
+    assert calls == [(text, "S2")]
+    assert fish.calls[-1][1] == "Hi. [sighing] Next. Last."
+    assert {d["reason"] for d in provider_module.last_render["dropped"]} >= {"assistant_ok:false", "sounds_per_turn"}
+
+
+def test_fish_adapter_injectable_and_missing(rig, monkeypatch):
+    ctx, fish, *_ = rig
+    calls = []
+    ctx.provider.tag_adapter = lambda text, family: calls.append(family) or text
+    ctx.provider.synthesize("Hi.", "out.mp3")
+    assert calls == ["S2"]
+    ctx.provider.tag_adapter = None
+    def missing(name):
+        raise ImportError("fixture missing tags")
+    monkeypatch.setattr(importlib, "import_module", missing)
+    ctx.provider.synthesize("Hi.", "out.mp3")
+    assert any("adapt_tags unavailable" in n for n in provider_module.last_render["notes"])
+
+
+@pytest.mark.parametrize("mode,result", [("facts", '{"error":"fixture"}'), ("facts", "fixture error"),
+                                        ("facts+affordance", '{"error":"fixture"}')])
+def test_transform_tool_result_mid_task(rig, mode, result):
+    ctx, *_ = rig
+    ctx.set_config("signals", mode)
+    hook = ctx.hooks["transform_tool_result"]
+    kw = {"session_id": "fixture-session", "tool_name": "terminal"}
+    assert hook(**kw, result=result) is None
+    for _ in range(2):
+        ctx.hooks["post_tool_call"](**kw, status="error")
+    transformed = hook(**kw, result=result)
+    if result.startswith("{"):
+        value = json.loads(transformed)
+        assert value["error"] == "fixture"
+        line = value["situation"]
+    else:
+        assert transformed.startswith(result + "\n\nSituation: ")
+        line = transformed.split("\n\nSituation: ", 1)[1]
+    assert "2 tool errors in a row" in line
+    assert ("Stopping and reporting is fine." in line) == (mode == "facts+affordance")
+    assert ctx.state["sessions"]["fixture-session"]["last_situation"] == line
+    assert hook(session_id="fixture-session", tool_name="text_to_speech", result=result) is None
+    ctx.set_config("signals", False)
+    assert hook(**kw, result=result) is None
+    ctx.set_config("signals", "facts")
+    ctx.hooks["post_tool_call"](**kw, status="ok")
+    assert hook(**kw, result=result) is None
