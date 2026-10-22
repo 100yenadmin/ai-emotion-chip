@@ -108,18 +108,17 @@ class Finding:
 
 @dataclass(frozen=True)
 class Options:
-    sounds_per_turn: int = 1
+    sounds: bool = True  # false drops affect sounds (the user's quiet switch)
     params_from: str | dict | None = None
     eleven_stability: float = 0.5
     eleven_similarity: float = 0.75
     allow_speakers: bool = False
     model: str | None = None
     overlay: dict | None = None
-    policy_state: dict | None = None  # carried across streamed pieces of one reply; reset per turn
 
 
 # Stands where a token was removed; render turns it into a space only between two word characters, so dropping
-# a token never fuses the words around it ("hap[hysterical]py" stays "hap py").
+# a token never fuses the words around it ("hap[laugh]py" stays "hap py").
 GAP = "\ue000"
 
 
