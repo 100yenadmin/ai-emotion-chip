@@ -676,82 +676,73 @@
   expected_params: *id003
   expected_dropped_kinds:
   - syntax
-- name: forbidden-blend
+- name: crying-blend
   input: '[crying, sad] Sorry.'
   dialect: fish_s2
   options: {}
-  expected_text: '[sad] Sorry.'
+  expected_text: '[crying, sad] Sorry.'
   expected_params:
     speed: 0.92
-  expected_dropped_kinds:
-  - cue
-- name: forbidden-only
+  expected_dropped_kinds: []
+- name: crying-only
   input: '[crying] Sorry.'
   dialect: fish_s2
   options: {}
-  expected_text: Sorry.
+  expected_text: '[crying] Sorry.'
   expected_params: *id001
-  expected_dropped_kinds:
-  - cue
-- name: forbidden-with-rung
+  expected_dropped_kinds: []
+- name: crying-with-rung
   input: '[very crying] Sorry.'
   dialect: fish_s2
   options: {}
-  expected_text: Sorry.
+  expected_text: '[very crying] Sorry.'
   expected_params: *id001
-  expected_dropped_kinds:
-  - cue
-- name: sound-cap-0
+  expected_dropped_kinds: []
+- name: sounds-off
   input: '[laugh] [sigh] [gasp] Yes.'
   dialect: eleven_v4
   options:
-    sounds_per_turn: 0
+    sounds: false
   expected_text: Yes.
   expected_params: *id003
   expected_dropped_kinds:
   - event
   - event
   - event
-- name: sound-cap-1
+- name: sounds-uncapped
   input: '[laugh] [sigh] [gasp] Yes.'
   dialect: eleven_v4
-  options:
-    sounds_per_turn: 1
-  expected_text: '[laughs] Yes.'
+  options: {}
+  expected_text: '[laughs] [sighs] [gasps] Yes.'
   expected_params: *id003
-  expected_dropped_kinds:
-  - event
-  - event
-- name: sound-cap-2
-  input: '[laugh] [sigh] [gasp] Yes.'
+  expected_dropped_kinds: []
+- name: sounds-on
+  input: '[laugh] [laugh:harder] Stop. [sigh] Okay.'
   dialect: eleven_v4
   options:
-    sounds_per_turn: 2
-  expected_text: '[laughs] [sighs] Yes.'
+    sounds: true
+  expected_text: '[laughs] [laughs harder] Stop. [sighs] Okay.'
   expected_params: *id003
-  expected_dropped_kinds:
-  - event
-- name: breath-density
+  expected_dropped_kinds: []
+- name: breaths-uncapped
   input: '[breath] One. [breath:shaky] Two. [breath] Three.'
   dialect: eleven_v4
   options: {}
-  expected_text: '[exhales] One. Two. [exhales] Three.'
+  expected_text: '[exhales] One. [shaky breath] Two. [exhales] Three.'
   expected_params: *id003
-  expected_dropped_kinds:
-  - event
-- name: breath-same-sentence
+  expected_dropped_kinds: []
+- name: breaths-same-sentence
   input: '[breath] [breath:shaky] One.'
   dialect: eleven_v4
   options: {}
-  expected_text: '[exhales] One.'
+  expected_text: '[exhales] [shaky breath] One.'
   expected_params: *id003
-  expected_dropped_kinds:
-  - event
+  expected_dropped_kinds: []
 - name: structural-uncapped
   input: '[exhale] [pause] [pause:long] Yes.'
   dialect: eleven_v4
   options:
-    sounds_per_turn: 0
+    sounds: false
   expected_text: '[exhales] [pause] [long pause] Yes.'
   expected_params: *id003
   expected_dropped_kinds: []

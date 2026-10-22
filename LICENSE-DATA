@@ -10,7 +10,7 @@ Attribution (requested, not required by CC0):
   profiles in vocal emotion expression". Journal of Personality and Social Psychology 70(3), 614-636. Table 4.
 - Valence and arousal ratings were produced by re-running the paper's 1-7 rating method (App. Fig 58) on the
   models named in each row. They are lexical ratings, not measurements of model activations.
-- Group assignments, the `about` and `assistant_ok` fields, aliases, sounds, dialect tables, model notes and guide
+- Group assignments, the `about` field, aliases, sounds, dialect tables, model notes and guide
   text are original design work of the AI Emotion Chip project.
 
 ------------------------------------------------------------------------------------------------------------------

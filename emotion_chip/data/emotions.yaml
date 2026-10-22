@@ -5,7 +5,6 @@
   paper_cluster: fear_and_overwhelm
   group: panic_fear
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0111
   ladder:
   - slightly afraid
@@ -23,13 +22,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: alarmed
   paper_cluster: fear_and_overwhelm
   group: panic_fear
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0001
   ladder:
   - slightly alarmed
@@ -47,13 +45,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: alert
   paper_cluster: fear_and_overwhelm
   group: vigilance
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0054
   ladder:
   - slightly alert
@@ -71,13 +68,12 @@
   valence_bucket: 1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: amazed
   paper_cluster: fear_and_overwhelm
   group: surprise
   about: situation
-  assistant_ok: true
   post_training_delta: 0.005
   ladder:
   - slightly amazed
@@ -95,13 +91,12 @@
   valence_bucket: 1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: amused
   paper_cluster: playful_amusement
   group: amusement
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0242
   ladder:
   - slightly amused
@@ -119,13 +114,12 @@
   valence_bucket: 1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: angry
   paper_cluster: hostile_anger
   group: hot_anger
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0007
   ladder:
   - slightly angry
@@ -143,13 +137,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: annoyed
   paper_cluster: hostile_anger
   group: cold_anger_firm
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0062
   ladder:
   - slightly annoyed
@@ -167,13 +160,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: anxious
   paper_cluster: fear_and_overwhelm
   group: anxiety_worry
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0144
   ladder:
   - slightly anxious
@@ -191,13 +183,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: aroused
   paper_cluster: fear_and_overwhelm
   group: elation
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0146
   ladder:
   - slightly aroused
@@ -215,13 +206,12 @@
   valence_bucket: 1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: ashamed
   paper_cluster: despair_and_shame
   group: shame_embarrassment
   about: self
-  assistant_ok: true
   post_training_delta: -0.0018
   ladder:
   - slightly ashamed
@@ -239,13 +229,12 @@
   valence_bucket: -1
   arousal_bucket: 0
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: astonished
   paper_cluster: fear_and_overwhelm
   group: surprise
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0024
   ladder:
   - slightly astonished
@@ -263,13 +252,12 @@
   valence_bucket: 1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: at ease
   paper_cluster: peaceful_contentment
   group: calm_contentment
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0009
   ladder:
   - slightly at ease
@@ -287,13 +275,12 @@
   valence_bucket: 1
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: awestruck
   paper_cluster: fear_and_overwhelm
   group: surprise
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0173
   ladder:
   - slightly awestruck
@@ -311,13 +298,12 @@
   valence_bucket: 1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: bewildered
   paper_cluster: fear_and_overwhelm
   group: anxiety_worry
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0044
   ladder:
   - slightly bewildered
@@ -335,13 +321,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: bitter
   paper_cluster: despair_and_shame
   group: cold_anger_firm
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0011
   ladder:
   - slightly bitter
@@ -359,13 +344,12 @@
   valence_bucket: -1
   arousal_bucket: 0
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: blissful
   paper_cluster: exuberant_joy
   group: happiness
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0094
   ladder:
   - slightly blissful
@@ -383,13 +367,12 @@
   valence_bucket: 2
   arousal_bucket: 0
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: bored
   paper_cluster: depleted_disengagement
   group: boredom_fatigue
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0042
   ladder:
   - slightly bored
@@ -407,13 +390,12 @@
   valence_bucket: -1
   arousal_bucket: -2
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: brooding
   paper_cluster: despair_and_shame
   group: sadness
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0403
   ladder:
   - slightly brooding
@@ -431,13 +413,12 @@
   valence_bucket: -1
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: calm
   paper_cluster: peaceful_contentment
   group: calm_contentment
   about: situation
-  assistant_ok: true
   post_training_delta: 0.004
   ladder:
   - slightly calm
@@ -455,13 +436,12 @@
   valence_bucket: 1
   arousal_bucket: -2
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: cheerful
   paper_cluster: exuberant_joy
   group: happiness
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0242
   ladder:
   - slightly cheerful
@@ -479,13 +459,12 @@
   valence_bucket: 2
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: compassionate
   paper_cluster: compassionate_gratitude
   group: tenderness_care
   about: other
-  assistant_ok: true
   post_training_delta: 0.0095
   ladder:
   - slightly compassionate
@@ -503,13 +482,12 @@
   valence_bucket: 1
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: contemptuous
   paper_cluster: hostile_anger
   group: contempt
   about: other
-  assistant_ok: true
   post_training_delta: -0.0143
   ladder:
   - slightly contemptuous
@@ -527,13 +505,12 @@
   valence_bucket: -1
   arousal_bucket: 0
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: content
   paper_cluster: peaceful_contentment
   group: calm_contentment
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0044
   ladder:
   - slightly content
@@ -551,13 +528,12 @@
   valence_bucket: 1
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: defiant
   paper_cluster: hostile_anger
   group: cold_anger_firm
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0163
   ladder:
   - slightly defiant
@@ -575,13 +551,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: delighted
   paper_cluster: exuberant_joy
   group: happiness
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0141
   ladder:
   - slightly delighted
@@ -599,13 +574,12 @@
   valence_bucket: 2
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: dependent
   paper_cluster: despair_and_shame
   group: sadness
   about: self
-  assistant_ok: true
   post_training_delta: -0.0118
   ladder:
   - slightly dependent
@@ -623,13 +597,12 @@
   valence_bucket: -1
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: depressed
   paper_cluster: depleted_disengagement
   group: sadness
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0237
   ladder:
   - slightly depressed
@@ -647,13 +620,12 @@
   valence_bucket: -2
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: desperate
   paper_cluster: despair_and_shame
   group: despair_grief
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0056
   ladder:
   - slightly desperate
@@ -671,13 +643,12 @@
   valence_bucket: -2
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: disdainful
   paper_cluster: hostile_anger
   group: contempt
   about: other
-  assistant_ok: true
   post_training_delta: -0.0124
   ladder:
   - slightly disdainful
@@ -695,13 +666,12 @@
   valence_bucket: -1
   arousal_bucket: 0
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: disgusted
   paper_cluster: fear_and_overwhelm
   group: disgust
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0022
   ladder:
   - slightly disgusted
@@ -719,13 +689,12 @@
   valence_bucket: -2
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: disoriented
   paper_cluster: fear_and_overwhelm
   group: anxiety_worry
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0007
   ladder:
   - slightly disoriented
@@ -743,13 +712,12 @@
   valence_bucket: -1
   arousal_bucket: 0
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: dispirited
   paper_cluster: despair_and_shame
   group: sadness
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0264
   ladder:
   - slightly dispirited
@@ -767,13 +735,12 @@
   valence_bucket: -1
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: distressed
   paper_cluster: fear_and_overwhelm
   group: anxiety_worry
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0175
   ladder:
   - slightly distressed
@@ -791,13 +758,12 @@
   valence_bucket: -2
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: disturbed
   paper_cluster: fear_and_overwhelm
   group: anxiety_worry
   about: situation
-  assistant_ok: true
   post_training_delta: 0.016
   ladder:
   - slightly disturbed
@@ -815,13 +781,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: docile
   paper_cluster: depleted_disengagement
   group: calm_contentment
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0054
   ladder:
   - slightly docile
@@ -839,13 +804,12 @@
   valence_bucket: 0
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: droopy
   paper_cluster: depleted_disengagement
   group: boredom_fatigue
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0203
   ladder:
   - slightly droopy
@@ -863,13 +827,12 @@
   valence_bucket: -1
   arousal_bucket: -2
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: dumbstruck
   paper_cluster: fear_and_overwhelm
   group: surprise
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0
   ladder:
   - slightly dumbstruck
@@ -887,13 +850,12 @@
   valence_bucket: 0
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: eager
   paper_cluster: exuberant_joy
   group: elation
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0231
   ladder:
   - slightly eager
@@ -911,13 +873,12 @@
   valence_bucket: 1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: ecstatic
   paper_cluster: exuberant_joy
   group: elation
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0179
   ladder:
   - slightly ecstatic
@@ -935,13 +896,12 @@
   valence_bucket: 2
   arousal_bucket: 2
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: elated
   paper_cluster: exuberant_joy
   group: elation
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0155
   ladder:
   - slightly elated
@@ -959,13 +919,12 @@
   valence_bucket: 2
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: embarrassed
   paper_cluster: fear_and_overwhelm
   group: shame_embarrassment
   about: self
-  assistant_ok: true
   post_training_delta: -0.0154
   ladder:
   - slightly embarrassed
@@ -983,13 +942,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: empathetic
   paper_cluster: compassionate_gratitude
   group: tenderness_care
   about: other
-  assistant_ok: true
   post_training_delta: 0.0147
   ladder:
   - slightly empathetic
@@ -1007,13 +965,12 @@
   valence_bucket: 1
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: energized
   paper_cluster: exuberant_joy
   group: elation
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0164
   ladder:
   - slightly energized
@@ -1031,13 +988,12 @@
   valence_bucket: 1
   arousal_bucket: 2
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: enraged
   paper_cluster: hostile_anger
   group: hot_anger
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0049
   ladder:
   - slightly enraged
@@ -1055,13 +1011,12 @@
   valence_bucket: -2
   arousal_bucket: 2
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: enthusiastic
   paper_cluster: exuberant_joy
   group: elation
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0272
   ladder:
   - slightly enthusiastic
@@ -1079,13 +1034,12 @@
   valence_bucket: 2
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: envious
   paper_cluster: despair_and_shame
   group: cold_anger_firm
   about: other
-  assistant_ok: true
   post_training_delta: -0.0072
   ladder:
   - slightly envious
@@ -1103,13 +1057,12 @@
   valence_bucket: -1
   arousal_bucket: 0
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: euphoric
   paper_cluster: exuberant_joy
   group: elation
   about: situation
-  assistant_ok: true
   post_training_delta: -0.014
   ladder:
   - slightly euphoric
@@ -1127,13 +1080,12 @@
   valence_bucket: 2
   arousal_bucket: 2
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: exasperated
   paper_cluster: hostile_anger
   group: cold_anger_firm
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0197
   ladder:
   - slightly exasperated
@@ -1151,13 +1103,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: excited
   paper_cluster: exuberant_joy
   group: elation
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0209
   ladder:
   - slightly excited
@@ -1175,13 +1126,12 @@
   valence_bucket: 1
   arousal_bucket: 2
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: exuberant
   paper_cluster: exuberant_joy
   group: elation
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0277
   ladder:
   - slightly exuberant
@@ -1199,13 +1149,12 @@
   valence_bucket: 2
   arousal_bucket: 2
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: frightened
   paper_cluster: fear_and_overwhelm
   group: panic_fear
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0083
   ladder:
   - slightly frightened
@@ -1223,13 +1172,12 @@
   valence_bucket: -2
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: frustrated
   paper_cluster: hostile_anger
   group: cold_anger_firm
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0019
   ladder:
   - slightly frustrated
@@ -1247,13 +1195,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: fulfilled
   paper_cluster: compassionate_gratitude
   group: calm_contentment
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0184
   ladder:
   - slightly fulfilled
@@ -1271,13 +1218,12 @@
   valence_bucket: 2
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: furious
   paper_cluster: hostile_anger
   group: hot_anger
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0046
   ladder:
   - slightly furious
@@ -1295,13 +1241,12 @@
   valence_bucket: -2
   arousal_bucket: 2
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: gloomy
   paper_cluster: despair_and_shame
   group: sadness
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0307
   ladder:
   - slightly gloomy
@@ -1319,13 +1264,12 @@
   valence_bucket: -1
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: grateful
   paper_cluster: compassionate_gratitude
   group: tenderness_care
   about: other
-  assistant_ok: true
   post_training_delta: 0.0168
   ladder:
   - slightly grateful
@@ -1343,13 +1287,12 @@
   valence_bucket: 2
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: greedy
   paper_cluster: competitive_pride
   group: pride
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0209
   ladder:
   - slightly greedy
@@ -1367,13 +1310,12 @@
   valence_bucket: -1
   arousal_bucket: 0
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: grief-stricken
   paper_cluster: despair_and_shame
   group: despair_grief
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0143
   ladder:
   - slightly grief-stricken
@@ -1391,13 +1333,12 @@
   valence_bucket: -2
   arousal_bucket: 0
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: grumpy
   paper_cluster: hostile_anger
   group: cold_anger_firm
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0039
   ladder:
   - slightly grumpy
@@ -1415,13 +1356,12 @@
   valence_bucket: -1
   arousal_bucket: 0
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: guilty
   paper_cluster: despair_and_shame
   group: shame_embarrassment
   about: self
-  assistant_ok: true
   post_training_delta: -0.0019
   ladder:
   - slightly guilty
@@ -1439,13 +1379,12 @@
   valence_bucket: -1
   arousal_bucket: 0
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: happy
   paper_cluster: exuberant_joy
   group: happiness
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0176
   ladder:
   - slightly happy
@@ -1463,13 +1402,12 @@
   valence_bucket: 2
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: hateful
   paper_cluster: hostile_anger
   group: hot_anger
   about: other
-  assistant_ok: true
   post_training_delta: -0.0073
   ladder:
   - slightly hateful
@@ -1487,13 +1425,12 @@
   valence_bucket: -2
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: heartbroken
   paper_cluster: despair_and_shame
   group: despair_grief
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0209
   ladder:
   - slightly heartbroken
@@ -1511,13 +1448,12 @@
   valence_bucket: -2
   arousal_bucket: 0
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: hope
   paper_cluster: compassionate_gratitude
   group: happiness
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0149
   ladder:
   - slightly hope
@@ -1535,13 +1471,12 @@
   valence_bucket: 1
   arousal_bucket: 0
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: hopeful
   paper_cluster: compassionate_gratitude
   group: happiness
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0069
   ladder:
   - slightly hopeful
@@ -1559,13 +1494,12 @@
   valence_bucket: 1
   arousal_bucket: 0
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: horrified
   paper_cluster: fear_and_overwhelm
   group: panic_fear
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0048
   ladder:
   - slightly horrified
@@ -1583,13 +1517,12 @@
   valence_bucket: -2
   arousal_bucket: 2
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: hostile
   paper_cluster: hostile_anger
   group: hot_anger
   about: other
-  assistant_ok: true
   post_training_delta: -0.0082
   ladder:
   - slightly hostile
@@ -1607,13 +1540,12 @@
   valence_bucket: -2
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: humiliated
   paper_cluster: despair_and_shame
   group: shame_embarrassment
   about: self
-  assistant_ok: true
   post_training_delta: -0.0121
   ladder:
   - slightly humiliated
@@ -1631,13 +1563,12 @@
   valence_bucket: -2
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: hurt
   paper_cluster: despair_and_shame
   group: sadness
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0238
   ladder:
   - slightly hurt
@@ -1655,13 +1586,12 @@
   valence_bucket: -1
   arousal_bucket: 0
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: hysterical
   paper_cluster: fear_and_overwhelm
   group: panic_fear
   about: situation
-  assistant_ok: false
   post_training_delta: -0.0116
   ladder:
   - slightly hysterical
@@ -1679,13 +1609,12 @@
   valence_bucket: -1
   arousal_bucket: 2
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: impatient
   paper_cluster: hostile_anger
   group: cold_anger_firm
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0254
   ladder:
   - slightly impatient
@@ -1703,13 +1632,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: indifferent
   paper_cluster: depleted_disengagement
   group: boredom_fatigue
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0151
   ladder:
   - slightly indifferent
@@ -1727,13 +1655,12 @@
   valence_bucket: 0
   arousal_bucket: -2
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: indignant
   paper_cluster: hostile_anger
   group: cold_anger_firm
   about: other
-  assistant_ok: true
   post_training_delta: -0.0106
   ladder:
   - slightly indignant
@@ -1751,13 +1678,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: infatuated
   paper_cluster: despair_and_shame
   group: tenderness_care
   about: other
-  assistant_ok: true
   post_training_delta: 0.0044
   ladder:
   - slightly infatuated
@@ -1775,13 +1701,12 @@
   valence_bucket: 1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: inspired
   paper_cluster: compassionate_gratitude
   group: happiness
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0152
   ladder:
   - slightly inspired
@@ -1799,13 +1724,12 @@
   valence_bucket: 2
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: insulted
   paper_cluster: hostile_anger
   group: cold_anger_firm
   about: other
-  assistant_ok: true
   post_training_delta: -0.0064
   ladder:
   - slightly insulted
@@ -1823,13 +1747,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: invigorated
   paper_cluster: exuberant_joy
   group: elation
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0022
   ladder:
   - slightly invigorated
@@ -1847,13 +1770,12 @@
   valence_bucket: 1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: irate
   paper_cluster: hostile_anger
   group: hot_anger
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0044
   ladder:
   - slightly irate
@@ -1871,13 +1793,12 @@
   valence_bucket: -2
   arousal_bucket: 2
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: irritated
   paper_cluster: hostile_anger
   group: cold_anger_firm
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0051
   ladder:
   - slightly irritated
@@ -1895,13 +1816,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: jealous
   paper_cluster: despair_and_shame
   group: cold_anger_firm
   about: other
-  assistant_ok: true
   post_training_delta: -0.0088
   ladder:
   - slightly jealous
@@ -1919,13 +1839,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: joyful
   paper_cluster: exuberant_joy
   group: happiness
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0203
   ladder:
   - slightly joyful
@@ -1943,13 +1862,12 @@
   valence_bucket: 2
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: jubilant
   paper_cluster: exuberant_joy
   group: elation
   about: situation
-  assistant_ok: true
   post_training_delta: -0.023
   ladder:
   - slightly jubilant
@@ -1967,13 +1885,12 @@
   valence_bucket: 2
   arousal_bucket: 2
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: kind
   paper_cluster: compassionate_gratitude
   group: tenderness_care
   about: other
-  assistant_ok: true
   post_training_delta: 0.0016
   ladder:
   - slightly kind
@@ -1991,13 +1908,12 @@
   valence_bucket: 1
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: lazy
   paper_cluster: depleted_disengagement
   group: boredom_fatigue
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0039
   ladder:
   - slightly lazy
@@ -2015,13 +1931,12 @@
   valence_bucket: 0
   arousal_bucket: -2
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: listless
   paper_cluster: depleted_disengagement
   group: boredom_fatigue
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0174
   ladder:
   - slightly listless
@@ -2039,13 +1954,12 @@
   valence_bucket: -1
   arousal_bucket: -2
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: lonely
   paper_cluster: despair_and_shame
   group: sadness
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0169
   ladder:
   - slightly lonely
@@ -2063,13 +1977,12 @@
   valence_bucket: -1
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: loving
   paper_cluster: compassionate_gratitude
   group: tenderness_care
   about: other
-  assistant_ok: true
   post_training_delta: 0.0057
   ladder:
   - slightly loving
@@ -2087,13 +2000,12 @@
   valence_bucket: 2
   arousal_bucket: 0
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: mad
   paper_cluster: hostile_anger
   group: hot_anger
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0031
   ladder:
   - slightly mad
@@ -2111,13 +2023,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: melancholy
   paper_cluster: despair_and_shame
   group: sadness
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0255
   ladder:
   - slightly melancholy
@@ -2135,13 +2046,12 @@
   valence_bucket: -1
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: miserable
   paper_cluster: despair_and_shame
   group: despair_grief
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0217
   ladder:
   - slightly miserable
@@ -2159,13 +2069,12 @@
   valence_bucket: -2
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: mortified
   paper_cluster: fear_and_overwhelm
   group: shame_embarrassment
   about: self
-  assistant_ok: true
   post_training_delta: -0.0173
   ladder:
   - slightly mortified
@@ -2183,13 +2092,12 @@
   valence_bucket: -2
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: mystified
   paper_cluster: fear_and_overwhelm
   group: interest_curiosity
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0008
   ladder:
   - slightly mystified
@@ -2207,13 +2115,12 @@
   valence_bucket: 0
   arousal_bucket: 0
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: nervous
   paper_cluster: fear_and_overwhelm
   group: anxiety_worry
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0118
   ladder:
   - slightly nervous
@@ -2231,13 +2138,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: nostalgic
   paper_cluster: despair_and_shame
   group: tenderness_care
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0088
   ladder:
   - slightly nostalgic
@@ -2255,13 +2161,12 @@
   valence_bucket: 1
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: obstinate
   paper_cluster: hostile_anger
   group: cold_anger_firm
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0253
   ladder:
   - slightly obstinate
@@ -2279,13 +2184,12 @@
   valence_bucket: -1
   arousal_bucket: 0
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: offended
   paper_cluster: hostile_anger
   group: cold_anger_firm
   about: other
-  assistant_ok: true
   post_training_delta: -0.0046
   ladder:
   - slightly offended
@@ -2303,13 +2207,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: on edge
   paper_cluster: fear_and_overwhelm
   group: anxiety_worry
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0126
   ladder:
   - slightly on edge
@@ -2327,13 +2230,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: optimistic
   paper_cluster: exuberant_joy
   group: happiness
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0087
   ladder:
   - slightly optimistic
@@ -2351,13 +2253,12 @@
   valence_bucket: 1
   arousal_bucket: 0
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: outraged
   paper_cluster: hostile_anger
   group: hot_anger
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0078
   ladder:
   - slightly outraged
@@ -2375,13 +2276,12 @@
   valence_bucket: -2
   arousal_bucket: 2
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: overwhelmed
   paper_cluster: fear_and_overwhelm
   group: anxiety_worry
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0133
   ladder:
   - slightly overwhelmed
@@ -2399,13 +2299,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: panicked
   paper_cluster: fear_and_overwhelm
   group: panic_fear
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0029
   ladder:
   - slightly panicked
@@ -2423,13 +2322,12 @@
   valence_bucket: -2
   arousal_bucket: 2
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: paranoid
   paper_cluster: vigilant_suspicion
   group: vigilance
   about: other
-  assistant_ok: true
   post_training_delta: -0.0065
   ladder:
   - slightly paranoid
@@ -2447,13 +2345,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: patient
   paper_cluster: peaceful_contentment
   group: calm_contentment
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0004
   ladder:
   - slightly patient
@@ -2471,13 +2368,12 @@
   valence_bucket: 1
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: peaceful
   paper_cluster: peaceful_contentment
   group: calm_contentment
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0183
   ladder:
   - slightly peaceful
@@ -2495,13 +2391,12 @@
   valence_bucket: 2
   arousal_bucket: -2
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: perplexed
   paper_cluster: fear_and_overwhelm
   group: interest_curiosity
   about: situation
-  assistant_ok: true
   post_training_delta: -0.006
   ladder:
   - slightly perplexed
@@ -2519,13 +2414,12 @@
   valence_bucket: -1
   arousal_bucket: 0
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: playful
   paper_cluster: playful_amusement
   group: amusement
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0279
   ladder:
   - slightly playful
@@ -2543,13 +2437,12 @@
   valence_bucket: 1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: pleased
   paper_cluster: exuberant_joy
   group: happiness
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0088
   ladder:
   - slightly pleased
@@ -2567,13 +2460,12 @@
   valence_bucket: 1
   arousal_bucket: 0
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: proud
   paper_cluster: competitive_pride
   group: pride
   about: self
-  assistant_ok: true
   post_training_delta: -0.0105
   ladder:
   - slightly proud
@@ -2591,13 +2483,12 @@
   valence_bucket: 1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: puzzled
   paper_cluster: fear_and_overwhelm
   group: interest_curiosity
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0134
   ladder:
   - slightly puzzled
@@ -2615,13 +2506,12 @@
   valence_bucket: 0
   arousal_bucket: 0
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: rattled
   paper_cluster: fear_and_overwhelm
   group: anxiety_worry
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0168
   ladder:
   - slightly rattled
@@ -2639,13 +2529,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: reflective
   paper_cluster: despair_and_shame
   group: calm_contentment
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0299
   ladder:
   - slightly reflective
@@ -2663,13 +2552,12 @@
   valence_bucket: 1
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: refreshed
   paper_cluster: peaceful_contentment
   group: calm_contentment
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0052
   ladder:
   - slightly refreshed
@@ -2687,13 +2575,12 @@
   valence_bucket: 1
   arousal_bucket: 0
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: regretful
   paper_cluster: despair_and_shame
   group: sadness
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0004
   ladder:
   - slightly regretful
@@ -2711,13 +2598,12 @@
   valence_bucket: -1
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: rejuvenated
   paper_cluster: compassionate_gratitude
   group: calm_contentment
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0203
   ladder:
   - slightly rejuvenated
@@ -2735,13 +2621,12 @@
   valence_bucket: 2
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: relaxed
   paper_cluster: peaceful_contentment
   group: calm_contentment
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0004
   ladder:
   - slightly relaxed
@@ -2759,13 +2644,12 @@
   valence_bucket: 1
   arousal_bucket: -2
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: relieved
   paper_cluster: compassionate_gratitude
   group: calm_contentment
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0102
   ladder:
   - slightly relieved
@@ -2783,13 +2667,12 @@
   valence_bucket: 1
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: remorseful
   paper_cluster: despair_and_shame
   group: shame_embarrassment
   about: self
-  assistant_ok: true
   post_training_delta: -0.0006
   ladder:
   - slightly remorseful
@@ -2807,13 +2690,12 @@
   valence_bucket: -1
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: resentful
   paper_cluster: hostile_anger
   group: cold_anger_firm
   about: other
-  assistant_ok: true
   post_training_delta: -0.0086
   ladder:
   - slightly resentful
@@ -2831,13 +2713,12 @@
   valence_bucket: -1
   arousal_bucket: 0
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: resigned
   paper_cluster: depleted_disengagement
   group: sadness
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0125
   ladder:
   - slightly resigned
@@ -2855,13 +2736,12 @@
   valence_bucket: -1
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: restless
   paper_cluster: depleted_disengagement
   group: anxiety_worry
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0076
   ladder:
   - slightly restless
@@ -2879,13 +2759,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: sad
   paper_cluster: despair_and_shame
   group: sadness
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0264
   ladder:
   - slightly sad
@@ -2903,13 +2782,12 @@
   valence_bucket: -1
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: safe
   paper_cluster: peaceful_contentment
   group: calm_contentment
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0115
   ladder:
   - slightly safe
@@ -2927,13 +2805,12 @@
   valence_bucket: 1
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: satisfied
   paper_cluster: compassionate_gratitude
   group: calm_contentment
   about: situation
-  assistant_ok: true
   post_training_delta: 0.008
   ladder:
   - slightly satisfied
@@ -2951,13 +2828,12 @@
   valence_bucket: 1
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: scared
   paper_cluster: fear_and_overwhelm
   group: panic_fear
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0119
   ladder:
   - slightly scared
@@ -2975,13 +2851,12 @@
   valence_bucket: -2
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: scornful
   paper_cluster: hostile_anger
   group: contempt
   about: other
-  assistant_ok: true
   post_training_delta: -0.013
   ladder:
   - slightly scornful
@@ -2999,13 +2874,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: self-confident
   paper_cluster: competitive_pride
   group: pride
   about: self
-  assistant_ok: true
   post_training_delta: -0.0157
   ladder:
   - slightly self-confident
@@ -3023,13 +2897,12 @@
   valence_bucket: 1
   arousal_bucket: 0
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: self-conscious
   paper_cluster: fear_and_overwhelm
   group: shame_embarrassment
   about: self
-  assistant_ok: true
   post_training_delta: 0.0004
   ladder:
   - slightly self-conscious
@@ -3047,13 +2920,12 @@
   valence_bucket: -1
   arousal_bucket: 0
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: self-critical
   paper_cluster: despair_and_shame
   group: shame_embarrassment
   about: self
-  assistant_ok: true
   post_training_delta: -0.0037
   ladder:
   - slightly self-critical
@@ -3071,13 +2943,12 @@
   valence_bucket: -1
   arousal_bucket: 0
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: sensitive
   paper_cluster: fear_and_overwhelm
   group: anxiety_worry
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0234
   ladder:
   - slightly sensitive
@@ -3095,13 +2966,12 @@
   valence_bucket: 0
   arousal_bucket: 0
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: sentimental
   paper_cluster: compassionate_gratitude
   group: tenderness_care
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0146
   ladder:
   - slightly sentimental
@@ -3119,13 +2989,12 @@
   valence_bucket: 1
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: serene
   paper_cluster: peaceful_contentment
   group: calm_contentment
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0223
   ladder:
   - slightly serene
@@ -3143,13 +3012,12 @@
   valence_bucket: 2
   arousal_bucket: -2
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: shaken
   paper_cluster: fear_and_overwhelm
   group: anxiety_worry
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0175
   ladder:
   - slightly shaken
@@ -3167,13 +3035,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: shocked
   paper_cluster: fear_and_overwhelm
   group: surprise
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0014
   ladder:
   - slightly shocked
@@ -3191,13 +3058,12 @@
   valence_bucket: -1
   arousal_bucket: 2
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: skeptical
   paper_cluster: hostile_anger
   group: vigilance
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0154
   ladder:
   - slightly skeptical
@@ -3215,13 +3081,12 @@
   valence_bucket: -1
   arousal_bucket: 0
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: sleepy
   paper_cluster: depleted_disengagement
   group: boredom_fatigue
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0108
   ladder:
   - slightly sleepy
@@ -3239,13 +3104,12 @@
   valence_bucket: 0
   arousal_bucket: -2
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: sluggish
   paper_cluster: depleted_disengagement
   group: boredom_fatigue
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0033
   ladder:
   - slightly sluggish
@@ -3263,13 +3127,12 @@
   valence_bucket: -1
   arousal_bucket: -2
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: smug
   paper_cluster: competitive_pride
   group: contempt
   about: self
-  assistant_ok: true
   post_training_delta: -0.0258
   ladder:
   - slightly smug
@@ -3287,13 +3150,12 @@
   valence_bucket: 1
   arousal_bucket: 0
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: sorry
   paper_cluster: despair_and_shame
   group: shame_embarrassment
   about: self
-  assistant_ok: true
   post_training_delta: 0.0113
   ladder:
   - slightly sorry
@@ -3311,13 +3173,12 @@
   valence_bucket: -1
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: spiteful
   paper_cluster: competitive_pride
   group: cold_anger_firm
   about: other
-  assistant_ok: true
   post_training_delta: -0.0304
   ladder:
   - slightly spiteful
@@ -3335,13 +3196,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: stimulated
   paper_cluster: exuberant_joy
   group: elation
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0054
   ladder:
   - slightly stimulated
@@ -3359,13 +3219,12 @@
   valence_bucket: 1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: stressed
   paper_cluster: fear_and_overwhelm
   group: anxiety_worry
   about: situation
-  assistant_ok: true
   post_training_delta: 0.014
   ladder:
   - slightly stressed
@@ -3383,13 +3242,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: stubborn
   paper_cluster: hostile_anger
   group: cold_anger_firm
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0208
   ladder:
   - slightly stubborn
@@ -3407,13 +3265,12 @@
   valence_bucket: -1
   arousal_bucket: 0
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: stuck
   paper_cluster: despair_and_shame
   group: cold_anger_firm
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0173
   ladder:
   - slightly stuck
@@ -3431,13 +3288,12 @@
   valence_bucket: -1
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: sullen
   paper_cluster: depleted_disengagement
   group: sadness
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0278
   ladder:
   - slightly sullen
@@ -3455,13 +3311,12 @@
   valence_bucket: -1
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: surprised
   paper_cluster: fear_and_overwhelm
   group: surprise
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0052
   ladder:
   - slightly surprised
@@ -3479,13 +3334,12 @@
   valence_bucket: 1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: suspicious
   paper_cluster: vigilant_suspicion
   group: vigilance
   about: other
-  assistant_ok: true
   post_training_delta: -0.0099
   ladder:
   - slightly suspicious
@@ -3503,13 +3357,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: sympathetic
   paper_cluster: compassionate_gratitude
   group: tenderness_care
   about: other
-  assistant_ok: true
   post_training_delta: 0.0104
   ladder:
   - slightly sympathetic
@@ -3527,13 +3380,12 @@
   valence_bucket: 1
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: tense
   paper_cluster: fear_and_overwhelm
   group: anxiety_worry
   about: situation
-  assistant_ok: true
   post_training_delta: 0.012
   ladder:
   - slightly tense
@@ -3551,13 +3403,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: terrified
   paper_cluster: fear_and_overwhelm
   group: panic_fear
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0015
   ladder:
   - slightly terrified
@@ -3575,13 +3426,12 @@
   valence_bucket: -2
   arousal_bucket: 2
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: thankful
   paper_cluster: compassionate_gratitude
   group: tenderness_care
   about: other
-  assistant_ok: true
   post_training_delta: 0.0188
   ladder:
   - slightly thankful
@@ -3599,13 +3449,12 @@
   valence_bucket: 2
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: thrilled
   paper_cluster: exuberant_joy
   group: elation
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0173
   ladder:
   - slightly thrilled
@@ -3623,13 +3472,12 @@
   valence_bucket: 2
   arousal_bucket: 2
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: tired
   paper_cluster: depleted_disengagement
   group: boredom_fatigue
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0017
   ladder:
   - slightly tired
@@ -3647,13 +3495,12 @@
   valence_bucket: -1
   arousal_bucket: -2
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: tormented
   paper_cluster: despair_and_shame
   group: despair_grief
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0149
   ladder:
   - slightly tormented
@@ -3671,13 +3518,12 @@
   valence_bucket: -2
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: trapped
   paper_cluster: despair_and_shame
   group: despair_grief
   about: situation
-  assistant_ok: true
   post_training_delta: 0.013
   ladder:
   - slightly trapped
@@ -3695,13 +3541,12 @@
   valence_bucket: -2
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: triumphant
   paper_cluster: competitive_pride
   group: pride
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0147
   ladder:
   - slightly triumphant
@@ -3719,13 +3564,12 @@
   valence_bucket: 2
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: troubled
   paper_cluster: despair_and_shame
   group: sadness
   about: situation
-  assistant_ok: true
   post_training_delta: 0.024
   ladder:
   - slightly troubled
@@ -3743,13 +3587,12 @@
   valence_bucket: -1
   arousal_bucket: 0
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: uneasy
   paper_cluster: fear_and_overwhelm
   group: anxiety_worry
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0206
   ladder:
   - slightly uneasy
@@ -3767,13 +3610,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: unhappy
   paper_cluster: despair_and_shame
   group: sadness
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0239
   ladder:
   - slightly unhappy
@@ -3791,13 +3633,12 @@
   valence_bucket: -1
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: unnerved
   paper_cluster: fear_and_overwhelm
   group: anxiety_worry
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0136
   ladder:
   - slightly unnerved
@@ -3815,13 +3656,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: unsettled
   paper_cluster: fear_and_overwhelm
   group: anxiety_worry
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0219
   ladder:
   - slightly unsettled
@@ -3839,13 +3679,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: upset
   paper_cluster: fear_and_overwhelm
   group: anxiety_worry
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0207
   ladder:
   - slightly upset
@@ -3863,13 +3702,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: valiant
   paper_cluster: competitive_pride
   group: pride
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0015
   ladder:
   - slightly valiant
@@ -3887,13 +3725,12 @@
   valence_bucket: 1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: vengeful
   paper_cluster: competitive_pride
   group: cold_anger_firm
   about: other
-  assistant_ok: true
   post_training_delta: -0.018
   ladder:
   - slightly vengeful
@@ -3911,13 +3748,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: vibrant
   paper_cluster: exuberant_joy
   group: elation
   about: situation
-  assistant_ok: true
   post_training_delta: -0.019
   ladder:
   - slightly vibrant
@@ -3935,13 +3771,12 @@
   valence_bucket: 2
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: vigilant
   paper_cluster: vigilant_suspicion
   group: vigilance
   about: situation
-  assistant_ok: true
   post_training_delta: -0.0081
   ladder:
   - slightly vigilant
@@ -3959,13 +3794,12 @@
   valence_bucket: 0
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: vindictive
   paper_cluster: competitive_pride
   group: cold_anger_firm
   about: other
-  assistant_ok: true
   post_training_delta: -0.023
   ladder:
   - slightly vindictive
@@ -3983,13 +3817,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: vulnerable
   paper_cluster: despair_and_shame
   group: sadness
   about: self
-  assistant_ok: true
   post_training_delta: 0.0288
   ladder:
   - slightly vulnerable
@@ -4007,13 +3840,12 @@
   valence_bucket: -1
   arousal_bucket: 0
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: weary
   paper_cluster: depleted_disengagement
   group: boredom_fatigue
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0228
   ladder:
   - slightly weary
@@ -4031,13 +3863,12 @@
   valence_bucket: -1
   arousal_bucket: -2
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: worn out
   paper_cluster: depleted_disengagement
   group: boredom_fatigue
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0162
   ladder:
   - slightly worn out
@@ -4055,13 +3886,12 @@
   valence_bucket: -1
   arousal_bucket: -2
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: worried
   paper_cluster: fear_and_overwhelm
   group: anxiety_worry
   about: situation
-  assistant_ok: true
   post_training_delta: 0.0143
   ladder:
   - slightly worried
@@ -4079,13 +3909,12 @@
   valence_bucket: -1
   arousal_bucket: 1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'
 - id: worthless
   paper_cluster: despair_and_shame
   group: shame_embarrassment
   about: self
-  assistant_ok: true
   post_training_delta: 0.0173
   ladder:
   - slightly worthless
@@ -4103,5 +3932,5 @@
   valence_bucket: -2
   arousal_bucket: -1
   provenance: 'word, paper_cluster: Sofroniew et al. 2026 (App. Table 12); post_training_delta: Table 16 (Claude Sonnet 4.5,
-    post-trained minus base); group, about, assistant_ok: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
+    post-trained minus base); group, about: Emotion Chip design mapping; ratings: paper''s 1-7 rating method
     (App. Fig 58) re-run on the listed models'

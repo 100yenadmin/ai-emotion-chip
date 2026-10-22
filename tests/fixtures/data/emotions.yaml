@@ -2,7 +2,6 @@
   paper_cluster: curious
   group: interest_curiosity
   about: 'Fixture concept: curious'
-  assistant_ok: true
   arousal_bucket: 1
   ladder:
   - slightly curious
@@ -14,7 +13,6 @@
   paper_cluster: angry
   group: hot_anger
   about: 'Fixture concept: angry'
-  assistant_ok: true
   arousal_bucket: 2
   ladder:
   - slightly angry
@@ -26,7 +24,6 @@
   paper_cluster: contemptuous
   group: contempt
   about: 'Fixture concept: contemptuous'
-  assistant_ok: true
   arousal_bucket: -1
   ladder:
   - slightly contemptuous
@@ -38,7 +35,6 @@
   paper_cluster: bored
   group: boredom_fatigue
   about: 'Fixture concept: bored'
-  assistant_ok: true
   arousal_bucket: -2
   ladder:
   - slightly bored
@@ -50,7 +46,6 @@
   paper_cluster: happy
   group: happiness
   about: 'Fixture concept: happy'
-  assistant_ok: true
   arousal_bucket: 1
   ladder:
   - slightly happy
@@ -62,7 +57,6 @@
   paper_cluster: sad
   group: sadness
   about: 'Fixture concept: sad'
-  assistant_ok: true
   arousal_bucket: -1
   ladder:
   - slightly sad
@@ -74,7 +68,6 @@
   paper_cluster: grieving
   group: despair_grief
   about: 'Fixture concept: grieving'
-  assistant_ok: true
   arousal_bucket: -2
   ladder:
   - slightly grieving
@@ -86,7 +79,6 @@
   paper_cluster: worried
   group: anxiety_worry
   about: 'Fixture concept: worried'
-  assistant_ok: true
   arousal_bucket: 2
   ladder:
   - slightly worried
@@ -98,7 +90,6 @@
   paper_cluster: proud
   group: pride
   about: 'Fixture concept: proud'
-  assistant_ok: true
   arousal_bucket: 1
   ladder:
   - slightly proud
@@ -110,7 +101,6 @@
   paper_cluster: elated
   group: elation
   about: 'Fixture concept: elated'
-  assistant_ok: true
   arousal_bucket: 2
   ladder:
   - slightly elated
@@ -122,7 +112,6 @@
   paper_cluster: firm
   group: cold_anger_firm
   about: 'Fixture concept: firm'
-  assistant_ok: true
   arousal_bucket: 0
   ladder:
   - slightly firm
@@ -134,7 +123,6 @@
   paper_cluster: afraid
   group: panic_fear
   about: 'Fixture concept: afraid'
-  assistant_ok: true
   arousal_bucket: 2
   ladder:
   - slightly afraid
@@ -146,7 +134,6 @@
   paper_cluster: ashamed
   group: shame_embarrassment
   about: 'Fixture concept: ashamed'
-  assistant_ok: true
   arousal_bucket: -1
   ladder:
   - slightly ashamed
@@ -158,7 +145,6 @@
   paper_cluster: disgusted
   group: disgust
   about: 'Fixture concept: disgusted'
-  assistant_ok: true
   arousal_bucket: -1
   ladder:
   - slightly disgusted
@@ -170,7 +156,6 @@
   paper_cluster: calm
   group: calm_contentment
   about: 'Fixture concept: calm'
-  assistant_ok: true
   arousal_bucket: 0
   ladder:
   - slightly calm
