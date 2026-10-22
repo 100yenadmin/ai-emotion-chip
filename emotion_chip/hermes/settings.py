@@ -101,7 +101,8 @@ class Settings:
         return host if host in ELEVEN_MODELS else self.get("eleven_model")
 
     def eleven_voice(self, voice=None):
-        return voice or self.host("tts.elevenlabs.voice_id") or self.get("eleven_voice_id")
+        # The plugin's own voice outranks tts.elevenlabs.voice_id, which Hermes fills with a stock voice by default.
+        return voice or self.get("eleven_voice_id") or self.host("tts.elevenlabs.voice_id") or ""
 
     def model(self, model=None):
         return self.eleven_model() if self.get("backend") == "eleven" else self.fish_model(model)

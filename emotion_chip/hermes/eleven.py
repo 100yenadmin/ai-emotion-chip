@@ -18,7 +18,7 @@ class ElevenClient:
 
     def _open(self, text, voice, model, params, output_format, *, streaming=False, previous_request_ids=()):
         if not voice:
-            raise ValueError("ElevenLabs needs a voice id (voice, tts.elevenlabs.voice_id or eleven_voice_id).")
+            raise ValueError("ElevenLabs needs a voice id (voice, eleven_voice_id or tts.elevenlabs.voice_id).")
         key = os.environ.get("ELEVENLABS_API_KEY", "")
         if not key:
             raise ValueError("ElevenLabs needs ELEVENLABS_API_KEY in the environment.")

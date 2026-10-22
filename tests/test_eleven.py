@@ -255,12 +255,15 @@ def test_voice_and_model_resolution(rig):
     ctx.set_config("eleven_model", "eleven_v4_turbo")
     p.synthesize("Hi.", directory / "out.mp3", voice="call-voice", model="eleven_v4")
     assert "/call-voice?" in calls[-1][0].full_url and payload(calls)["model_id"] == "eleven_v3"
+    # The plugin's voice outranks tts.elevenlabs.voice_id, which Hermes fills with a stock voice by default.
+    p.synthesize("Hi.", directory / "out.mp3")
+    assert "/setting-voice?" in calls[-1][0].full_url and p.default_voice() == "setting-voice"
+    ctx.set_config("eleven_voice_id", "")
     p.synthesize("Hi.", directory / "out.mp3")
     assert "/host-voice?" in calls[-1][0].full_url and p.default_voice() == "host-voice"
-    host["tts.elevenlabs.voice_id"] = ""
     host["tts.elevenlabs.model_id"] = "unsupported-model"
     p.synthesize("Hi.", directory / "out.mp3")
-    assert "/setting-voice?" in calls[-1][0].full_url and payload(calls)["model_id"] == "eleven_v4_turbo"
+    assert payload(calls)["model_id"] == "eleven_v4_turbo"
 
 
 def test_missing_voice_or_key(rig, monkeypatch):

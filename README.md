@@ -49,7 +49,7 @@ The plugin's own settings, under `plugins.entries.emotion-chip.settings` (also s
 | `backend` | `fish` | Voice backend: `fish` or `eleven`. |
 | `fish_model` | `s2.1-pro` | The Fish model to request when neither Fish's `tts.fish-audio.model` nor the call names one. |
 | `eleven_model` | `eleven_v4` | `eleven_v4`, `eleven_v4_turbo` or `eleven_v3`; a supported `tts.elevenlabs.model_id` takes precedence. |
-| `eleven_voice_id` | empty | Voice fallback after the call's `voice` and `tts.elevenlabs.voice_id`. A voice is required. |
+| `eleven_voice_id` | empty | Voice to use unless the call names one. It outranks `tts.elevenlabs.voice_id`, which Hermes fills with a stock voice by default. A voice is required. |
 | `eleven_style` | `null` | Optional style in `voice_settings`; omitted when unset. |
 | `eleven_speed` | `null` | Optional speed in `voice_settings`; omitted when unset. |
 | `guide_mode` | `generate` | `generate` adds the delivery guide to the system prompt and the `emotion-chip-voice` skill. `defer` leaves guidance to you, for example an existing voice file. |
@@ -61,8 +61,8 @@ If you keep `tts.provider: fish-audio`, the plugin still renders a score the age
 
 ### ElevenLabs
 
-Set the plugin's `backend` to `eleven`, keep `tts.provider: emotion-chip`, and set `tts.elevenlabs.voice_id` or
-`eleven_voice_id` to your voice id. Supply `ELEVENLABS_API_KEY` through your Hermes profile environment; the key is read
+Set the plugin's `backend` to `eleven`, keep `tts.provider: emotion-chip`, and set `eleven_voice_id` to your voice
+id (or `tts.elevenlabs.voice_id`, which applies only when `eleven_voice_id` is empty). Supply `ELEVENLABS_API_KEY` through your Hermes profile environment; the key is read
 at each call. `eleven_style: 0.30` and `eleven_speed: 0.90` can match an existing voice route. Stability and similarity
 come from the rendered score (neutral defaults: 0.5 and 0.75).
 
