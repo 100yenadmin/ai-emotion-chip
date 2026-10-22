@@ -29,7 +29,8 @@ renders them and the brackets are never shown or spoken as words.
 {{MODEL_NOTE}}
 
 ### Sounds
-Use at most one sound per reply unless told otherwise; extra sounds are dropped.
+Use at most one of the sounds on the next line per reply unless told otherwise; extra ones are dropped. Pauses and
+breaths do not count toward it.
 {{SOUNDS}}
 <!-- optional -->
 At most one breath every two sentences, at a clause boundary. Put a laugh at the end of the clause it answers.

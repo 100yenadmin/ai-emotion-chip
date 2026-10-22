@@ -82,7 +82,8 @@ def render(text_or_score, dialect, options=None, data=None):
     # Params follow the header, else the first cue that survives policy, so a dropped forbidden cue never sets them.
     first = opener or _first_cue(score)
     override = option(options, "params_from")
-    group = override if isinstance(override, str) else _group(first, data)
+    # A params dict comes from the caller (a streamed piece of a rendered reply), so no cue of this piece set them.
+    group = override if isinstance(override, str) else None if isinstance(override, dict) else _group(first, data)
     if isinstance(override, str) and group not in data.groups:
         raise ValueError(f"unknown params_from group: {group}")
     params = _params(name, group, data, options)

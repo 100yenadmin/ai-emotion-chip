@@ -8,6 +8,7 @@ import string
 import yaml
 
 from .model import SPAN_OPS
+from .score import cue as _cue
 
 DIALECTS = ("fish_s2", "fish_drama3", "eleven_v4", "tagless", "prose")
 LITERALS = re.compile(r"\[[^\[\]]+\]|</?\w+>")
@@ -69,6 +70,16 @@ def _number(value):
     return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
+def _cue_like(data, text):
+    """True when text, read as a bracket cue, names an emotion: such a literal would voice an unauthored cue."""
+    return any(data.lookup(word) for word in _cue(text).words)
+
+
+def _shadows_score(data, name):
+    """True when a sound name would capture a cue or a span/speaker form, since events are matched first."""
+    return _cue_like(data, name) or name.partition(":")[0].strip().lower() in SPAN_OPS + ("speaker",)
+
+
 def validate(data):
     """Validate references and renderer literals as well as required fields."""
     for name, group in _mapping(data.groups, "groups").items():
@@ -102,6 +113,7 @@ def validate(data):
     sounds = _mapping(data.sounds, "sounds")
     for name, row in _mapping(sounds.get("events"), "events").items():
         _require(isinstance(row, dict) and row.get("kind") in {"affect", "structural"}, f"event {name}: invalid kind")
+        _require(not _shadows_score(data, name), f"event {name} would capture an emotion cue or score form")
     _require(isinstance(sounds.get("forbidden_cue_words"), list) and sounds["forbidden_cue_words"]
              and all(isinstance(x, str) and x.strip() for x in sounds["forbidden_cue_words"]),
              "forbidden_cue_words must be a nonempty list of nonblank strings")
@@ -109,6 +121,7 @@ def validate(data):
         _require(isinstance(alias, str) and alias.strip() and target in sounds["events"],
                  f"sound alias {alias}: target {target} is not an event")
         _require(alias.lower() not in sounds["events"], f"sound alias {alias} would override the event {alias}")
+        _require(not _shadows_score(data, alias), f"sound alias {alias} would capture an emotion cue or score form")
     for name in DIALECTS:
         dialect = _mapping(data.dialects.get(name), f"dialect {name}")
         _require(isinstance(dialect.get("dialect_version"), str), f"dialect {name}: missing dialect_version")
@@ -133,6 +146,9 @@ def validate(data):
                     _require(op in sounds["events"], f"dialect {name}: event {op} is not a declared sound event")
                 for literal in LITERALS.findall(template or ""):
                     _require(literal in phrases, f"dialect {name}: emitted phrase {literal} not in whitelist")
+                    # A renderer literal is syntax; one that names an emotion would voice a cue the agent never wrote.
+                    _require(not (literal.startswith("[") and _cue_like(data, literal[1:-1])),
+                             f"dialect {name}: emitted phrase {literal} is an emotion cue")
                     _require(literal in inverse, f"dialect {name}: missing inverse for {literal}")
                 if kind == "spans" and template not in (None, "uppercase"):
                     # Only declared vendor literals and whitespace may surround {text}: no unmarked spoken words.
