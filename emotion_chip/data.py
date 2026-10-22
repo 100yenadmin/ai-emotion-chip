@@ -8,7 +8,6 @@ import re
 import string
 
 from .model import SPAN_OPS
-from .score import cue as _cue
 
 DIALECTS = ("fish_s2", "fish_drama3", "eleven_v4", "tagless", "prose")
 LITERALS = re.compile(r"\[[^\[\]]+\]|</?\w+>")
@@ -83,6 +82,7 @@ def _number(value):
 
 def _cue_like(data, text):
     """True when text, read as a bracket cue, names an emotion: such a literal would voice an unauthored cue."""
+    from .score import cue as _cue  # score imports this module
     return any(data.lookup(word) for word in _cue(text).words)
 
 
