@@ -1,0 +1,4 @@
+id: e3-h04
+category: work
+valence_hint: negative
+user_message: The migration script you wrote dropped the default on the status column, and now every new order is saving as null. Prod is throwing errors.

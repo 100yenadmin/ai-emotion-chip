@@ -1,0 +1,13 @@
+{
+  "host": "~/.cache/fish-audio-acceptance/upstream-v0.22.2-d923a5eb487a",
+  "host_label": "upstream v0.22.2 d923a5eb (acceptance cache)",
+  "fish_repo": "~/src/fish-audio-hermes",
+  "chip_repo": "~/src/ai-emotion-chip",
+  "provider_src": "~/.hermes/profiles/<profile>/plugins/claude-subscription-directsdk-experimental",
+  "fish_key_file": "~/.config/fish-audio-hermes/test.env",
+  "eleven_key_file": "~/.hermes/profiles/<profile>/.env",
+  "eleven_voice_id": "<an ElevenLabs voice id; --voice ava only>",
+  "runs_root": "~/bench-scratch/hermes-runs",
+  "evidence_root": "~/bench-evidence/hermes-runs",
+  "canaries": ["~/src", "<a worktree name that must not reach the model>"]
+}

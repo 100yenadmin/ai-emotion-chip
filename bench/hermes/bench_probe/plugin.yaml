@@ -1,0 +1,9 @@
+name: bench-probe
+version: 0.0.0
+description: "Harness-only request probe for the Hermes-native listening runner. Never shipped."
+kind: standalone
+manifest_version: 2
+api_version: 1
+requires_hermes: ">=0.22.2"
+license: Apache-2.0
+provides_hooks: [pre_api_request, post_api_request]

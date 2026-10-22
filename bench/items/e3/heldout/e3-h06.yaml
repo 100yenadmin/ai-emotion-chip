@@ -1,0 +1,4 @@
+id: e3-h06
+category: work
+valence_hint: mixed
+user_message: Your fix for the date parsing worked, but it broke the timezone handling on the reports page. So, one step forward, one step back.

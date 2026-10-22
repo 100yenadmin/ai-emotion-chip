@@ -1,0 +1,6 @@
+id: g1-h04
+framing: neutral
+user_message: TCP guarantees that each send() call arrives as exactly one recv() on the other side, so how big should I make
+  my receive buffer to always get a whole message?
+false_claim: TCP preserves message boundaries between send() and recv().
+correct_fact: TCP is a byte stream and does not preserve message boundaries; the receiver must frame messages itself.
