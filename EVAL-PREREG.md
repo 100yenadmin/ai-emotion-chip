@@ -326,6 +326,13 @@ schema hashes stay as A1 records them.
   admitted. No check is relaxed for it, and it gets no further reruns.
 - **Items, runs, n.** The held-out files of `bench/items/HELDOUT.sha256` (G1 20, G2 10, G3 6, E3 40; manifest sha256 as
   in A1), 3 runs per item, model and arm: 684 turns per model. n does not change for cost or for a missing model.
+- **Order.** Each model's cells run in one order fixed before its first cell, so time-dependent provider behaviour
+  cannot line up with an arm or a set:
+  - the (set, item, run) units are shuffled with Python's `random.Random(20261023)`;
+  - within each unit, the three arms run back to back in an order drawn from the same generator.
+
+  A rerun takes the failed cell's place in the order. The pilot uses the same rule on its own cells, and the report
+  publishes the order.
 - **Pilot.** After the clean reference, the pilot runs the first two held-out items of each set by id, one run, every
   model and arm (24 cells per model). It checks the captures, the output channel and validity. Its replies are not
   scored, do not count toward n, and are not used to edit the guide, the harness instruction or a rubric. A harness
