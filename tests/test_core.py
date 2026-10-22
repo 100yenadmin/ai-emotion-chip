@@ -547,6 +547,13 @@ def test_segment_text_keeps_word_boundaries_at_kept_tokens(data):
     assert out.text == "ha[laughing]ha." and out.plan.segments[0].text == "ha ha."
 
 
+@pytest.mark.parametrize("quoted", ['He said "go."', "He said 'go.'", "He said “go.”", "(It went.)"])
+def test_sentence_ends_before_a_closing_quote(quoted, data):
+    score = parse(f"[breath] One. {quoted} [exhale] Three.", data)
+    assert len(score.sentences) == 3
+    assert apply_policy(score, data)[1] == []
+
+
 def test_exhale_counts_toward_breath_density(data):
     _, dropped = apply_policy(parse("[breath] One. [exhale] Two. [breath:shaky] Three."), data)
     assert [(x.value, x.reason) for x in dropped] == [("exhale", "breath density")]

@@ -10,7 +10,9 @@ from .model import GAP, SPAN_OPS, Cue, Dropped, Event, Header, Score, Sentence, 
 
 # A period after a common title or "e.g." does not end a sentence ("Dr. Smith arrived." is one sentence).
 ABBREVIATIONS = ("Mr", "Mrs", "Ms", "Dr", "Prof", "Sr", "Jr", "St", "Mt", "vs", "e.g", "i.e")
-BOUNDARY = re.compile("".join(rf"(?<!\b{re.escape(a)}\.)" for a in ABBREVIATIONS) + r"(?<=[.!?…])\s+")
+# A closing quote or parenthesis may follow the punctuation ('He said "go." Then').
+BOUNDARY = re.compile("".join(rf"(?<!\b{re.escape(a)}\.)" for a in ABBREVIATIONS)
+                      + r"(?:(?<=[.!?…])|(?<=[.!?…][\"'”’)]))\s+")
 SPAN = re.compile(rf"^({'|'.join(SPAN_OPS)}):\s*(.+)$", re.I | re.S)
 SPAN_OPEN = re.compile(rf"\[\s*({'|'.join(SPAN_OPS)}):\s*", re.I)
 SPEAKER_ID = re.compile(r"\d{1,3}")
