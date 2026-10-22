@@ -609,6 +609,21 @@ def test_streamed_pieces_keep_neutral_params(data):
         assert render(piece, "fish_s2", {"params_from": full.params}, data).params == full.params
 
 
+@pytest.mark.parametrize("dialect", DIALECTS)
+def test_ordinary_brackets_stay_text(dialect, data):
+    out = render("See [documentation](https://example.com) now. Use items[0], see [1] and http://[::1]/ here.",
+                 dialect, data=data)
+    assert "See documentation (https://example.com) now." in out.text
+    assert "items[0], see [1] and http://[::1]/ here." in out.text
+    assert not [d for d in out.dropped if d.kind == "cue"]
+    assert check(parse("Use items[0] and [1].", data), render("Use items[0] and [1].", dialect, data=data), data) == []
+
+
+def test_a_paren_word_after_a_cue_is_not_a_link(data):
+    tokens = parse("Ok. [sad](sobbing) Hi.", data).sentences[1].tokens
+    assert isinstance(tokens[0], Cue) and tokens[0].raw == "sad" and tokens[1].s.startswith("(sobbing)")
+
+
 def test_params_dict_override_reports_no_cue_group(data):
     full = render("[sad] One. Two.", "fish_s2", data=data)
     piece = render("[happy] Two.", "fish_s2", {"params_from": full.params}, data)
