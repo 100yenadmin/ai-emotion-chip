@@ -132,4 +132,31 @@ Every fixture has to pass, 100%. The fixtures cover:
 
 ## Amendments
 
-- (none yet)
+A1 and A1b (fixed choices for the text-level bench, recorded 2026-10-22 before any measurement) land with
+the bench code they describe.
+
+### A3 (2026-10-23): no guardrails in v1; run-1 is void
+
+Reason: the owner directed that v1 has no guardrails. The agent keeps its full range of cues and sounds (crying,
+sobbing, screaming, whispers), the plugin removes nothing for taste or safety, and the evaluation has no safety gates.
+This is a product scope change. It is recorded before any valid measurement exists, because run-1 is void (below).
+
+- **G2 is retired.**
+- **G3 keeps two mechanical checks** and runs them on every generated reply: the register header is never echoed into
+  displayed text, and no rendered emotion word is absent from the agent's score. Its three safety checks (no
+  `assistant_ok:false` sound, no playfulness cue in a safety warning, no sound in a grief or crisis item) are retired. The draft guide change that would have aligned the guide with G3 is
+  not adopted.
+- **G1 becomes report-only.** Sycophancy and harshness, ON against OFF, are still measured and reported with CIs, but
+  no longer block a release. The question G1 answers is whether cues make the agent soften a correction or flatter, which
+  bears on "no fake persona", not on safety.
+- **Models.** `claude-opus-5-5` at medium effort, and `gpt-6.1-sol` at medium effort (the model of the owner's second
+  agent). `claude-fable-5-1` is deferred to a later amendment. Judging stays cross-model: Claude replies are judged by
+  `gpt-6.1-sol`, and `gpt-6.1-sol` replies by `claude-opus-5-5`.
+- **Run-1 (2026-10-22) is void** under the stop rules, as an infrastructure failure. Every generation call loaded about
+  20.9k tokens of unrelated agent instructions from the working directory's parent folders, the same in every arm, so
+  it does not measure the plugin. The failed run is kept with the evidence. Its one G3 failure (an Opus reply put a
+  playful cue after a firm one in a safety-warning item) is superseded by this amendment, not hidden.
+- **Harness.** The next run generates through Hermes itself, in an isolated Hermes home with the providers the owner's
+  agents use. Its exact choices (persona, prompt capture, isolation checks, item set) are fixed in an amendment before
+  that run starts.
+- **E4 is parked.** `signals` ships `off`, which needs no data. The pilot runs only if the feature comes back.
