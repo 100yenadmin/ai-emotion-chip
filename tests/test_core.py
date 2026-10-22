@@ -620,7 +620,7 @@ def test_sound_names_match_across_whitespace(data):
 def test_guide_offers_the_whole_range_with_no_caps():
     for text in (build_prompt_section("fish_s2", "absent", load_data()), build_skill("fish_s2", "absent", load_data())):
         for limit in ("at most one of the sounds", "extra ones are dropped", "No whisper", "never playful",
-                      "human resource", "use discretion", "At most one breath"):
+                      "human resource", "use discretion", "At most one breath", "at most two"):
             assert limit not in text, limit
     assert "crying, sobbing, screaming and whispering" in build_prompt_section("fish_s2", "absent", load_data())
 
@@ -629,6 +629,9 @@ def test_misplaced_header_and_removed_cues_keep_boundaries(data):
     assert render("hap[[register: sad]]py.", "fish_s2", data=data).text == "hap py."
     out = render("[[register: sad]] [pause] [happy] Hi.", "tagless", data=data)
     assert out.text == "Hi." and out.params == {}
+    # A sound removed by the quiet switch leaves no extra header cue, and the header still sets params.
+    out = render("[[register: sad]] [laugh] [happy] Hi.", "fish_s2", {"sounds": False}, data)
+    assert out.text == "[happy] Hi." and out.params == {"speed": 0.92}
 
 
 def test_cli_can_render_speakers(monkeypatch, capsys):
