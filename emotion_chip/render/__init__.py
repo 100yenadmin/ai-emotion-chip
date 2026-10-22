@@ -2,7 +2,7 @@
 import re
 
 from ..data import load_data
-from ..model import Cue, DeliveryPlan, Dropped, Event, Rendered, Segment, Span, Speaker, Text, option
+from ..model import GAP, close_gaps, Cue, DeliveryPlan, Dropped, Event, Rendered, Segment, Span, Speaker, Text, option
 from ..policy import apply_policy
 from ..score import header_cue, parse
 
@@ -113,16 +113,18 @@ def render(text_or_score, dialect, options=None, data=None):
                 plain.append(token.s)
             elif isinstance(token, Cue):
                 cues.append(token)
+                plain.append(GAP)
                 if tagless:
                     dropped.append(Dropped("cue", token.raw, "unsupported"))
+                    chunks.append(GAP)
                 else:
                     chunks.append("[" + token.raw + "]")
             elif isinstance(token, Span):
                 spans.append(token)
-                plain.append(token.text)
+                plain.extend((GAP, token.text, GAP))
                 template = table["spans"].get(token.op)
                 if not template:
-                    chunks.append(token.text)
+                    chunks.extend((GAP, token.text, GAP))
                     dropped.append(Dropped("span", token.op, "unsupported"))
                 elif template == "uppercase":
                     chunks.append(token.text.upper())
@@ -132,26 +134,31 @@ def render(text_or_score, dialect, options=None, data=None):
                         notes.append("span scope lost (sentence-level)")
             elif isinstance(token, Event):
                 events.append(token)
+                plain.append(GAP)
                 literal = table["events"].get(token.id)
                 if literal:
                     chunks.append(literal)
                 else:
                     dropped.append(Dropped("event", token.id, "unsupported"))
+                    chunks.append(GAP)
             elif isinstance(token, Speaker):
+                plain.append(GAP)
                 if table.get("speaker") and option(options, "allow_speakers", False):
                     chunks.append(table["speaker"].format(id=token.id))
                 else:
                     dropped.append(Dropped("speaker", token.id, "unsupported"))
+                    chunks.append(GAP)
         count = sum(isinstance(t, Cue) for t in original.sentences[index].tokens)
         if count > 3:
             notes.append(f"sentence {index + 1} has {count} cues (Fish guidance: ≤3)")
         # Collapse gaps left by dropped tokens; the agent's own bracket text stays byte-for-byte.
-        rendered = re.sub(r"(\[[^\[\]]*\])|[ \t]{2,}", lambda m: m[1] or " ", "".join(chunks)).strip()
+        rendered = re.sub(r"(\[[^\[\]]*\])|[ \t]{2,}", lambda m: m[1] or " ", close_gaps("".join(chunks))).strip()
         if name == "eleven_v4":
             rendered = re.sub(r"(?<!\.)\.\.(?!\.)", "…", rendered)
         if rendered:
             output.append(rendered)
-        segments.append(Segment(index, "".join(plain).strip(), cues, spans, events, seg_group, seg_rung, dict(params)))
+        spoken = re.sub(r"\s{2,}", " ", close_gaps("".join(plain))).strip()
+        segments.append(Segment(index, spoken, cues, spans, events, seg_group, seg_rung, dict(params)))
     text = " ".join(output)
     if name == "eleven_v4":
         cap = table["variants"].get(model, 10000)

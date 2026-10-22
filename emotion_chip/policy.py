@@ -2,7 +2,7 @@
 from dataclasses import replace
 import re
 
-from .model import Cue, Dropped, Event, Header, Sentence, option
+from .model import GAP, Cue, Dropped, Event, Header, Sentence, Text, option
 from .score import cue, header_cue
 
 
@@ -19,10 +19,14 @@ def apply_policy(score, data, options=None):
     words = [w for w in words if w.strip()]
     # An empty list must never compile to an empty alternative, which would match every word.
     forbidden = re.compile(r"\b(?:" + "|".join(map(re.escape, words)) + r")\b", re.I) if words else re.compile(r"(?!)")
+    # policy_state carries the per-turn limits across streamed pieces of one reply; callers reset it per turn.
+    state = option(options, "policy_state")
+    state = state if isinstance(state, dict) else None
+    affect_count = int(state.get("affect_count", 0)) if state else 0
+    since = int(state.get("since_breath", 1)) if state else 1
+    last_breath = -1 - since
     dropped = []
     sentences = []
-    affect_count = 0
-    last_breath = -2
     for index, sentence in enumerate(score.sentences):
         kept = []
         for token in sentence.tokens:
@@ -30,23 +34,29 @@ def apply_policy(score, data, options=None):
                 allowed = [p for p, w in zip(token.parts, token.words) if not forbidden.search(w)]
                 if len(allowed) != len(token.parts):
                     dropped.append(Dropped("cue", token.raw, "assistant_ok:false"))
-                    if allowed:
-                        kept.append(cue(", ".join(allowed)))
+                    kept.append(cue(", ".join(allowed)) if allowed else Text(GAP))
                     continue
             if isinstance(token, Event):
                 kind = data.sounds["events"][token.id]["kind"]
                 if kind == "affect":
                     if affect_count >= limit:
                         dropped.append(Dropped("event", token.id, "sounds_per_turn"))
+                        kept.append(Text(GAP))
                         continue
                     affect_count += 1
-                if token.id in {"breath", "breath:shaky"}:
+                # Every structural event except a pause is a breath for the density limit (breath, shaky, exhale).
+                if kind == "structural" and not token.id.startswith("pause"):
                     if index <= last_breath + 1:
                         dropped.append(Dropped("event", token.id, "breath density"))
+                        kept.append(Text(GAP))
                         continue
                     last_breath = index
             kept.append(token)
         sentences.append(Sentence(kept))
+    if state is not None:
+        count = len(score.sentences)
+        state["affect_count"] = affect_count
+        state["since_breath"] = count - 1 - last_breath if last_breath >= 0 else since + count
     header = score.header
     opener = header_cue(header)
     if opener is not None:
