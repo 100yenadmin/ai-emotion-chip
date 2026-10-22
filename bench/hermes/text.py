@@ -1,4 +1,8 @@
-"""A4 text-only speech proxy. Paid execution is explicit; imports and injected tests are offline."""
+"""A4 text-only speech proxy. Paid execution is explicit; imports and injected tests are offline.
+
+Run the parent with the pinned Hermes Python (its auth library needs that environment):
+    <host>/.venv/bin/python -m bench.hermes.text --paths PATHS --scratch SCRATCH --out OUT
+"""
 import argparse
 import json
 import os
@@ -17,6 +21,15 @@ from ..items import BENCH, CONDITIONS, MODELS, RUNS, SETS, atomic_json, heldout_
 SEED = 20261023
 HARNESS = ("Your final reply is spoken aloud as a voice message. There is no text_to_speech call in this "
            "conversation: write the reply exactly as it should be spoken.")
+
+
+def load_paths(source):
+    paths = read_json(Path(source).expanduser())
+    keys = (set(host.PATH_KEYS) - {"host_label"}) | {"eleven_key_file", "claude_command", "harness_auth_home"}
+    paths = {k: Path(v).expanduser() if k in keys and v else v for k, v in paths.items()}
+    paths["canaries"] = [str(Path(c).expanduser()) if str(c).startswith("~") else str(c)
+                         for c in paths.get("canaries", []) if str(c).strip()]
+    return paths
 
 
 def sections(model, arm):
@@ -252,7 +265,7 @@ class Harness:
 
     def call(self, item, model, arm, **extra):
         # Host's environment comes from an allowlist; the route override is also applied inside the isolated driver.
-        args = {"mode": "turn", "text": True, "item_dir": str(item), "cwd": str(self.run / "cwd"),
+        args = {"mode": "turn", "text": True, "arm": arm, "item_dir": str(item), "cwd": str(self.run / "cwd"),
             "claude_command": self.paths.get("claude_command"),
             "provider_path": str(self.run / "src" / host.PROVIDER), "a4b": self.records.get(model, {}), **extra}
         if self.paths.get("claude_command") and probe.digest(Path(self.paths["claude_command"]).read_bytes().hex()) != self.provenance["claude_binary_sha256"]:
@@ -263,7 +276,7 @@ class Harness:
         for arm in CONDITIONS:
             item = self.run / "golden" / model / arm
             self.home(item, model, arm)
-            result = self.call(item, model, arm, mode="warm", sections=sections(model, arm), arm=arm)
+            result = self.call(item, model, arm, mode="warm", sections=sections(model, arm))
             db = host.db_summary(item / "home/state.db")
             if result.get("error") or db["sessions"] or db["usage_rows"] or any(result.get("canaries", {}).values()):
                 raise RuntimeError("golden warm failed")
@@ -322,14 +335,19 @@ def main(argv=None):
     parser.add_argument("--a4b", type=Path)
     parser.add_argument("--route-record", action="store_true")
     args = parser.parse_args(argv)
-    paths = read_json(args.paths)
+    paths = load_paths(args.paths)
     # Harness-owned store only: parent refresh uses the pinned Hermes library and an isolated config, never a CLI.
     auth_home = safe_home(paths["harness_auth_home"])
     os.environ["HERMES_HOME"] = str(auth_home)
     import sys
-    sys.path.insert(0, paths["host"])
-    from hermes_cli.auth import _read_codex_tokens, resolve_codex_runtime_credentials
-    from hermes_cli.config import load_config
+    sys.path.insert(0, str(paths["host"]))
+    try:
+        from hermes_cli.auth import _read_codex_tokens, resolve_codex_runtime_credentials
+        from hermes_cli.config import load_config
+    except ImportError as exc:
+        raise SystemExit(f"Hermes imports unavailable ({exc}). Run with the pinned Hermes Python: "
+                         f"{paths['host'] / '.venv/bin/python'} -m bench.hermes.text "
+                         "--paths PATHS --scratch SCRATCH --out OUT") from exc
     if load_config().get("auth", {}).get("adopt_external_logins") is not False:
         raise RuntimeError("harness parent must disable external login adoption")
     def load_pair():
@@ -341,8 +359,8 @@ def main(argv=None):
     def refresh(pair):
         resolve_codex_runtime_credentials(refresh_skew_seconds=900)
         return load_pair()
-    runner = Harness(args.scratch, args.out, {k: Path(v) if k in {"host", "chip_repo", "provider_src"} else v
-        for k, v in paths.items()}, read_json(args.a4b) if args.a4b else {}, TokenPair(load_pair, refresh), gen.keychain_token)
+    runner = Harness(args.scratch, args.out, paths, read_json(args.a4b) if args.a4b else {},
+                     TokenPair(load_pair, refresh), gen.keychain_token)
     runner.prepare()
     records = {model: runner.run_model(model, args.route_record) for model in MODELS}
     extras = {"route_identities": runner.provenance, "a4b": runner.records, "phases": records,

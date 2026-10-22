@@ -1,6 +1,9 @@
 {
   "host": "~/.cache/fish-audio-acceptance/upstream-v0.22.2-d923a5eb487a",
   "host_label": "upstream v0.22.2 d923a5eb (acceptance cache)",
+  "claude_command": "~/path/to/claude",
+  "claude_code_version": "<pinned Claude Code version>",
+  "harness_auth_home": "~/bench-scratch/harness-auth-home",
   "fish_repo": "~/src/fish-audio-hermes",
   "chip_repo": "~/src/ai-emotion-chip",
   "provider_src": "~/.hermes/profiles/<profile>/plugins/claude-subscription-directsdk-experimental",

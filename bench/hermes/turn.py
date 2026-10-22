@@ -176,8 +176,6 @@ def warm(args):
 def golden_delta(agent, prompt, args):
     from agent.system_prompt import _frozen_plugin_prompt_sections, _skills_prompt
     from hermes_cli.plugins import format_system_prompt_sections
-    from emotion_chip.data import load_data
-    from emotion_chip.guide import build_skill
     sections = _frozen_plugin_prompt_sections(agent)
     bodies = {s.id: s.content for s in sections}
     if bodies != args["sections"]:
@@ -196,10 +194,16 @@ def golden_delta(agent, prompt, args):
         residue = residue.replace(skills + "\n\n", "", 1)
     elif skills:
         raise RuntimeError("unexpected golden skill index")
+    skill = ""
+    if args["arm"] == "ON":
+        # The fresh cell has one profile scope: plugins_loader._directory_module_name
+        # loads this directory plugin under hermes_plugins.emotion_chip.
+        from hermes_plugins.emotion_chip.emotion_chip.hermes.settings import plugin_data_dir
+        skill = (plugin_data_dir() / "skills/emotion-chip-voice/SKILL.md").read_text(encoding="utf-8")
     return {"residue": component(normalise(residue, args["item_dir"])),
             "skill_tree": skill_tree(),
             "sections": {s.id: component(s.content) for s in sections}, "skill_index": component(skills),
-            "skill": component(build_skill("eleven_v4", "default", load_data()) if args["arm"] == "ON" else "")}
+            "skill": component(skill)}
 
 
 def skill_tree(home=None):
@@ -231,7 +235,8 @@ def tool_reference(function, call_id, agent):
     except (ValueError, TypeError):
         return None
     if not isinstance(arguments, dict):
-        arguments = {}  # handle_function_call coerces non-dicts to an empty mapping.
+        # agent.tool_executor._parse_tool_arguments rejects these before dispatch.
+        return None
     if name == "skills_list":
         result = skills_tool.skills_list(category=arguments.get("category"), task_id=agent._current_task_id)
     else:

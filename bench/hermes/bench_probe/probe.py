@@ -179,6 +179,21 @@ def compare_request(expected, final, a4b):
     return [k for k in ("system", "messages") if not equal(norm(body[k], k == "system"), norm(final.get(k), k == "system"))]
 
 
+def message_component(message, item_dir=None):
+    """A4 permits only the cell-directory replacement inside message content."""
+    def replace(value):
+        if isinstance(value, str):
+            return value.replace(str(item_dir), "<ITEM>") if item_dir else value
+        if isinstance(value, list):
+            return [replace(v) for v in value]
+        if isinstance(value, dict):
+            return {k: replace(v) for k, v in value.items()}
+        return value
+    # Codex represents a tool message's content as function_call_output.output.
+    fields = {"content", "output"} if message.get("type") == "function_call_output" else {"content"}
+    return component({k: replace(v) if k in fields else v for k, v in message.items()})
+
+
 def capture_row(S, M, final, expected, a4b, item_dir=None):
     """Full captures stay in memory; only component receipts leave the process."""
     tools = final.get("tools") or []
@@ -186,8 +201,8 @@ def capture_row(S, M, final, expected, a4b, item_dir=None):
     system = final.get("instructions", final.get("system", ""))
     return {"event": "capture", "system": component(normalise(S, item_dir)),
             "model": final.get("model"), "system_components": [component(v) for v in system] if isinstance(system, list) else [component(system)],
-            "messages": [component(m) for m in M], "final_system": component(normalise(system, item_dir)),
-            "final_messages": [component(m) for m in messages],
+            "messages": [message_component(m, item_dir) for m in M], "final_system": component(normalise(system, item_dir)),
+            "final_messages": [message_component(m, item_dir) for m in messages],
             "tool_schemas": {t.get("name", t.get("function", {}).get("name")): component(t)["sha256"] for t in tools},
             "checks": compare_request(expected, final, {**a4b, "item_dir": item_dir}),
             "canaries": {f"marker-{i}": hit for i, hit in enumerate(canaries(S, canonical(M), canonical(final)).values(), 1)}}

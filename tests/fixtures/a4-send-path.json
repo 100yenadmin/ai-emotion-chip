@@ -133,6 +133,122 @@
       ]
     }
   },
+  "surrogate_histories": {
+    "codex_responses": {
+      "provider": "openai-codex",
+      "model": "gpt-6.1-sol",
+      "history": [
+        {
+          "role": "user",
+          "content": "hello\ud800"
+        },
+        {
+          "role": "assistant",
+          "content": "  Loading guide.  ",
+          "tool_calls": [
+            {
+              "id": "read",
+              "call_id": "read",
+              "response_item_id": "fc_read",
+              "type": "function",
+              "function": {
+                "name": "skill_view",
+                "arguments": "{ \"name\": \"emotion-chip-voice\", \"file_path\": null }"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "tool_call_id": "read",
+          "content": "synthetic tool result"
+        }
+      ],
+      "sent": [
+        {
+          "role": "user",
+          "content": "hello\ufffd"
+        },
+        {
+          "role": "assistant",
+          "content": "Loading guide.",
+          "tool_calls": [
+            {
+              "id": "read",
+              "call_id": "read",
+              "response_item_id": "fc_read",
+              "type": "function",
+              "function": {
+                "name": "skill_view",
+                "arguments": "{\"file_path\":null,\"name\":\"emotion-chip-voice\"}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "tool_call_id": "read",
+          "content": "synthetic tool result"
+        }
+      ]
+    },
+    "chat_completions": {
+      "provider": "claude-subscription-directsdk-experimental",
+      "model": "claude-opus-5-5",
+      "history": [
+        {
+          "role": "user",
+          "content": "hello\ud800"
+        },
+        {
+          "role": "assistant",
+          "content": "  Loading guide.  ",
+          "tool_calls": [
+            {
+              "id": "read",
+              "call_id": "read",
+              "response_item_id": "fc_read",
+              "type": "function",
+              "function": {
+                "name": "skill_view",
+                "arguments": "{ \"name\": \"emotion-chip-voice\", \"file_path\": null }"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "tool_call_id": "read",
+          "content": "synthetic tool result"
+        }
+      ],
+      "sent": [
+        {
+          "role": "user",
+          "content": "hello\ufffd"
+        },
+        {
+          "role": "assistant",
+          "content": "Loading guide.",
+          "tool_calls": [
+            {
+              "id": "read",
+              "type": "function",
+              "function": {
+                "name": "skill_view",
+                "arguments": "{\"file_path\":null,\"name\":\"emotion-chip-voice\"}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "tool_call_id": "read",
+          "content": "synthetic tool result"
+        }
+      ]
+    }
+  },
   "metadata": {
     "name": "emotion-chip:emotion-chip-voice",
     "description": "Synthetic delivery guide"

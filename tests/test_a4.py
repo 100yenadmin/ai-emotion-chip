@@ -5,6 +5,7 @@ import inspect
 import json
 from pathlib import Path
 import random
+import re
 import sys
 from types import ModuleType, SimpleNamespace
 
@@ -516,7 +517,12 @@ def send_runtime(monkeypatch, loop, agent):
                     call["function"]["arguments"] = "{}"
     loop._canonicalize_api_tool_calls = canonicalize
     module = ModuleType("agent.message_sanitization")
-    module._sanitize_messages_surrogates = lambda rows: None  # fixture text has no lone surrogates
+    def surrogates(rows):
+        # Match the pinned sanitizer on the recorded user content (no mutation of keys).
+        for row in rows:
+            if isinstance(row.get("content"), str):
+                row["content"] = re.sub(r"[\ud800-\udfff]", "\ufffd", row["content"])
+    module._sanitize_messages_surrogates = surrogates
     monkeypatch.setitem(sys.modules, module.__name__, module)
 
 
@@ -812,12 +818,33 @@ def test_on_golden_pinned_index(tmp_path, monkeypatch, single_query):
     monkeypatch.setitem(sys.modules, system.__name__, system)
     monkeypatch.setitem(sys.modules, plugins.__name__, plugins)
     monkeypatch.setattr(turn, "skill_tree", lambda: "tree")
+    loaded_chip_skill(tmp_path, monkeypatch, fixture["skill_text"])
     args = {"sections": {}, "arm": "ON", "item_dir": str(tmp_path)}
     assert turn.golden_delta(None, index + "\n\nS", args)["residue"] == probe.component("S")
     for extra in ("    - second-skill", "    - emotion-chip:emotion-chip-voice: Synthetic delivery guide"):
         index = fixture["indexes"][single_query].replace("</available_skills>", extra + "\n</available_skills>")
         with pytest.raises(RuntimeError, match="golden skill index differs"):
             turn.golden_delta(None, index + "\n\nS", args)
+
+
+def loaded_chip_skill(tmp_path, monkeypatch, content):
+    # Exact directory-plugin namespace from pinned plugins_loader._directory_module_name.
+    name = "hermes_plugins.emotion_chip.emotion_chip.hermes.settings"
+    settings = ModuleType(name)
+    root = tmp_path / "home/plugin-data/emotion-chip"
+    path = root / "skills/emotion-chip-voice/SKILL.md"
+    path.parent.mkdir(parents=True)
+    path.write_text(content, encoding="utf-8")
+    settings.plugin_data_dir = lambda: root
+    for package in ("hermes_plugins", "hermes_plugins.emotion_chip", "hermes_plugins.emotion_chip.emotion_chip",
+                    "hermes_plugins.emotion_chip.emotion_chip.hermes"):
+        module = ModuleType(package)
+        module.__path__ = []
+        monkeypatch.setitem(sys.modules, package, module)
+    monkeypatch.setitem(sys.modules, name, settings)
+    for bare in ("emotion_chip", "emotion_chip.data", "emotion_chip.guide"):
+        monkeypatch.setitem(sys.modules, bare, None)
+    return path
 
 
 def test_golden_home_has_empty_skills_root(tmp_path):
@@ -929,3 +956,131 @@ def test_skill_manage_poisoning_branch(monkeypatch):
     # No result for w: the later read has a valid reference and fails only due to poisoning.
     messages[1]["tool_calls"].insert(0, {"id": "w", "function": {"name": "skill_manage", "arguments": "{}"}})
     assert turn.tool_results_match(messages, agent) is False
+
+
+@pytest.mark.parametrize("model", items.MODELS)
+def test_harness_warm_host_args_and_checks(tmp_path, monkeypatch, model):
+    calls, homes, scenario = [], [], {"kind": "valid"}
+    class FakeHost:
+        def __init__(self, *args):
+            pass
+        def call(self, item, args, **kwargs):
+            arm = item.name
+            assert args["mode"] == "warm" and args["text"] is True
+            assert args["arm"] == arm and args["sections"] == text.sections(model, arm)
+            assert args["item_dir"] == str(item)
+            assert kwargs == {"token": None, "timeout": 600}
+            calls.append(arm)
+            return {"canaries": {"synthetic": scenario["kind"] == "canary"},
+                    "error": "synthetic" if scenario["kind"] == "error" else None,
+                    "residue": {"sha256": arm if scenario["kind"] == "residue" else "same"}}
+    monkeypatch.setattr(run, "Host", FakeHost)
+    monkeypatch.setattr(run, "db_summary", lambda path: {
+        "sessions": int(scenario["kind"] == "sessions"), "usage_rows": int(scenario["kind"] == "usage")})
+    harness = text.Harness(tmp_path, tmp_path / "out", {}, {}, None, lambda: None)
+    monkeypatch.setattr(harness, "home", lambda item, m, a: homes.append((item, m, a)))
+    harness.warm(model)
+    assert calls == list(items.CONDITIONS)
+    assert [(m, a) for _, m, a in homes] == [(model, a) for a in items.CONDITIONS]
+    assert set(harness.golden) == {(model, a) for a in items.CONDITIONS}
+    assert all(v["canaries"] == {"marker-1": False} for v in harness.golden.values())
+    for kind in ("error", "canary", "sessions", "usage", "residue"):
+        scenario["kind"] = kind
+        with pytest.raises(RuntimeError, match="golden arm deltas" if kind == "residue" else "golden warm failed"):
+            harness.warm(model)
+
+
+def test_text_paths_expand_tilde(tmp_path, monkeypatch):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    example = items.read_json(run.HERE / "paths.example.json")
+    assert {"claude_command", "claude_code_version", "harness_auth_home"} <= example.keys()
+    assert example["claude_command"].startswith("~/") and example["harness_auth_home"].startswith("~/")
+    raw = {**example, "claude_code_version": "2.1.synthetic", "canaries": ["~/source", "tree-name", " "]}
+    config = tmp_path / "paths.json"
+    config.write_text(json.dumps(raw))
+    paths = text.load_paths("~/paths.json")
+    for key in (set(run.PATH_KEYS) - {"host_label"}) | {"claude_command", "harness_auth_home", "eleven_key_file"}:
+        assert paths[key] == tmp_path / raw[key][2:]
+    assert paths["canaries"] == [str(tmp_path / "source"), "tree-name"]
+    assert paths["host_label"] == raw["host_label"] and paths["claude_code_version"] == "2.1.synthetic"
+
+
+def test_main_missing_hermes_import_explains_python(tmp_path, monkeypatch):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    config = tmp_path / "paths.json"
+    config.write_text(json.dumps({"host": "~/pinned-host", "harness_auth_home": "~/parent-home"}))
+    monkeypatch.setitem(sys.modules, "hermes_cli.auth", None)
+    monkeypatch.setattr(sys, "path", sys.path.copy())
+    monkeypatch.setenv("HERMES_HOME", "synthetic-unused")
+    with pytest.raises(SystemExit, match="Hermes imports unavailable") as error:
+        text.main(["--paths", "~/paths.json", "--scratch", str(tmp_path / "scratch"), "--out", str(tmp_path / "out")])
+    assert f"{tmp_path}/pinned-host/.venv/bin/python -m bench.hermes.text" in str(error.value)
+    assert "<host>/.venv/bin/python -m bench.hermes.text" in text.__doc__
+    assert text.os.environ["HERMES_HOME"] == str(tmp_path / "parent-home")
+
+
+def test_golden_uses_loaded_namespace_and_served_skill(tmp_path, monkeypatch):
+    turn = driver()
+    fixture = send_fixture()
+    system, plugins = ModuleType("agent.system_prompt"), ModuleType("hermes_cli.plugins")
+    system._frozen_plugin_prompt_sections = lambda agent: []
+    system._skills_prompt = lambda agent: fixture["indexes"]["False"]
+    plugins.format_system_prompt_sections = lambda sections: ""
+    plugins.get_plugin_manager = lambda: SimpleNamespace(list_plugin_skill_metadata=lambda: [fixture["metadata"]])
+    monkeypatch.setitem(sys.modules, system.__name__, system)
+    monkeypatch.setitem(sys.modules, plugins.__name__, plugins)
+    monkeypatch.setattr(turn, "skill_tree", lambda: "tree")
+    skill = loaded_chip_skill(tmp_path, monkeypatch, "Synthetic served skill.\n")
+    args = {"sections": {}, "arm": "ON", "item_dir": str(tmp_path)}
+    for content in ("Synthetic served skill.\n", "Changed served skill.\n\n"):
+        skill.write_text(content, encoding="utf-8")
+        result = turn.golden_delta(None, fixture["indexes"]["False"] + "\n\nS", args)
+        assert result["skill"] == probe.component(content)
+        assert result["skill"] != probe.component(content.rstrip())
+    monkeypatch.setitem(sys.modules, "hermes_plugins.emotion_chip.emotion_chip.hermes.settings", None)
+    with pytest.raises(ImportError):
+        turn.golden_delta(None, fixture["indexes"]["False"] + "\n\nS", args)
+
+
+@pytest.mark.parametrize("route", ["codex", "relay"])
+def test_message_hashes_normalize_only_item_content(route):
+    rows = []
+    for attempt in ("/synthetic/cell/1-1", "/synthetic/cell/1-2"):
+        messages = [{"role": "tool", "tool_call_id": "read", "content": json.dumps({"path": attempt + "/SKILL.md"})}]
+        final_message = {"role": "user", "content": [{"type": "text", "text": attempt + "/SKILL.md"}]}
+        final = ({"instructions": "S", "input": [final_message]} if route == "codex" else
+                 {"system": "S", "messages": [final_message]})
+        output = {"type": "function_call_output", "call_id": "read", "output": messages[0]["content"]}
+        if route == "codex":
+            final["input"].append(output)
+        expected = {"instructions": "S", "input": [final_message]}
+        row = probe.capture_row("S", messages, final, expected, {}, attempt)
+        assert row["messages"] == [probe.component({**messages[0], "content": json.dumps({"path": "<ITEM>/SKILL.md"})})]
+        wanted = [probe.component({**final_message, "content": [{"type": "text", "text": "<ITEM>/SKILL.md"}]})]
+        if route == "codex":
+            wanted.append(probe.component({**output, "output": json.dumps({"path": "<ITEM>/SKILL.md"})}))
+        assert row["final_messages"] == wanted
+        rows.append(row)
+    assert rows[0]["messages"] == rows[1]["messages"]
+    assert rows[0]["final_messages"] == rows[1]["final_messages"]
+    original = {"role": "assistant", "content": "Session ID: keep this", "tool_calls": [{"id": "/cell/id"}]}
+    assert probe.message_component(original, "/cell") == probe.component(original)
+
+
+@pytest.mark.parametrize("api_mode", ["chat_completions", "codex_responses"])
+def test_pinned_surrogate_history(monkeypatch, api_mode):
+    turn, loop, Transport, agent = capture_runtime(monkeypatch)
+    record = send_fixture()["surrogate_histories"][api_mode]
+    agent.api_mode, agent.provider, agent.model = api_mode, record["provider"], record["model"]
+    history = deepcopy(record["history"])
+    assert history[0]["content"] == "hello\ud800" and record["sent"][0]["content"] == "hello\ufffd"
+    assert turn.history_for_send(history, agent) == record["sent"]
+    assert history == record["history"]
+
+
+def test_non_dict_tool_arguments_have_no_reference(monkeypatch):
+    turn, loop, Transport, agent = capture_runtime(monkeypatch)
+    read_runtime(monkeypatch)
+    for name in ("skills_list", "skill_view"):
+        for arguments in ("[]", "null", "1", '"text"'):
+            assert turn.tool_reference({"name": name, "arguments": arguments}, "read", agent) is None
