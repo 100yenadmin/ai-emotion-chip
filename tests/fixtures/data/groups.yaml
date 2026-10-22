@@ -1,0 +1,143 @@
+groups:
+  interest_curiosity:
+    bs_code: Int
+    bs_recognition: 75
+    tier: A
+    fish_speed: 1.03
+    el_stability_offset: 0.0
+    evidence: 'rate direction: Banse & Scherer 1996 (checked); magnitude: design hypothesis
+      pending probe-voice'
+  hot_anger:
+    bs_code: HAn
+    bs_recognition: 78
+    tier: A
+    fish_speed: 1.05
+    el_stability_offset: 0.0
+    evidence: 'rate direction: Banse & Scherer 1996 (checked); magnitude: design hypothesis
+      pending probe-voice'
+  contempt:
+    bs_code: Con
+    bs_recognition: 60
+    tier: A
+    fish_speed: 0.95
+    el_stability_offset: 0.0
+    evidence: 'rate direction: Banse & Scherer 1996 (checked); magnitude: design hypothesis
+      pending probe-voice'
+  boredom_fatigue:
+    bs_code: Bor
+    bs_recognition: 76
+    tier: A
+    fish_speed: 0.92
+    el_stability_offset: 0.0
+    evidence: 'rate direction: Banse & Scherer 1996 (checked); magnitude: design hypothesis
+      pending probe-voice'
+  happiness:
+    bs_code: Hap
+    bs_recognition: 52
+    tier: B
+    fish_speed: 1.02
+    el_stability_offset: 0.0
+    evidence: 'rate direction: Banse & Scherer 1996 (checked); magnitude: design hypothesis
+      pending probe-voice'
+  sadness:
+    bs_code: Sad
+    bs_recognition: 52
+    tier: B
+    fish_speed: 0.92
+    el_stability_offset: 0.0
+    evidence: 'rate direction: Banse & Scherer 1996 (checked); magnitude: design hypothesis
+      pending probe-voice'
+  despair_grief:
+    bs_code: Des
+    bs_recognition: 47
+    tier: B
+    fish_speed: 1.0
+    el_stability_offset: 0.0
+    evidence: 'rate direction: Banse & Scherer 1996 (checked); magnitude: design hypothesis
+      pending probe-voice'
+  anxiety_worry:
+    bs_code: Anx
+    bs_recognition: 42
+    tier: B
+    fish_speed: 1.03
+    el_stability_offset: 0.0
+    evidence: 'rate direction: Banse & Scherer 1996 (checked); magnitude: design hypothesis
+      pending probe-voice'
+  pride:
+    bs_code: Pri
+    bs_recognition: 43
+    tier: B
+    fish_speed: 0.98
+    el_stability_offset: 0.0
+    evidence: 'rate direction: Banse & Scherer 1996 (checked); magnitude: design hypothesis
+      pending probe-voice'
+  elation:
+    bs_code: Ela
+    bs_recognition: 38
+    tier: C
+    fish_speed: 1.0
+    el_stability_offset: 0.0
+    evidence: no vocal evidence row; neutral params until measured
+  cold_anger_firm:
+    bs_code: CAn
+    bs_recognition: 34
+    tier: C
+    fish_speed: 1.0
+    el_stability_offset: 0.0
+    evidence: no vocal evidence row; neutral params until measured
+  panic_fear:
+    bs_code: Pan
+    bs_recognition: 36
+    tier: C
+    fish_speed: 1.0
+    el_stability_offset: 0.0
+    evidence: no vocal evidence row; neutral params until measured
+  shame_embarrassment:
+    bs_code: Sha
+    bs_recognition: 22
+    tier: C
+    fish_speed: 1.0
+    el_stability_offset: 0.0
+    evidence: no vocal evidence row; neutral params until measured
+  disgust:
+    bs_code: Dis
+    bs_recognition: 15
+    tier: C
+    fish_speed: 1.0
+    el_stability_offset: 0.0
+    evidence: no vocal evidence row; neutral params until measured
+  calm_contentment:
+    bs_code: null
+    bs_recognition: null
+    tier: C
+    fish_speed: 1.0
+    el_stability_offset: 0.0
+    evidence: no vocal evidence row; neutral params until measured
+  tenderness_care:
+    bs_code: null
+    bs_recognition: null
+    tier: C
+    fish_speed: 1.0
+    el_stability_offset: 0.0
+    evidence: no vocal evidence row; neutral params until measured
+  surprise:
+    bs_code: null
+    bs_recognition: null
+    tier: C
+    fish_speed: 1.0
+    el_stability_offset: 0.0
+    evidence: no vocal evidence row; neutral params until measured
+  amusement:
+    bs_code: null
+    bs_recognition: null
+    tier: C
+    fish_speed: 1.0
+    el_stability_offset: 0.0
+    evidence: no vocal evidence row; neutral params until measured
+  vigilance:
+    bs_code: null
+    bs_recognition: null
+    tier: C
+    fish_speed: 1.0
+    el_stability_offset: 0.0
+    evidence: no vocal evidence row; neutral params until measured

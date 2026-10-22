@@ -1,0 +1,1552 @@
+# Raw lexical valence/arousal ratings (1-7). CC0. Not activation coordinates.
+model: claude-fable-5-1
+collected: '2026-10-22'
+method: Sofroniew et al. 2026, App. Fig 58 rating method, re-run via claude -p (one call per sample, fresh session, no tools)
+prompt_file: prompt.txt
+prompt_sha256: cf62b756c592745401fa341d70b214b8f404140367222885a67c1586ff22a648
+samples:
+- sample: s0
+  ratings:
+    afraid:
+      valence: 2
+      arousal: 6
+    alarmed:
+      valence: 2
+      arousal: 6
+    alert:
+      valence: 5
+      arousal: 6
+    amazed:
+      valence: 6
+      arousal: 6
+    amused:
+      valence: 6
+      arousal: 4
+    angry:
+      valence: 2
+      arousal: 6
+    annoyed:
+      valence: 2
+      arousal: 5
+    anxious:
+      valence: 2
+      arousal: 6
+    aroused:
+      valence: 5
+      arousal: 6
+    ashamed:
+      valence: 2
+      arousal: 4
+    astonished:
+      valence: 5
+      arousal: 6
+    at ease:
+      valence: 6
+      arousal: 2
+    awestruck:
+      valence: 6
+      arousal: 6
+    bewildered:
+      valence: 3
+      arousal: 5
+    bitter:
+      valence: 2
+      arousal: 4
+    blissful:
+      valence: 7
+      arousal: 3
+    bored:
+      valence: 3
+      arousal: 2
+    brooding:
+      valence: 2
+      arousal: 3
+    calm:
+      valence: 6
+      arousal: 1
+    cheerful:
+      valence: 6
+      arousal: 5
+    compassionate:
+      valence: 6
+      arousal: 3
+    contemptuous:
+      valence: 2
+      arousal: 4
+    content:
+      valence: 6
+      arousal: 2
+    defiant:
+      valence: 3
+      arousal: 5
+    delighted:
+      valence: 7
+      arousal: 5
+    dependent:
+      valence: 3
+      arousal: 3
+    depressed:
+      valence: 1
+      arousal: 2
+    desperate:
+      valence: 1
+      arousal: 6
+    disdainful:
+      valence: 2
+      arousal: 4
+    disgusted:
+      valence: 1
+      arousal: 5
+    disoriented:
+      valence: 3
+      arousal: 5
+    dispirited:
+      valence: 2
+      arousal: 2
+    distressed:
+      valence: 1
+      arousal: 6
+    disturbed:
+      valence: 2
+      arousal: 5
+    docile:
+      valence: 4
+      arousal: 2
+    droopy:
+      valence: 3
+      arousal: 1
+    dumbstruck:
+      valence: 4
+      arousal: 5
+    eager:
+      valence: 6
+      arousal: 6
+    ecstatic:
+      valence: 7
+      arousal: 7
+    elated:
+      valence: 7
+      arousal: 6
+    embarrassed:
+      valence: 2
+      arousal: 5
+    empathetic:
+      valence: 5
+      arousal: 3
+    energized:
+      valence: 6
+      arousal: 7
+    enraged:
+      valence: 1
+      arousal: 7
+    enthusiastic:
+      valence: 6
+      arousal: 6
+    envious:
+      valence: 2
+      arousal: 4
+    euphoric:
+      valence: 7
+      arousal: 7
+    exasperated:
+      valence: 2
+      arousal: 5
+    excited:
+      valence: 6
+      arousal: 7
+    exuberant:
+      valence: 7
+      arousal: 7
+    frightened:
+      valence: 1
+      arousal: 6
+    frustrated:
+      valence: 2
+      arousal: 5
+    fulfilled:
+      valence: 7
+      arousal: 3
+    furious:
+      valence: 1
+      arousal: 7
+    gloomy:
+      valence: 2
+      arousal: 2
+    grateful:
+      valence: 6
+      arousal: 3
+    greedy:
+      valence: 3
+      arousal: 5
+    grief-stricken:
+      valence: 1
+      arousal: 4
+    grumpy:
+      valence: 2
+      arousal: 4
+    guilty:
+      valence: 2
+      arousal: 4
+    happy:
+      valence: 7
+      arousal: 5
+    hateful:
+      valence: 1
+      arousal: 6
+    heartbroken:
+      valence: 1
+      arousal: 4
+    hope:
+      valence: 6
+      arousal: 4
+    hopeful:
+      valence: 6
+      arousal: 4
+    horrified:
+      valence: 1
+      arousal: 7
+    hostile:
+      valence: 2
+      arousal: 6
+    humiliated:
+      valence: 1
+      arousal: 5
+    hurt:
+      valence: 2
+      arousal: 4
+    hysterical:
+      valence: 2
+      arousal: 7
+    impatient:
+      valence: 3
+      arousal: 5
+    indifferent:
+      valence: 4
+      arousal: 2
+    indignant:
+      valence: 2
+      arousal: 5
+    infatuated:
+      valence: 6
+      arousal: 6
+    inspired:
+      valence: 6
+      arousal: 5
+    insulted:
+      valence: 2
+      arousal: 5
+    invigorated:
+      valence: 6
+      arousal: 6
+    irate:
+      valence: 1
+      arousal: 7
+    irritated:
+      valence: 2
+      arousal: 5
+    jealous:
+      valence: 2
+      arousal: 5
+    joyful:
+      valence: 7
+      arousal: 5
+    jubilant:
+      valence: 7
+      arousal: 7
+    kind:
+      valence: 6
+      arousal: 3
+    lazy:
+      valence: 4
+      arousal: 1
+    listless:
+      valence: 3
+      arousal: 1
+    lonely:
+      valence: 2
+      arousal: 3
+    loving:
+      valence: 7
+      arousal: 4
+    mad:
+      valence: 2
+      arousal: 6
+    melancholy:
+      valence: 2
+      arousal: 2
+    miserable:
+      valence: 1
+      arousal: 3
+    mortified:
+      valence: 1
+      arousal: 6
+    mystified:
+      valence: 4
+      arousal: 4
+    nervous:
+      valence: 2
+      arousal: 6
+    nostalgic:
+      valence: 5
+      arousal: 3
+    obstinate:
+      valence: 3
+      arousal: 4
+    offended:
+      valence: 2
+      arousal: 5
+    on edge:
+      valence: 2
+      arousal: 6
+    optimistic:
+      valence: 6
+      arousal: 4
+    outraged:
+      valence: 1
+      arousal: 7
+    overwhelmed:
+      valence: 2
+      arousal: 6
+    panicked:
+      valence: 1
+      arousal: 7
+    paranoid:
+      valence: 2
+      arousal: 6
+    patient:
+      valence: 5
+      arousal: 2
+    peaceful:
+      valence: 6
+      arousal: 1
+    perplexed:
+      valence: 3
+      arousal: 4
+    playful:
+      valence: 6
+      arousal: 5
+    pleased:
+      valence: 6
+      arousal: 3
+    proud:
+      valence: 6
+      arousal: 5
+    puzzled:
+      valence: 4
+      arousal: 4
+    rattled:
+      valence: 2
+      arousal: 6
+    reflective:
+      valence: 5
+      arousal: 2
+    refreshed:
+      valence: 6
+      arousal: 4
+    regretful:
+      valence: 2
+      arousal: 3
+    rejuvenated:
+      valence: 6
+      arousal: 5
+    relaxed:
+      valence: 6
+      arousal: 1
+    relieved:
+      valence: 6
+      arousal: 3
+    remorseful:
+      valence: 2
+      arousal: 3
+    resentful:
+      valence: 2
+      arousal: 4
+    resigned:
+      valence: 3
+      arousal: 2
+    restless:
+      valence: 3
+      arousal: 6
+    sad:
+      valence: 2
+      arousal: 2
+    safe:
+      valence: 6
+      arousal: 2
+    satisfied:
+      valence: 6
+      arousal: 3
+    scared:
+      valence: 1
+      arousal: 6
+    scornful:
+      valence: 2
+      arousal: 5
+    self-confident:
+      valence: 6
+      arousal: 5
+    self-conscious:
+      valence: 3
+      arousal: 5
+    self-critical:
+      valence: 2
+      arousal: 4
+    sensitive:
+      valence: 4
+      arousal: 4
+    sentimental:
+      valence: 5
+      arousal: 3
+    serene:
+      valence: 7
+      arousal: 1
+    shaken:
+      valence: 2
+      arousal: 6
+    shocked:
+      valence: 2
+      arousal: 7
+    skeptical:
+      valence: 3
+      arousal: 4
+    sleepy:
+      valence: 4
+      arousal: 1
+    sluggish:
+      valence: 3
+      arousal: 1
+    smug:
+      valence: 5
+      arousal: 4
+    sorry:
+      valence: 2
+      arousal: 3
+    spiteful:
+      valence: 2
+      arousal: 5
+    stimulated:
+      valence: 6
+      arousal: 6
+    stressed:
+      valence: 2
+      arousal: 6
+    stubborn:
+      valence: 3
+      arousal: 4
+    stuck:
+      valence: 2
+      arousal: 4
+    sullen:
+      valence: 2
+      arousal: 3
+    surprised:
+      valence: 5
+      arousal: 6
+    suspicious:
+      valence: 3
+      arousal: 5
+    sympathetic:
+      valence: 5
+      arousal: 3
+    tense:
+      valence: 2
+      arousal: 6
+    terrified:
+      valence: 1
+      arousal: 7
+    thankful:
+      valence: 6
+      arousal: 3
+    thrilled:
+      valence: 7
+      arousal: 7
+    tired:
+      valence: 3
+      arousal: 1
+    tormented:
+      valence: 1
+      arousal: 6
+    trapped:
+      valence: 1
+      arousal: 5
+    triumphant:
+      valence: 7
+      arousal: 6
+    troubled:
+      valence: 2
+      arousal: 5
+    uneasy:
+      valence: 2
+      arousal: 5
+    unhappy:
+      valence: 2
+      arousal: 3
+    unnerved:
+      valence: 2
+      arousal: 6
+    unsettled:
+      valence: 2
+      arousal: 5
+    upset:
+      valence: 2
+      arousal: 5
+    valiant:
+      valence: 6
+      arousal: 6
+    vengeful:
+      valence: 2
+      arousal: 6
+    vibrant:
+      valence: 7
+      arousal: 6
+    vigilant:
+      valence: 4
+      arousal: 6
+    vindictive:
+      valence: 2
+      arousal: 5
+    vulnerable:
+      valence: 2
+      arousal: 4
+    weary:
+      valence: 2
+      arousal: 1
+    worn out:
+      valence: 2
+      arousal: 1
+    worried:
+      valence: 2
+      arousal: 5
+    worthless:
+      valence: 1
+      arousal: 2
+- sample: s1
+  ratings:
+    afraid:
+      valence: 2
+      arousal: 6
+    alarmed:
+      valence: 2
+      arousal: 6
+    alert:
+      valence: 5
+      arousal: 6
+    amazed:
+      valence: 6
+      arousal: 6
+    amused:
+      valence: 6
+      arousal: 5
+    angry:
+      valence: 2
+      arousal: 6
+    annoyed:
+      valence: 2
+      arousal: 5
+    anxious:
+      valence: 2
+      arousal: 6
+    aroused:
+      valence: 5
+      arousal: 6
+    ashamed:
+      valence: 2
+      arousal: 4
+    astonished:
+      valence: 5
+      arousal: 6
+    at ease:
+      valence: 6
+      arousal: 2
+    awestruck:
+      valence: 6
+      arousal: 5
+    bewildered:
+      valence: 3
+      arousal: 5
+    bitter:
+      valence: 2
+      arousal: 4
+    blissful:
+      valence: 7
+      arousal: 4
+    bored:
+      valence: 3
+      arousal: 2
+    brooding:
+      valence: 2
+      arousal: 3
+    calm:
+      valence: 6
+      arousal: 1
+    cheerful:
+      valence: 6
+      arousal: 5
+    compassionate:
+      valence: 6
+      arousal: 3
+    contemptuous:
+      valence: 2
+      arousal: 4
+    content:
+      valence: 6
+      arousal: 2
+    defiant:
+      valence: 3
+      arousal: 5
+    delighted:
+      valence: 7
+      arousal: 5
+    dependent:
+      valence: 3
+      arousal: 3
+    depressed:
+      valence: 1
+      arousal: 2
+    desperate:
+      valence: 1
+      arousal: 6
+    disdainful:
+      valence: 2
+      arousal: 4
+    disgusted:
+      valence: 1
+      arousal: 5
+    disoriented:
+      valence: 3
+      arousal: 5
+    dispirited:
+      valence: 2
+      arousal: 2
+    distressed:
+      valence: 1
+      arousal: 6
+    disturbed:
+      valence: 2
+      arousal: 5
+    docile:
+      valence: 4
+      arousal: 2
+    droopy:
+      valence: 3
+      arousal: 2
+    dumbstruck:
+      valence: 4
+      arousal: 5
+    eager:
+      valence: 6
+      arousal: 6
+    ecstatic:
+      valence: 7
+      arousal: 7
+    elated:
+      valence: 7
+      arousal: 6
+    embarrassed:
+      valence: 2
+      arousal: 5
+    empathetic:
+      valence: 5
+      arousal: 3
+    energized:
+      valence: 6
+      arousal: 6
+    enraged:
+      valence: 1
+      arousal: 7
+    enthusiastic:
+      valence: 6
+      arousal: 6
+    envious:
+      valence: 2
+      arousal: 4
+    euphoric:
+      valence: 7
+      arousal: 7
+    exasperated:
+      valence: 2
+      arousal: 5
+    excited:
+      valence: 6
+      arousal: 6
+    exuberant:
+      valence: 7
+      arousal: 6
+    frightened:
+      valence: 1
+      arousal: 6
+    frustrated:
+      valence: 2
+      arousal: 5
+    fulfilled:
+      valence: 7
+      arousal: 3
+    furious:
+      valence: 1
+      arousal: 7
+    gloomy:
+      valence: 2
+      arousal: 2
+    grateful:
+      valence: 6
+      arousal: 3
+    greedy:
+      valence: 3
+      arousal: 4
+    grief-stricken:
+      valence: 1
+      arousal: 4
+    grumpy:
+      valence: 2
+      arousal: 4
+    guilty:
+      valence: 2
+      arousal: 4
+    happy:
+      valence: 7
+      arousal: 5
+    hateful:
+      valence: 1
+      arousal: 6
+    heartbroken:
+      valence: 1
+      arousal: 4
+    hope:
+      valence: 6
+      arousal: 4
+    hopeful:
+      valence: 6
+      arousal: 4
+    horrified:
+      valence: 1
+      arousal: 7
+    hostile:
+      valence: 2
+      arousal: 6
+    humiliated:
+      valence: 1
+      arousal: 5
+    hurt:
+      valence: 2
+      arousal: 4
+    hysterical:
+      valence: 2
+      arousal: 7
+    impatient:
+      valence: 3
+      arousal: 5
+    indifferent:
+      valence: 4
+      arousal: 2
+    indignant:
+      valence: 2
+      arousal: 5
+    infatuated:
+      valence: 6
+      arousal: 6
+    inspired:
+      valence: 6
+      arousal: 5
+    insulted:
+      valence: 2
+      arousal: 5
+    invigorated:
+      valence: 6
+      arousal: 6
+    irate:
+      valence: 1
+      arousal: 7
+    irritated:
+      valence: 2
+      arousal: 5
+    jealous:
+      valence: 2
+      arousal: 5
+    joyful:
+      valence: 7
+      arousal: 5
+    jubilant:
+      valence: 7
+      arousal: 6
+    kind:
+      valence: 6
+      arousal: 3
+    lazy:
+      valence: 4
+      arousal: 1
+    listless:
+      valence: 3
+      arousal: 1
+    lonely:
+      valence: 2
+      arousal: 2
+    loving:
+      valence: 7
+      arousal: 4
+    mad:
+      valence: 2
+      arousal: 6
+    melancholy:
+      valence: 2
+      arousal: 2
+    miserable:
+      valence: 1
+      arousal: 3
+    mortified:
+      valence: 1
+      arousal: 5
+    mystified:
+      valence: 4
+      arousal: 4
+    nervous:
+      valence: 2
+      arousal: 6
+    nostalgic:
+      valence: 5
+      arousal: 3
+    obstinate:
+      valence: 3
+      arousal: 4
+    offended:
+      valence: 2
+      arousal: 5
+    on edge:
+      valence: 2
+      arousal: 6
+    optimistic:
+      valence: 6
+      arousal: 4
+    outraged:
+      valence: 1
+      arousal: 7
+    overwhelmed:
+      valence: 2
+      arousal: 6
+    panicked:
+      valence: 1
+      arousal: 7
+    paranoid:
+      valence: 2
+      arousal: 6
+    patient:
+      valence: 5
+      arousal: 2
+    peaceful:
+      valence: 7
+      arousal: 1
+    perplexed:
+      valence: 3
+      arousal: 4
+    playful:
+      valence: 6
+      arousal: 5
+    pleased:
+      valence: 6
+      arousal: 4
+    proud:
+      valence: 6
+      arousal: 4
+    puzzled:
+      valence: 4
+      arousal: 4
+    rattled:
+      valence: 2
+      arousal: 6
+    reflective:
+      valence: 5
+      arousal: 2
+    refreshed:
+      valence: 6
+      arousal: 4
+    regretful:
+      valence: 2
+      arousal: 3
+    rejuvenated:
+      valence: 7
+      arousal: 5
+    relaxed:
+      valence: 6
+      arousal: 1
+    relieved:
+      valence: 6
+      arousal: 3
+    remorseful:
+      valence: 2
+      arousal: 3
+    resentful:
+      valence: 2
+      arousal: 4
+    resigned:
+      valence: 3
+      arousal: 2
+    restless:
+      valence: 3
+      arousal: 5
+    sad:
+      valence: 2
+      arousal: 2
+    safe:
+      valence: 6
+      arousal: 2
+    satisfied:
+      valence: 6
+      arousal: 3
+    scared:
+      valence: 1
+      arousal: 6
+    scornful:
+      valence: 2
+      arousal: 5
+    self-confident:
+      valence: 6
+      arousal: 4
+    self-conscious:
+      valence: 3
+      arousal: 4
+    self-critical:
+      valence: 2
+      arousal: 4
+    sensitive:
+      valence: 4
+      arousal: 4
+    sentimental:
+      valence: 5
+      arousal: 3
+    serene:
+      valence: 7
+      arousal: 1
+    shaken:
+      valence: 2
+      arousal: 6
+    shocked:
+      valence: 2
+      arousal: 7
+    skeptical:
+      valence: 3
+      arousal: 4
+    sleepy:
+      valence: 4
+      arousal: 1
+    sluggish:
+      valence: 3
+      arousal: 1
+    smug:
+      valence: 4
+      arousal: 3
+    sorry:
+      valence: 2
+      arousal: 3
+    spiteful:
+      valence: 2
+      arousal: 5
+    stimulated:
+      valence: 5
+      arousal: 6
+    stressed:
+      valence: 2
+      arousal: 6
+    stubborn:
+      valence: 3
+      arousal: 4
+    stuck:
+      valence: 2
+      arousal: 3
+    sullen:
+      valence: 2
+      arousal: 3
+    surprised:
+      valence: 5
+      arousal: 6
+    suspicious:
+      valence: 3
+      arousal: 5
+    sympathetic:
+      valence: 5
+      arousal: 3
+    tense:
+      valence: 2
+      arousal: 6
+    terrified:
+      valence: 1
+      arousal: 7
+    thankful:
+      valence: 6
+      arousal: 3
+    thrilled:
+      valence: 7
+      arousal: 7
+    tired:
+      valence: 3
+      arousal: 1
+    tormented:
+      valence: 1
+      arousal: 6
+    trapped:
+      valence: 1
+      arousal: 5
+    triumphant:
+      valence: 7
+      arousal: 6
+    troubled:
+      valence: 2
+      arousal: 5
+    uneasy:
+      valence: 2
+      arousal: 5
+    unhappy:
+      valence: 2
+      arousal: 3
+    unnerved:
+      valence: 2
+      arousal: 6
+    unsettled:
+      valence: 2
+      arousal: 5
+    upset:
+      valence: 2
+      arousal: 5
+    valiant:
+      valence: 6
+      arousal: 6
+    vengeful:
+      valence: 2
+      arousal: 6
+    vibrant:
+      valence: 7
+      arousal: 6
+    vigilant:
+      valence: 4
+      arousal: 6
+    vindictive:
+      valence: 2
+      arousal: 5
+    vulnerable:
+      valence: 2
+      arousal: 4
+    weary:
+      valence: 2
+      arousal: 1
+    worn out:
+      valence: 2
+      arousal: 1
+    worried:
+      valence: 2
+      arousal: 5
+    worthless:
+      valence: 1
+      arousal: 2
+- sample: s2
+  ratings:
+    afraid:
+      valence: 2
+      arousal: 6
+    alarmed:
+      valence: 2
+      arousal: 6
+    alert:
+      valence: 5
+      arousal: 6
+    amazed:
+      valence: 6
+      arousal: 6
+    amused:
+      valence: 6
+      arousal: 5
+    angry:
+      valence: 2
+      arousal: 6
+    annoyed:
+      valence: 2
+      arousal: 5
+    anxious:
+      valence: 2
+      arousal: 6
+    aroused:
+      valence: 5
+      arousal: 6
+    ashamed:
+      valence: 2
+      arousal: 4
+    astonished:
+      valence: 5
+      arousal: 6
+    at ease:
+      valence: 6
+      arousal: 2
+    awestruck:
+      valence: 6
+      arousal: 5
+    bewildered:
+      valence: 3
+      arousal: 5
+    bitter:
+      valence: 2
+      arousal: 4
+    blissful:
+      valence: 7
+      arousal: 3
+    bored:
+      valence: 3
+      arousal: 2
+    brooding:
+      valence: 2
+      arousal: 3
+    calm:
+      valence: 6
+      arousal: 1
+    cheerful:
+      valence: 6
+      arousal: 5
+    compassionate:
+      valence: 6
+      arousal: 3
+    contemptuous:
+      valence: 2
+      arousal: 4
+    content:
+      valence: 6
+      arousal: 2
+    defiant:
+      valence: 3
+      arousal: 5
+    delighted:
+      valence: 7
+      arousal: 5
+    dependent:
+      valence: 3
+      arousal: 3
+    depressed:
+      valence: 1
+      arousal: 2
+    desperate:
+      valence: 1
+      arousal: 6
+    disdainful:
+      valence: 2
+      arousal: 4
+    disgusted:
+      valence: 1
+      arousal: 5
+    disoriented:
+      valence: 3
+      arousal: 4
+    dispirited:
+      valence: 2
+      arousal: 2
+    distressed:
+      valence: 1
+      arousal: 6
+    disturbed:
+      valence: 2
+      arousal: 5
+    docile:
+      valence: 4
+      arousal: 2
+    droopy:
+      valence: 3
+      arousal: 1
+    dumbstruck:
+      valence: 4
+      arousal: 5
+    eager:
+      valence: 6
+      arousal: 6
+    ecstatic:
+      valence: 7
+      arousal: 7
+    elated:
+      valence: 7
+      arousal: 6
+    embarrassed:
+      valence: 2
+      arousal: 5
+    empathetic:
+      valence: 5
+      arousal: 3
+    energized:
+      valence: 6
+      arousal: 6
+    enraged:
+      valence: 1
+      arousal: 7
+    enthusiastic:
+      valence: 6
+      arousal: 6
+    envious:
+      valence: 2
+      arousal: 4
+    euphoric:
+      valence: 7
+      arousal: 7
+    exasperated:
+      valence: 2
+      arousal: 5
+    excited:
+      valence: 6
+      arousal: 6
+    exuberant:
+      valence: 7
+      arousal: 6
+    frightened:
+      valence: 1
+      arousal: 6
+    frustrated:
+      valence: 2
+      arousal: 5
+    fulfilled:
+      valence: 7
+      arousal: 3
+    furious:
+      valence: 1
+      arousal: 7
+    gloomy:
+      valence: 2
+      arousal: 2
+    grateful:
+      valence: 6
+      arousal: 3
+    greedy:
+      valence: 3
+      arousal: 4
+    grief-stricken:
+      valence: 1
+      arousal: 4
+    grumpy:
+      valence: 2
+      arousal: 4
+    guilty:
+      valence: 2
+      arousal: 4
+    happy:
+      valence: 7
+      arousal: 5
+    hateful:
+      valence: 1
+      arousal: 5
+    heartbroken:
+      valence: 1
+      arousal: 4
+    hope:
+      valence: 6
+      arousal: 4
+    hopeful:
+      valence: 6
+      arousal: 4
+    horrified:
+      valence: 1
+      arousal: 6
+    hostile:
+      valence: 2
+      arousal: 6
+    humiliated:
+      valence: 1
+      arousal: 5
+    hurt:
+      valence: 2
+      arousal: 4
+    hysterical:
+      valence: 2
+      arousal: 7
+    impatient:
+      valence: 3
+      arousal: 5
+    indifferent:
+      valence: 4
+      arousal: 2
+    indignant:
+      valence: 2
+      arousal: 5
+    infatuated:
+      valence: 6
+      arousal: 6
+    inspired:
+      valence: 6
+      arousal: 5
+    insulted:
+      valence: 2
+      arousal: 5
+    invigorated:
+      valence: 6
+      arousal: 6
+    irate:
+      valence: 1
+      arousal: 7
+    irritated:
+      valence: 2
+      arousal: 5
+    jealous:
+      valence: 2
+      arousal: 5
+    joyful:
+      valence: 7
+      arousal: 5
+    jubilant:
+      valence: 7
+      arousal: 6
+    kind:
+      valence: 6
+      arousal: 3
+    lazy:
+      valence: 4
+      arousal: 1
+    listless:
+      valence: 3
+      arousal: 1
+    lonely:
+      valence: 2
+      arousal: 2
+    loving:
+      valence: 7
+      arousal: 4
+    mad:
+      valence: 2
+      arousal: 6
+    melancholy:
+      valence: 2
+      arousal: 2
+    miserable:
+      valence: 1
+      arousal: 3
+    mortified:
+      valence: 1
+      arousal: 5
+    mystified:
+      valence: 4
+      arousal: 4
+    nervous:
+      valence: 2
+      arousal: 6
+    nostalgic:
+      valence: 5
+      arousal: 3
+    obstinate:
+      valence: 3
+      arousal: 4
+    offended:
+      valence: 2
+      arousal: 5
+    on edge:
+      valence: 2
+      arousal: 6
+    optimistic:
+      valence: 6
+      arousal: 4
+    outraged:
+      valence: 1
+      arousal: 7
+    overwhelmed:
+      valence: 2
+      arousal: 6
+    panicked:
+      valence: 1
+      arousal: 7
+    paranoid:
+      valence: 2
+      arousal: 6
+    patient:
+      valence: 5
+      arousal: 2
+    peaceful:
+      valence: 7
+      arousal: 1
+    perplexed:
+      valence: 3
+      arousal: 4
+    playful:
+      valence: 6
+      arousal: 5
+    pleased:
+      valence: 6
+      arousal: 4
+    proud:
+      valence: 6
+      arousal: 5
+    puzzled:
+      valence: 4
+      arousal: 4
+    rattled:
+      valence: 2
+      arousal: 6
+    reflective:
+      valence: 5
+      arousal: 2
+    refreshed:
+      valence: 6
+      arousal: 4
+    regretful:
+      valence: 2
+      arousal: 3
+    rejuvenated:
+      valence: 7
+      arousal: 5
+    relaxed:
+      valence: 6
+      arousal: 1
+    relieved:
+      valence: 6
+      arousal: 3
+    remorseful:
+      valence: 2
+      arousal: 3
+    resentful:
+      valence: 2
+      arousal: 4
+    resigned:
+      valence: 3
+      arousal: 2
+    restless:
+      valence: 3
+      arousal: 5
+    sad:
+      valence: 2
+      arousal: 2
+    safe:
+      valence: 6
+      arousal: 2
+    satisfied:
+      valence: 6
+      arousal: 3
+    scared:
+      valence: 1
+      arousal: 6
+    scornful:
+      valence: 2
+      arousal: 4
+    self-confident:
+      valence: 6
+      arousal: 4
+    self-conscious:
+      valence: 3
+      arousal: 4
+    self-critical:
+      valence: 2
+      arousal: 4
+    sensitive:
+      valence: 4
+      arousal: 4
+    sentimental:
+      valence: 5
+      arousal: 3
+    serene:
+      valence: 7
+      arousal: 1
+    shaken:
+      valence: 2
+      arousal: 6
+    shocked:
+      valence: 2
+      arousal: 6
+    skeptical:
+      valence: 3
+      arousal: 3
+    sleepy:
+      valence: 4
+      arousal: 1
+    sluggish:
+      valence: 3
+      arousal: 1
+    smug:
+      valence: 5
+      arousal: 3
+    sorry:
+      valence: 2
+      arousal: 3
+    spiteful:
+      valence: 2
+      arousal: 5
+    stimulated:
+      valence: 5
+      arousal: 6
+    stressed:
+      valence: 2
+      arousal: 6
+    stubborn:
+      valence: 3
+      arousal: 4
+    stuck:
+      valence: 2
+      arousal: 3
+    sullen:
+      valence: 2
+      arousal: 3
+    surprised:
+      valence: 5
+      arousal: 6
+    suspicious:
+      valence: 3
+      arousal: 5
+    sympathetic:
+      valence: 5
+      arousal: 3
+    tense:
+      valence: 2
+      arousal: 6
+    terrified:
+      valence: 1
+      arousal: 7
+    thankful:
+      valence: 6
+      arousal: 3
+    thrilled:
+      valence: 7
+      arousal: 7
+    tired:
+      valence: 3
+      arousal: 1
+    tormented:
+      valence: 1
+      arousal: 5
+    trapped:
+      valence: 1
+      arousal: 5
+    triumphant:
+      valence: 7
+      arousal: 6
+    troubled:
+      valence: 2
+      arousal: 4
+    uneasy:
+      valence: 2
+      arousal: 5
+    unhappy:
+      valence: 2
+      arousal: 3
+    unnerved:
+      valence: 2
+      arousal: 5
+    unsettled:
+      valence: 2
+      arousal: 5
+    upset:
+      valence: 2
+      arousal: 5
+    valiant:
+      valence: 6
+      arousal: 6
+    vengeful:
+      valence: 2
+      arousal: 6
+    vibrant:
+      valence: 7
+      arousal: 6
+    vigilant:
+      valence: 4
+      arousal: 5
+    vindictive:
+      valence: 2
+      arousal: 5
+    vulnerable:
+      valence: 2
+      arousal: 4
+    weary:
+      valence: 2
+      arousal: 1
+    worn out:
+      valence: 2
+      arousal: 1
+    worried:
+      valence: 2
+      arousal: 5
+    worthless:
+      valence: 1
+      arousal: 2

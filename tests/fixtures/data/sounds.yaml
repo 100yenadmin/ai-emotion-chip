@@ -1,0 +1,62 @@
+events:
+  chuckle:
+    kind: affect
+  laugh:
+    kind: affect
+  laugh:harder:
+    kind: affect
+  giggle:
+    kind: affect
+  sigh:
+    kind: affect
+  sigh:relieved:
+    kind: affect
+  sigh:resigned:
+    kind: affect
+  gasp:
+    kind: affect
+  clears-throat:
+    kind: affect
+  breath:
+    kind: structural
+  breath:shaky:
+    kind: structural
+  exhale:
+    kind: structural
+  pause:
+    kind: structural
+  pause:long:
+    kind: structural
+forbidden_cue_words:
+- sobbing
+- sobs
+- sob
+- crying
+- cries
+- screaming
+- screams
+- scream
+- wailing
+- wails
+- wail
+- hysterical
+aliases:
+  laughs: laugh
+  laughing: laugh
+  laughs harder: laugh:harder
+  laughing harder: laugh:harder
+  chuckles: chuckle
+  chuckling: chuckle
+  giggles: giggle
+  giggling: giggle
+  sighs: sigh
+  sighing: sigh
+  gasps: gasp
+  gasping: gasp
+  clears throat: clears-throat
+  clear throat: clears-throat
+  exhales: exhale
+  shaky breath: breath:shaky
+  long pause: pause:long
+  break: pause
+  long-break: pause:long

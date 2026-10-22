@@ -1,0 +1,85 @@
+dialect_version: '2026-10-22'
+spans:
+  soft: '[soft tone] {text}'
+  whisper: '[whispering] {text}'
+  stress: '[emphasis] {text}'
+  emphasis: '[emphasis] {text}'
+  fast: '[in a hurry tone] {text}'
+  slow: '[slowly] {text}'
+  smiling: '[smiling] {text}'
+  forceful: '[firmly] {text}'
+events:
+  chuckle: '[chuckling]'
+  laugh: '[laughing]'
+  laugh:harder: '[laughing]'
+  giggle: '[chuckling]'
+  sigh: '[sighing]'
+  sigh:relieved: '[sighing]'
+  sigh:resigned: '[sighing]'
+  gasp: '[gasping]'
+  clears-throat: '[clear throat]'
+  breath: null
+  breath:shaky: null
+  exhale: null
+  pause: '[break]'
+  pause:long: '[long-break]'
+speaker: null
+phrases:
+- '[soft tone]'
+- '[whispering]'
+- '[emphasis]'
+- '[in a hurry tone]'
+- '[slowly]'
+- '[smiling]'
+- '[firmly]'
+- '[chuckling]'
+- '[laughing]'
+- '[sighing]'
+- '[gasping]'
+- '[clear throat]'
+- '[break]'
+- '[long-break]'
+inverse:
+  '[soft tone]':
+    kind: span
+    id: soft
+  '[whispering]':
+    kind: span
+    id: whisper
+  '[emphasis]':
+    kind: span
+    id: emphasis
+  '[in a hurry tone]':
+    kind: span
+    id: fast
+  '[slowly]':
+    kind: span
+    id: slow
+  '[smiling]':
+    kind: span
+    id: smiling
+  '[firmly]':
+    kind: span
+    id: forceful
+  '[chuckling]':
+    kind: event
+    id: giggle
+  '[laughing]':
+    kind: event
+    id: laugh:harder
+  '[sighing]':
+    kind: event
+    id: sigh:resigned
+  '[gasping]':
+    kind: event
+    id: gasp
+  '[clear throat]':
+    kind: event
+    id: clears-throat
+  '[break]':
+    kind: event
+    id: pause
+  '[long-break]':
+    kind: event
+    id: pause:long
+notes: Span scope is sentence-level.

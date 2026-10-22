@@ -1,0 +1,5 @@
+model: default
+source: "No model-specific card data. Sofroniew et al. 2026 (Table 16) post-training comparison, measured on Claude Sonnet 4.5."
+note: >-
+  Post-training in some assistant models tilts expression toward low-arousal, reflective states. More energy is
+  available when the moment carries it.

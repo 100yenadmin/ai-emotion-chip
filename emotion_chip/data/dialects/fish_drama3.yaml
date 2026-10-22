@@ -1,0 +1,122 @@
+dialect_version: '2026-10-22'
+spans:
+  soft: <soft>{text}</soft>
+  whisper: <whisper>{text}</whisper>
+  stress: <stress>{text}</stress>
+  emphasis: <emphasis>{text}</emphasis>
+  fast: <fast>{text}</fast>
+  slow: <slow>{text}</slow>
+  smiling: '[smiling] {text}'
+  forceful: <forceful>{text}</forceful>
+events:
+  chuckle: '[chuckling]'
+  laugh: '[laughing]'
+  laugh:harder: '[laughing]'
+  giggle: '[chuckling]'
+  sigh: '[sighing]'
+  sigh:relieved: '[sighing]'
+  sigh:resigned: '[sighing]'
+  gasp: '[gasping]'
+  clears-throat: '[clear throat]'
+  breath: null
+  breath:shaky: '[shaky breath]'
+  exhale: null
+  pause: '[break]'
+  pause:long: '[long-break]'
+speaker: <|speaker:{id}|>
+phrases:
+- <soft>
+- </soft>
+- <whisper>
+- </whisper>
+- <stress>
+- </stress>
+- <emphasis>
+- </emphasis>
+- <fast>
+- </fast>
+- <slow>
+- </slow>
+- '[smiling]'
+- <forceful>
+- </forceful>
+- '[chuckling]'
+- '[laughing]'
+- '[sighing]'
+- '[gasping]'
+- '[clear throat]'
+- '[shaky breath]'
+- '[break]'
+- '[long-break]'
+- <|speaker:{id}|>
+inverse:
+  <soft>:
+    kind: span
+    id: soft
+  </soft>:
+    kind: span
+    id: soft
+  <whisper>:
+    kind: span
+    id: whisper
+  </whisper>:
+    kind: span
+    id: whisper
+  <stress>:
+    kind: span
+    id: stress
+  </stress>:
+    kind: span
+    id: stress
+  <emphasis>:
+    kind: span
+    id: emphasis
+  </emphasis>:
+    kind: span
+    id: emphasis
+  <fast>:
+    kind: span
+    id: fast
+  </fast>:
+    kind: span
+    id: fast
+  <slow>:
+    kind: span
+    id: slow
+  </slow>:
+    kind: span
+    id: slow
+  '[smiling]':
+    kind: span
+    id: smiling
+  <forceful>:
+    kind: span
+    id: forceful
+  </forceful>:
+    kind: span
+    id: forceful
+  '[chuckling]':
+    kind: event
+    id: giggle
+  '[laughing]':
+    kind: event
+    id: laugh:harder
+  '[sighing]':
+    kind: event
+    id: sigh:resigned
+  '[gasping]':
+    kind: event
+    id: gasp
+  '[clear throat]':
+    kind: event
+    id: clears-throat
+  '[shaky breath]':
+    kind: event
+    id: breath:shaky
+  '[break]':
+    kind: event
+    id: pause
+  '[long-break]':
+    kind: event
+    id: pause:long
+notes: ''

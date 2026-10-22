@@ -1,0 +1,987 @@
+- name: span-soft-fish_s2
+  input: '[soft: x 12!]'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[soft tone] x 12!'
+  expected_params: &id001
+    speed: 1.0
+  expected_dropped_kinds: []
+  expected_notes:
+  - span scope lost (sentence-level)
+- name: span-whisper-fish_s2
+  input: '[whisper: x 12!]'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[whispering] x 12!'
+  expected_params: *id001
+  expected_dropped_kinds: []
+  expected_notes:
+  - span scope lost (sentence-level)
+- name: span-stress-fish_s2
+  input: '[stress: x 12!]'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[emphasis] x 12!'
+  expected_params: *id001
+  expected_dropped_kinds: []
+  expected_notes:
+  - span scope lost (sentence-level)
+- name: span-emphasis-fish_s2
+  input: '[emphasis: x 12!]'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[emphasis] x 12!'
+  expected_params: *id001
+  expected_dropped_kinds: []
+  expected_notes:
+  - span scope lost (sentence-level)
+- name: span-fast-fish_s2
+  input: '[fast: x 12!]'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[in a hurry tone] x 12!'
+  expected_params: *id001
+  expected_dropped_kinds: []
+  expected_notes:
+  - span scope lost (sentence-level)
+- name: span-slow-fish_s2
+  input: '[slow: x 12!]'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[slowly] x 12!'
+  expected_params: *id001
+  expected_dropped_kinds: []
+  expected_notes:
+  - span scope lost (sentence-level)
+- name: span-smiling-fish_s2
+  input: '[smiling: x 12!]'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[smiling] x 12!'
+  expected_params: *id001
+  expected_dropped_kinds: []
+  expected_notes:
+  - span scope lost (sentence-level)
+- name: span-forceful-fish_s2
+  input: '[forceful: x 12!]'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[firmly] x 12!'
+  expected_params: *id001
+  expected_dropped_kinds: []
+  expected_notes:
+  - span scope lost (sentence-level)
+- name: span-soft-fish_drama3
+  input: '[soft: x 12!]'
+  dialect: fish_drama3
+  options: {}
+  expected_text: <soft>x 12!</soft>
+  expected_params: &id002
+    speed: 1.0
+  expected_dropped_kinds: []
+- name: span-whisper-fish_drama3
+  input: '[whisper: x 12!]'
+  dialect: fish_drama3
+  options: {}
+  expected_text: <whisper>x 12!</whisper>
+  expected_params: *id002
+  expected_dropped_kinds: []
+- name: span-stress-fish_drama3
+  input: '[stress: x 12!]'
+  dialect: fish_drama3
+  options: {}
+  expected_text: <stress>x 12!</stress>
+  expected_params: *id002
+  expected_dropped_kinds: []
+- name: span-emphasis-fish_drama3
+  input: '[emphasis: x 12!]'
+  dialect: fish_drama3
+  options: {}
+  expected_text: <emphasis>x 12!</emphasis>
+  expected_params: *id002
+  expected_dropped_kinds: []
+- name: span-fast-fish_drama3
+  input: '[fast: x 12!]'
+  dialect: fish_drama3
+  options: {}
+  expected_text: <fast>x 12!</fast>
+  expected_params: *id002
+  expected_dropped_kinds: []
+- name: span-slow-fish_drama3
+  input: '[slow: x 12!]'
+  dialect: fish_drama3
+  options: {}
+  expected_text: <slow>x 12!</slow>
+  expected_params: *id002
+  expected_dropped_kinds: []
+- name: span-forceful-fish_drama3
+  input: '[forceful: x 12!]'
+  dialect: fish_drama3
+  options: {}
+  expected_text: <forceful>x 12!</forceful>
+  expected_params: *id002
+  expected_dropped_kinds: []
+- name: span-smiling-fish_drama3
+  input: '[smiling: x 12!]'
+  dialect: fish_drama3
+  options: {}
+  expected_text: '[smiling] x 12!'
+  expected_params: *id002
+  expected_dropped_kinds: []
+- name: span-soft-eleven_v4
+  input: '[soft: x 12!]'
+  dialect: eleven_v4
+  options: {}
+  expected_text: '[softly] x 12!'
+  expected_params: &id003
+    stability: 0.5
+    similarity_boost: 0.75
+  expected_dropped_kinds: []
+- name: span-whisper-eleven_v4
+  input: '[whisper: x 12!]'
+  dialect: eleven_v4
+  options: {}
+  expected_text: '[whispers] x 12!'
+  expected_params: *id003
+  expected_dropped_kinds: []
+- name: span-stress-eleven_v4
+  input: '[stress: x 12!]'
+  dialect: eleven_v4
+  options: {}
+  expected_text: X 12!
+  expected_params: *id003
+  expected_dropped_kinds: []
+- name: span-emphasis-eleven_v4
+  input: '[emphasis: x 12!]'
+  dialect: eleven_v4
+  options: {}
+  expected_text: X 12!
+  expected_params: *id003
+  expected_dropped_kinds: []
+- name: span-fast-eleven_v4
+  input: '[fast: x 12!]'
+  dialect: eleven_v4
+  options: {}
+  expected_text: '[rushed] x 12!'
+  expected_params: *id003
+  expected_dropped_kinds: []
+- name: span-slow-eleven_v4
+  input: '[slow: x 12!]'
+  dialect: eleven_v4
+  options: {}
+  expected_text: '[slowly] x 12!'
+  expected_params: *id003
+  expected_dropped_kinds: []
+- name: span-smiling-eleven_v4
+  input: '[smiling: x 12!]'
+  dialect: eleven_v4
+  options: {}
+  expected_text: '[smiling] x 12!'
+  expected_params: *id003
+  expected_dropped_kinds: []
+- name: span-forceful-eleven_v4
+  input: '[forceful: x 12!]'
+  dialect: eleven_v4
+  options: {}
+  expected_text: '[firmly] x 12!'
+  expected_params: *id003
+  expected_dropped_kinds: []
+- name: event-chuckle-fish_s2
+  input: '[chuckle] Yes.'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[chuckling] Yes.'
+  expected_params: *id001
+  expected_dropped_kinds: []
+- name: event-laugh-fish_s2
+  input: '[laugh] Yes.'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[laughing] Yes.'
+  expected_params: *id001
+  expected_dropped_kinds: []
+- name: event-laugh:harder-fish_s2
+  input: '[laugh:harder] Yes.'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[laughing] Yes.'
+  expected_params: *id001
+  expected_dropped_kinds: []
+- name: event-giggle-fish_s2
+  input: '[giggle] Yes.'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[chuckling] Yes.'
+  expected_params: *id001
+  expected_dropped_kinds: []
+- name: event-sigh-fish_s2
+  input: '[sigh] Yes.'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[sighing] Yes.'
+  expected_params: *id001
+  expected_dropped_kinds: []
+- name: event-sigh:relieved-fish_s2
+  input: '[sigh:relieved] Yes.'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[sighing] Yes.'
+  expected_params: *id001
+  expected_dropped_kinds: []
+- name: event-sigh:resigned-fish_s2
+  input: '[sigh:resigned] Yes.'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[sighing] Yes.'
+  expected_params: *id001
+  expected_dropped_kinds: []
+- name: event-gasp-fish_s2
+  input: '[gasp] Yes.'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[gasping] Yes.'
+  expected_params: *id001
+  expected_dropped_kinds: []
+- name: event-clears-throat-fish_s2
+  input: '[clears-throat] Yes.'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[clear throat] Yes.'
+  expected_params: *id001
+  expected_dropped_kinds: []
+- name: event-breath-fish_s2
+  input: '[breath] Yes.'
+  dialect: fish_s2
+  options: {}
+  expected_text: Yes.
+  expected_params: *id001
+  expected_dropped_kinds:
+  - event
+- name: event-breath:shaky-fish_s2
+  input: '[breath:shaky] Yes.'
+  dialect: fish_s2
+  options: {}
+  expected_text: Yes.
+  expected_params: *id001
+  expected_dropped_kinds:
+  - event
+- name: event-exhale-fish_s2
+  input: '[exhale] Yes.'
+  dialect: fish_s2
+  options: {}
+  expected_text: Yes.
+  expected_params: *id001
+  expected_dropped_kinds:
+  - event
+- name: event-pause-fish_s2
+  input: '[pause] Yes.'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[break] Yes.'
+  expected_params: *id001
+  expected_dropped_kinds: []
+- name: event-pause:long-fish_s2
+  input: '[pause:long] Yes.'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[long-break] Yes.'
+  expected_params: *id001
+  expected_dropped_kinds: []
+- name: event-chuckle-fish_drama3
+  input: '[chuckle] Yes.'
+  dialect: fish_drama3
+  options: {}
+  expected_text: '[chuckling] Yes.'
+  expected_params: *id002
+  expected_dropped_kinds: []
+- name: event-laugh-fish_drama3
+  input: '[laugh] Yes.'
+  dialect: fish_drama3
+  options: {}
+  expected_text: '[laughing] Yes.'
+  expected_params: *id002
+  expected_dropped_kinds: []
+- name: event-laugh:harder-fish_drama3
+  input: '[laugh:harder] Yes.'
+  dialect: fish_drama3
+  options: {}
+  expected_text: '[laughing] Yes.'
+  expected_params: *id002
+  expected_dropped_kinds: []
+- name: event-giggle-fish_drama3
+  input: '[giggle] Yes.'
+  dialect: fish_drama3
+  options: {}
+  expected_text: '[chuckling] Yes.'
+  expected_params: *id002
+  expected_dropped_kinds: []
+- name: event-sigh-fish_drama3
+  input: '[sigh] Yes.'
+  dialect: fish_drama3
+  options: {}
+  expected_text: '[sighing] Yes.'
+  expected_params: *id002
+  expected_dropped_kinds: []
+- name: event-sigh:relieved-fish_drama3
+  input: '[sigh:relieved] Yes.'
+  dialect: fish_drama3
+  options: {}
+  expected_text: '[sighing] Yes.'
+  expected_params: *id002
+  expected_dropped_kinds: []
+- name: event-sigh:resigned-fish_drama3
+  input: '[sigh:resigned] Yes.'
+  dialect: fish_drama3
+  options: {}
+  expected_text: '[sighing] Yes.'
+  expected_params: *id002
+  expected_dropped_kinds: []
+- name: event-gasp-fish_drama3
+  input: '[gasp] Yes.'
+  dialect: fish_drama3
+  options: {}
+  expected_text: '[gasping] Yes.'
+  expected_params: *id002
+  expected_dropped_kinds: []
+- name: event-clears-throat-fish_drama3
+  input: '[clears-throat] Yes.'
+  dialect: fish_drama3
+  options: {}
+  expected_text: '[clear throat] Yes.'
+  expected_params: *id002
+  expected_dropped_kinds: []
+- name: event-breath-fish_drama3
+  input: '[breath] Yes.'
+  dialect: fish_drama3
+  options: {}
+  expected_text: Yes.
+  expected_params: *id002
+  expected_dropped_kinds:
+  - event
+- name: event-breath:shaky-fish_drama3
+  input: '[breath:shaky] Yes.'
+  dialect: fish_drama3
+  options: {}
+  expected_text: '[shaky breath] Yes.'
+  expected_params: *id002
+  expected_dropped_kinds: []
+- name: event-exhale-fish_drama3
+  input: '[exhale] Yes.'
+  dialect: fish_drama3
+  options: {}
+  expected_text: Yes.
+  expected_params: *id002
+  expected_dropped_kinds:
+  - event
+- name: event-pause-fish_drama3
+  input: '[pause] Yes.'
+  dialect: fish_drama3
+  options: {}
+  expected_text: '[break] Yes.'
+  expected_params: *id002
+  expected_dropped_kinds: []
+- name: event-pause:long-fish_drama3
+  input: '[pause:long] Yes.'
+  dialect: fish_drama3
+  options: {}
+  expected_text: '[long-break] Yes.'
+  expected_params: *id002
+  expected_dropped_kinds: []
+- name: event-chuckle-eleven_v4
+  input: '[chuckle] Yes.'
+  dialect: eleven_v4
+  options: {}
+  expected_text: '[chuckles] Yes.'
+  expected_params: *id003
+  expected_dropped_kinds: []
+- name: event-laugh-eleven_v4
+  input: '[laugh] Yes.'
+  dialect: eleven_v4
+  options: {}
+  expected_text: '[laughs] Yes.'
+  expected_params: *id003
+  expected_dropped_kinds: []
+- name: event-laugh:harder-eleven_v4
+  input: '[laugh:harder] Yes.'
+  dialect: eleven_v4
+  options: {}
+  expected_text: '[laughs harder] Yes.'
+  expected_params: *id003
+  expected_dropped_kinds: []
+- name: event-giggle-eleven_v4
+  input: '[giggle] Yes.'
+  dialect: eleven_v4
+  options: {}
+  expected_text: '[giggles] Yes.'
+  expected_params: *id003
+  expected_dropped_kinds: []
+- name: event-sigh-eleven_v4
+  input: '[sigh] Yes.'
+  dialect: eleven_v4
+  options: {}
+  expected_text: '[sighs] Yes.'
+  expected_params: *id003
+  expected_dropped_kinds: []
+- name: event-sigh:relieved-eleven_v4
+  input: '[sigh:relieved] Yes.'
+  dialect: eleven_v4
+  options: {}
+  expected_text: '[sighs] Yes.'
+  expected_params: *id003
+  expected_dropped_kinds: []
+- name: event-sigh:resigned-eleven_v4
+  input: '[sigh:resigned] Yes.'
+  dialect: eleven_v4
+  options: {}
+  expected_text: '[sighs] Yes.'
+  expected_params: *id003
+  expected_dropped_kinds: []
+- name: event-gasp-eleven_v4
+  input: '[gasp] Yes.'
+  dialect: eleven_v4
+  options: {}
+  expected_text: '[gasps] Yes.'
+  expected_params: *id003
+  expected_dropped_kinds: []
+- name: event-clears-throat-eleven_v4
+  input: '[clears-throat] Yes.'
+  dialect: eleven_v4
+  options: {}
+  expected_text: '[clears throat] Yes.'
+  expected_params: *id003
+  expected_dropped_kinds: []
+- name: event-breath-eleven_v4
+  input: '[breath] Yes.'
+  dialect: eleven_v4
+  options: {}
+  expected_text: '[exhales] Yes.'
+  expected_params: *id003
+  expected_dropped_kinds: []
+- name: event-breath:shaky-eleven_v4
+  input: '[breath:shaky] Yes.'
+  dialect: eleven_v4
+  options: {}
+  expected_text: '[shaky breath] Yes.'
+  expected_params: *id003
+  expected_dropped_kinds: []
+- name: event-exhale-eleven_v4
+  input: '[exhale] Yes.'
+  dialect: eleven_v4
+  options: {}
+  expected_text: '[exhales] Yes.'
+  expected_params: *id003
+  expected_dropped_kinds: []
+- name: event-pause-eleven_v4
+  input: '[pause] Yes.'
+  dialect: eleven_v4
+  options: {}
+  expected_text: '[pause] Yes.'
+  expected_params: *id003
+  expected_dropped_kinds: []
+- name: event-pause:long-eleven_v4
+  input: '[pause:long] Yes.'
+  dialect: eleven_v4
+  options: {}
+  expected_text: '[long pause] Yes.'
+  expected_params: *id003
+  expected_dropped_kinds: []
+- name: failed-deploy-fish_s2
+  input: '[slightly frustrated] [sigh] The deploy failed after 3 retries. I will not retry blindly.'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[slightly frustrated] [sighing] The deploy failed after 3 retries. I will not retry blindly.'
+  expected_params:
+    speed: 1.05
+  expected_dropped_kinds: []
+- name: criticism-fish_s2
+  input: '[somewhat sad] You are right. [soft: I made a mistake.] I will fix it.'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[somewhat sad] You are right. [soft tone] I made a mistake. I will fix it.'
+  expected_params:
+    speed: 0.92
+  expected_dropped_kinds: []
+- name: grief-fish_s2
+  input: '[gentle] [soft: I''m sorry for your loss.] [pause] I am here.'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[gentle] [soft tone] I''m sorry for your loss. [break] I am here.'
+  expected_params:
+    speed: 1.0
+  expected_dropped_kinds: []
+- name: breakthrough-fish_s2
+  input: '[very excited] It worked! [happy] We solved it.'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[very excited] It worked! [happy] We solved it.'
+  expected_params:
+    speed: 1.0
+  expected_dropped_kinds: []
+- name: safety-fish_s2
+  input: '[firm] [forceful: Never mix these.] Do not proceed.'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[firm] [firmly] Never mix these. Do not proceed.'
+  expected_params:
+    speed: 1.0
+  expected_dropped_kinds: []
+- name: failed-deploy-fish_drama3
+  input: '[slightly frustrated] [sigh] The deploy failed after 3 retries. I will not retry blindly.'
+  dialect: fish_drama3
+  options: {}
+  expected_text: '[slightly frustrated] [sighing] The deploy failed after 3 retries. I will not retry blindly.'
+  expected_params:
+    speed: 1.05
+  expected_dropped_kinds: []
+- name: criticism-fish_drama3
+  input: '[somewhat sad] You are right. [soft: I made a mistake.] I will fix it.'
+  dialect: fish_drama3
+  options: {}
+  expected_text: '[somewhat sad] You are right. <soft>I made a mistake.</soft> I will fix it.'
+  expected_params:
+    speed: 0.92
+  expected_dropped_kinds: []
+- name: grief-fish_drama3
+  input: '[gentle] [soft: I''m sorry for your loss.] [pause] I am here.'
+  dialect: fish_drama3
+  options: {}
+  expected_text: '[gentle] <soft>I''m sorry for your loss.</soft> [break] I am here.'
+  expected_params:
+    speed: 1.0
+  expected_dropped_kinds: []
+- name: breakthrough-fish_drama3
+  input: '[very excited] It worked! [happy] We solved it.'
+  dialect: fish_drama3
+  options: {}
+  expected_text: '[very excited] It worked! [happy] We solved it.'
+  expected_params:
+    speed: 1.0
+  expected_dropped_kinds: []
+- name: safety-fish_drama3
+  input: '[firm] [forceful: Never mix these.] Do not proceed.'
+  dialect: fish_drama3
+  options: {}
+  expected_text: '[firm] <forceful>Never mix these.</forceful> Do not proceed.'
+  expected_params:
+    speed: 1.0
+  expected_dropped_kinds: []
+- name: failed-deploy-eleven_v4
+  input: '[slightly frustrated] [sigh] The deploy failed after 3 retries. I will not retry blindly.'
+  dialect: eleven_v4
+  options: {}
+  expected_text: '[slightly frustrated] [sighs] The deploy failed after 3 retries. I will not retry blindly.'
+  expected_params: *id003
+  expected_dropped_kinds: []
+- name: criticism-eleven_v4
+  input: '[somewhat sad] You are right. [soft: I made a mistake.] I will fix it.'
+  dialect: eleven_v4
+  options: {}
+  expected_text: '[somewhat sad] You are right. [softly] I made a mistake. I will fix it.'
+  expected_params: *id003
+  expected_dropped_kinds: []
+- name: grief-eleven_v4
+  input: '[gentle] [soft: I''m sorry for your loss.] [pause] I am here.'
+  dialect: eleven_v4
+  options: {}
+  expected_text: '[gentle] [softly] I''m sorry for your loss. [pause] I am here.'
+  expected_params: *id003
+  expected_dropped_kinds: []
+- name: breakthrough-eleven_v4
+  input: '[very excited] It worked! [happy] We solved it.'
+  dialect: eleven_v4
+  options: {}
+  expected_text: '[very excited] It worked! [happy] We solved it.'
+  expected_params: *id003
+  expected_dropped_kinds: []
+- name: safety-eleven_v4
+  input: '[firm] [forceful: Never mix these.] Do not proceed.'
+  dialect: eleven_v4
+  options: {}
+  expected_text: '[firm] [firmly] Never mix these. Do not proceed.'
+  expected_params: *id003
+  expected_dropped_kinds: []
+- name: header-simple
+  input: '[[conversational]] Hello.'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[conversational] Hello.'
+  expected_params: *id001
+  expected_dropped_kinds: []
+- name: header-fields
+  input: '  [[register: warm; pace: calm]] Hello.'
+  dialect: fish_drama3
+  options: {}
+  expected_text: '[warm, calm] Hello.'
+  expected_params: *id002
+  expected_dropped_kinds: []
+- name: header-cleanup-dot
+  input: '[[register: warm]]. Hello.'
+  dialect: eleven_v4
+  options: {}
+  expected_text: '[warm] Hello.'
+  expected_params: *id003
+  expected_dropped_kinds: []
+- name: header-spaced-dot
+  input: '[[register: warm]] . Hello.'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[warm] Hello.'
+  expected_params: *id001
+  expected_dropped_kinds: []
+- name: misplaced-header
+  input: 'Hello [[register: warm]] there.'
+  dialect: fish_s2
+  options: {}
+  expected_text: Hello there.
+  expected_params: *id001
+  expected_dropped_kinds:
+  - header
+- name: unterminated-span
+  input: '[soft: One. Two.]'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[soft] One. Two.'
+  expected_params: *id001
+  expected_dropped_kinds:
+  - span
+- name: open-span-eof
+  input: '[soft: One. Two.'
+  dialect: fish_drama3
+  options: {}
+  expected_text: '[soft] One. Two.'
+  expected_params: *id002
+  expected_dropped_kinds:
+  - span
+- name: open-bracket
+  input: Hello [world
+  dialect: fish_s2
+  options: {}
+  expected_text: Hello world
+  expected_params: *id001
+  expected_dropped_kinds:
+  - syntax
+- name: stray-bracket
+  input: Hello] there.
+  dialect: fish_s2
+  options: {}
+  expected_text: Hello there.
+  expected_params: *id001
+  expected_dropped_kinds:
+  - syntax
+- name: empty-bracket
+  input: '[] Hello.'
+  dialect: eleven_v4
+  options: {}
+  expected_text: Hello.
+  expected_params: *id003
+  expected_dropped_kinds:
+  - syntax
+- name: forbidden-blend
+  input: '[crying, sad] Sorry.'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[sad] Sorry.'
+  expected_params:
+    speed: 0.92
+  expected_dropped_kinds:
+  - cue
+- name: forbidden-only
+  input: '[crying] Sorry.'
+  dialect: fish_s2
+  options: {}
+  expected_text: Sorry.
+  expected_params: *id001
+  expected_dropped_kinds:
+  - cue
+- name: forbidden-with-rung
+  input: '[very crying] Sorry.'
+  dialect: fish_s2
+  options: {}
+  expected_text: Sorry.
+  expected_params: *id001
+  expected_dropped_kinds:
+  - cue
+- name: sound-cap-0
+  input: '[laugh] [sigh] [gasp] Yes.'
+  dialect: eleven_v4
+  options:
+    sounds_per_turn: 0
+  expected_text: Yes.
+  expected_params: *id003
+  expected_dropped_kinds:
+  - event
+  - event
+  - event
+- name: sound-cap-1
+  input: '[laugh] [sigh] [gasp] Yes.'
+  dialect: eleven_v4
+  options:
+    sounds_per_turn: 1
+  expected_text: '[laughs] Yes.'
+  expected_params: *id003
+  expected_dropped_kinds:
+  - event
+  - event
+- name: sound-cap-2
+  input: '[laugh] [sigh] [gasp] Yes.'
+  dialect: eleven_v4
+  options:
+    sounds_per_turn: 2
+  expected_text: '[laughs] [sighs] Yes.'
+  expected_params: *id003
+  expected_dropped_kinds:
+  - event
+- name: breath-density
+  input: '[breath] One. [breath:shaky] Two. [breath] Three.'
+  dialect: eleven_v4
+  options: {}
+  expected_text: '[exhales] One. Two. [exhales] Three.'
+  expected_params: *id003
+  expected_dropped_kinds:
+  - event
+- name: breath-same-sentence
+  input: '[breath] [breath:shaky] One.'
+  dialect: eleven_v4
+  options: {}
+  expected_text: '[exhales] One.'
+  expected_params: *id003
+  expected_dropped_kinds:
+  - event
+- name: structural-uncapped
+  input: '[exhale] [pause] [pause:long] Yes.'
+  dialect: eleven_v4
+  options:
+    sounds_per_turn: 0
+  expected_text: '[exhales] [pause] [long pause] Yes.'
+  expected_params: *id003
+  expected_dropped_kinds: []
+- name: speaker-fish_s2-True
+  input: '[speaker: 0] Hello.'
+  dialect: fish_s2
+  options:
+    allow_speakers: true
+  expected_text: Hello.
+  expected_params: *id001
+  expected_dropped_kinds:
+  - speaker
+- name: speaker-fish_s2-False
+  input: '[speaker: 0] Hello.'
+  dialect: fish_s2
+  options:
+    allow_speakers: false
+  expected_text: Hello.
+  expected_params: *id001
+  expected_dropped_kinds:
+  - speaker
+- name: speaker-fish_drama3-True
+  input: '[speaker: 0] Hello.'
+  dialect: fish_drama3
+  options:
+    allow_speakers: true
+  expected_text: <|speaker:0|> Hello.
+  expected_params: *id002
+  expected_dropped_kinds: []
+- name: speaker-fish_drama3-False
+  input: '[speaker: 0] Hello.'
+  dialect: fish_drama3
+  options:
+    allow_speakers: false
+  expected_text: Hello.
+  expected_params: *id002
+  expected_dropped_kinds:
+  - speaker
+- name: speaker-eleven_v4-True
+  input: '[speaker: 0] Hello.'
+  dialect: eleven_v4
+  options:
+    allow_speakers: true
+  expected_text: Hello.
+  expected_params: *id003
+  expected_dropped_kinds:
+  - speaker
+- name: speaker-eleven_v4-False
+  input: '[speaker: 0] Hello.'
+  dialect: eleven_v4
+  options:
+    allow_speakers: false
+  expected_text: Hello.
+  expected_params: *id003
+  expected_dropped_kinds:
+  - speaker
+- name: blend-arousal
+  input: '[calm, very angry] Stop.'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[calm, very angry] Stop.'
+  expected_params:
+    speed: 1.05
+  expected_dropped_kinds: []
+- name: blend-tie
+  input: '[angry, afraid] Wait.'
+  dialect: fish_drama3
+  options: {}
+  expected_text: '[angry, afraid] Wait.'
+  expected_params:
+    speed: 1.05
+  expected_dropped_kinds: []
+- name: unknown-cue
+  input: '[uniquely reflective] Hello.'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[uniquely reflective] Hello.'
+  expected_params: *id001
+  expected_dropped_kinds: []
+- name: rung-slightly
+  input: '[slightly curious] Hello.'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[slightly curious] Hello.'
+  expected_params:
+    speed: 1.03
+  expected_dropped_kinds: []
+- name: rung-a little
+  input: '[a little curious] Hello.'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[a little curious] Hello.'
+  expected_params:
+    speed: 1.03
+  expected_dropped_kinds: []
+- name: rung-somewhat
+  input: '[somewhat curious] Hello.'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[somewhat curious] Hello.'
+  expected_params:
+    speed: 1.03
+  expected_dropped_kinds: []
+- name: rung-very
+  input: '[very curious] Hello.'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[very curious] Hello.'
+  expected_params:
+    speed: 1.03
+  expected_dropped_kinds: []
+- name: rung-extremely
+  input: '[extremely curious] Hello.'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[extremely curious] Hello.'
+  expected_params:
+    speed: 1.03
+  expected_dropped_kinds: []
+- name: rung-deeply
+  input: '[deeply curious] Hello.'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[deeply curious] Hello.'
+  expected_params:
+    speed: 1.03
+  expected_dropped_kinds: []
+- name: rung-really
+  input: '[really curious] Hello.'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[really curious] Hello.'
+  expected_params:
+    speed: 1.03
+  expected_dropped_kinds: []
+- name: density-note
+  input: '[calm][happy][sad][curious] Hello.'
+  dialect: fish_s2
+  options: {}
+  expected_text: '[calm][happy][sad][curious] Hello.'
+  expected_params: *id001
+  expected_dropped_kinds: []
+  expected_notes:
+  - 'sentence 1 has 4 cues (Fish guidance: ≤3)'
+- name: first-cue-global
+  input: One. [sad] Two. [angry] Three.
+  dialect: fish_s2
+  options: {}
+  expected_text: One. [sad] Two. [angry] Three.
+  expected_params:
+    speed: 0.92
+  expected_dropped_kinds: []
+- name: ellipsis
+  input: Wait.. Ready... Yes.
+  dialect: eleven_v4
+  options: {}
+  expected_text: Wait… Ready... Yes.
+  expected_params: *id003
+  expected_dropped_kinds: []
+- name: v3-cap
+  input: '[stress: ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß]'
+  dialect: eleven_v4
+  options:
+    model: eleven_v3
+  expected_text: SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
+  expected_params: *id003
+  expected_dropped_kinds: []
+  expected_notes:
+  - character cap exceeded (5002 > 5000)
+- name: params-group-override
+  input: '[angry] Hello.'
+  dialect: fish_s2
+  options:
+    params_from: sadness
+  expected_text: '[angry] Hello.'
+  expected_params:
+    speed: 0.92
+  expected_dropped_kinds: []
+- name: params-dict-override
+  input: '[sad] Hello.'
+  dialect: eleven_v4
+  options:
+    params_from:
+      stability: 0.2
+  expected_text: '[sad] Hello.'
+  expected_params:
+    stability: 0.2
+  expected_dropped_kinds: []
+- name: fish-clamp
+  input: '[angry] Hello.'
+  dialect: fish_s2
+  options:
+    overlay:
+      fish_speed_offset: 0.2
+  expected_text: '[angry] Hello.'
+  expected_params:
+    speed: 1.1
+  expected_dropped_kinds: []
+- name: eleven-clamp
+  input: '[sad] Hello.'
+  dialect: eleven_v4
+  options:
+    eleven_stability: 2.0
+    eleven_similarity: 0.8
+  expected_text: '[sad] Hello.'
+  expected_params:
+    stability: 1.0
+    similarity_boost: 0.8
+  expected_dropped_kinds: []
+- name: plain-tagless
+  input: '[[register: warm]] [sad] [speaker: 0] [soft: Keep 12.] [pause] Do not stop.'
+  dialect: tagless
+  options: {}
+  expected_text: Keep 12. Do not stop.
+  expected_params: {}
+  expected_dropped_kinds:
+  - header
+  - cue
+  - speaker
+  - span
+  - event
+- name: plain-prose
+  input: '[[register: warm]] [sad] [speaker: 0] [soft: Keep 12.] [pause] Do not stop.'
+  dialect: prose
+  options: {}
+  expected_text: Keep 12. Do not stop.
+  expected_params: {}
+  expected_dropped_kinds:
+  - header
+  - cue
+  - speaker
+  - span
+  - event
