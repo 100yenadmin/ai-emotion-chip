@@ -27,19 +27,6 @@ events:
     kind: structural
   pause:long:
     kind: structural
-forbidden_cue_words:
-- sobbing
-- sobs
-- sob
-- crying
-- cries
-- screaming
-- screams
-- scream
-- wailing
-- wails
-- wail
-- hysterical
 aliases:
   laughs: laugh
   laughing: laugh
