@@ -515,7 +515,7 @@ def test_segment_text_keeps_word_boundaries_at_kept_tokens(data):
     assert out.text == "ha[laughing]ha." and out.plan.segments[0].text == "ha ha."
 
 
-@pytest.mark.parametrize("quoted", ['He said "go."', "He said 'go.'", "He said “go.”", "(It went.)"])
+@pytest.mark.parametrize("quoted", ['He said "go."', "He said 'go.'", "He said “go.”", "(It went.)", '(He said "go.")'])
 def test_sentence_ends_before_a_closing_quote(quoted, data):
     score = parse(f"[breath] One. {quoted} [exhale] Three.", data)
     assert len(score.sentences) == 3
@@ -557,6 +557,12 @@ def test_speaker_ids_are_numeric_only(data, text):
     assert [d.reason for d in score.dropped] == ["invalid id"]
     assert render(text, "fish_drama3", Options(allow_speakers=True), data).text == "Hi."
     assert render("[speaker: 2] Hi.", "fish_drama3", Options(allow_speakers=True), data).text == "<|speaker:2|> Hi."
+
+
+@pytest.mark.parametrize("text", ['The "Dr." Smith arrived.', "See (e.g.) this.", 'Ask ("Dr.") Lee.', "[soft: The \"Dr.\" Smith arrived.]"])
+def test_a_closing_mark_after_a_title_does_not_end_the_sentence(data, text):
+    score = parse(text, data)
+    assert len(score.sentences) == 1 and not score.dropped
 
 
 def test_titles_do_not_end_sentences(data):
