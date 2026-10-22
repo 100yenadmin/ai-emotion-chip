@@ -17,7 +17,8 @@ def make_middleware(settings, situation=None, env=None):
             if kwargs.get("tool_name") != "text_to_speech" or settings.get("guide_mode") != "generate":
                 return None
             provider = settings.tts_provider()
-            if provider == "emotion-chip":
+            # A command provider is the user's own script (eva's sag-eva speaks ElevenLabs tags): leave its text alone.
+            if provider == "emotion-chip" or settings.host(f"tts.providers.{provider}.type") == "command":
                 return None
             text = args.get("text", "")
             dialect, adapt = "tagless", None

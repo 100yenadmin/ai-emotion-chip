@@ -226,6 +226,14 @@ def test_middleware_dialects(rig, provider, model, expected):
     assert ("<soft>" in expected) == (provider == "fish-audio" and model == "drama-3")
 
 
+def test_middleware_leaves_command_providers_alone(rig):
+    ctx, _, host, *_ = rig
+    host.update({"tts.provider": "sag-eva", "tts.providers.sag-eva.type": "command"})
+    assert ctx.middleware(tool_name="text_to_speech", args={"text": "[whispers] [crying] Hi. [laughs]"}) is None
+    host["tts.providers.sag-eva.type"] = "plugin"
+    assert ctx.middleware(tool_name="text_to_speech", args={"text": "[sad] Hi."}) == {"args": {"text": "Hi."}}
+
+
 def test_middleware_noops_and_reader_error(rig):
     ctx, _, host, *_ = rig
     assert ctx.middleware(tool_name="text_to_speech", args={"text": "[sad] Hi."}) is None
