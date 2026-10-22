@@ -1,15 +1,19 @@
 """A bracket scanner; vendor angle markup remains ordinary text."""
+from bisect import bisect_left
 import re
 from pathlib import Path
 from functools import lru_cache
 
 import yaml
 
-from .model import Cue, Dropped, Event, Header, Score, Sentence, Span, Speaker, Text
+from .model import GAP, SPAN_OPS, Cue, Dropped, Event, Header, Score, Sentence, Span, Speaker, Text
 
-BOUNDARY = re.compile(r"(?<=[.!?…])\s+")
-SPAN = re.compile(r"^(soft|stress|slow|fast|whisper|smiling|emphasis|forceful):\s*(.+)$", re.I | re.S)
-SPAN_OPEN = re.compile(r"\[\s*(soft|stress|slow|fast|whisper|smiling|emphasis|forceful):\s*", re.I)
+# A period after a common title or "e.g." does not end a sentence ("Dr. Smith arrived." is one sentence).
+ABBREVIATIONS = ("Mr", "Mrs", "Ms", "Dr", "Prof", "Sr", "Jr", "St", "Mt", "vs", "e.g", "i.e")
+BOUNDARY = re.compile("".join(rf"(?<!\b{re.escape(a)}\.)" for a in ABBREVIATIONS) + r"(?<=[.!?…])\s+")
+SPAN = re.compile(rf"^({'|'.join(SPAN_OPS)}):\s*(.+)$", re.I | re.S)
+SPAN_OPEN = re.compile(rf"\[\s*({'|'.join(SPAN_OPS)}):\s*", re.I)
+SPEAKER_ID = re.compile(r"\d{1,3}")
 INNER = re.compile(r"(\[[^\[\]]*\])")
 RUNG = re.compile(r"^(slightly|a little|somewhat|very|extremely|deeply|really)\s+", re.I)
 
@@ -79,17 +83,30 @@ def _unwrap(body, op, dropped):
     return parts + _flatten(op, "".join(v for k, v in pieces if k == "group"), dropped)
 
 
+@lru_cache(maxsize=16)
+def _scan(body):
+    """One pass over a body: matched bracket pairs, every ']' and every ']]' start, so lookups stay linear."""
+    pairs, stack, closes, doubles = {}, [], [], []
+    for j, char in enumerate(body):
+        if char == "[":
+            stack.append(j)
+        elif char == "]":
+            closes.append(j)
+            if stack:
+                pairs[stack.pop()] = j
+            if j and body[j - 1] == "]":
+                doubles.append(j - 1)
+    return pairs, closes, doubles
+
+
 def _close(body, i):
     """Index of the bracket that closes the one at i, counting nested pairs; -1 if none."""
-    depth = 0
-    for j in range(i, len(body)):
-        if body[j] == "[":
-            depth += 1
-        elif body[j] == "]":
-            depth -= 1
-            if depth == 0:
-                return j
-    return -1
+    return _scan(body)[0].get(i, -1)
+
+
+def _find_after(positions, start):
+    k = bisect_left(positions, start)
+    return positions[k] if k < len(positions) else -1
 
 
 def cue(raw: str) -> Cue:
@@ -153,7 +170,7 @@ def parse(text: str, data=None) -> Score:
     i = 0
     while i < len(body):
         if body.startswith("[[", i):
-            end = body.find("]]", i + 2)
+            end = _find_after(_scan(body)[2], i + 2)
             if end != -1:
                 dropped.append(Dropped("header", "misplaced"))
                 i = end + 2
@@ -187,7 +204,7 @@ def parse(text: str, data=None) -> Score:
                 # A sound or cue inside a span splits the span around it: [soft: a [laugh] b] → [soft: a] [laugh] [soft: b].
                 body = body[:i] + " ".join(_flatten(op, inner, dropped)) + body[close + 1:]
                 continue
-        end = body.find("]", i + 1)
+        end = _find_after(_scan(body)[1], i + 1)
         nested = body.find("[", i + 1, end if end != -1 else len(body))
         if nested != -1:
             close = _close(body, i)
@@ -204,7 +221,7 @@ def parse(text: str, data=None) -> Score:
         raw = content.strip()
         low = raw.lower()
         span = SPAN.match(raw)
-        speaker = re.match(r"^speaker:\s*(\S.*)$", raw, re.I | re.S)
+        speaker = re.match(r"^speaker:\s*(.*)$", raw, re.I | re.S)
         if low in events:
             tokens.append(Event(events[low], raw))
         elif span:
@@ -215,8 +232,12 @@ def parse(text: str, data=None) -> Score:
                 dropped.append(Dropped("span", op, "crossed sentence"))
             else:
                 tokens.append(Span(op, span[2], raw))
+        elif speaker and SPEAKER_ID.fullmatch(speaker[1].strip()):
+            tokens.append(Speaker(speaker[1].strip(), raw))
         elif speaker:
-            tokens.append(Speaker(speaker[1], raw))
+            # Only the documented numeric form: anything else could inject vendor markup into the marker.
+            dropped.append(Dropped("speaker", raw, "invalid id"))
+            append_text(GAP)
         elif raw:
             tokens.append(cue(content))
         else:

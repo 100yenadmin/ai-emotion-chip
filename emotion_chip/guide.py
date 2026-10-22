@@ -15,7 +15,10 @@ def _assemble(template, dialect, model, data, overlay):
     if model and re.fullmatch(r"[A-Za-z0-9_.-]+", model):
         path = root / "models" / f"{model}.yaml"
         if path.is_file():
-            model_note = (yaml.safe_load(path.read_text(encoding="utf-8")) or {}).get("note", "")
+            value = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+            if not isinstance(value, dict) or not isinstance(value.get("note", ""), str):
+                raise ValueError(f"model note {model}: must be a mapping with a string note")
+            model_note = value.get("note", "")
     # The agent writes score forms only; vendor syntax stays inside the renderer.
     forms = ["- `[word]` or `[word, word]` before a sentence sets its delivery; add `slightly` or `very` for intensity.",
              "- `[[register: word; word]]` at the very start sets the whole reply's register. It is never spoken."]
