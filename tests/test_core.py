@@ -19,7 +19,7 @@ from emotion_chip.guide import build_prompt_section, build_skill
 from emotion_chip.model import Cue, Event, Options, Span, Speaker, Text
 from emotion_chip.policy import apply_policy
 from emotion_chip.render import dialect_for, render
-from emotion_chip.score import parse
+from emotion_chip.score import header_cue, parse
 from conftest import FIXTURES, GOLDENS
 
 spec = importlib.util.spec_from_file_location("hermes_normalize", Path(__file__).parent / "vendor" / "hermes_tts_text_normalize.py")
@@ -121,6 +121,7 @@ def test_emitted_phrase_whitelist(case, data):
     # Policy may remove a forbidden part of a blend.
     filtered, _ = apply_policy(parse(case["input"]), data, case["options"])
     authored |= {"["+t.raw+"]" for s in filtered.sentences for t in s.tokens if isinstance(t, Cue)}
+    authored |= {"[" + header_cue(filtered.header).raw + "]"} if filtered.header else set()
     for literal in LITERALS.findall(out.text):
         assert literal in authored or literal in table["phrases"]
 
@@ -188,7 +189,8 @@ def test_optional_blocks_last_first(data, tmp_path):
 
 
 @pytest.mark.parametrize("backend,models,expected", [
-    ("fish", ["s2.1-pro", "s2.1-pro-free", "s2-pro", "s1"], "fish_s2"),
+    ("fish", ["s2.1-pro", "s2.1-pro-free", "s2-pro"], "fish_s2"),
+    ("fish", ["s1"], "tagless"),
     ("fish", ["drama-3", "drama-3-preview"], "fish_drama3"),
     ("eleven", ["eleven_v4", "eleven_v4_turbo", "eleven_v3", "eleven_v3_conversational"], "eleven_v4"),
     ("eleven", ["eleven_flash_v2_5", "eleven_multilingual_v2", "eleven_turbo_v2_5"], "tagless"),
@@ -416,3 +418,68 @@ def test_override_never_borrows_a_later_rung(data):
     out = render("One. [very curious] Two. Three.", "fish_s2", {"params_from": "sadness"}, data)
     assert [(s.group, s.rung) for s in out.plan.segments] == [
         ("sadness", "plain"), ("interest_curiosity", "very"), ("interest_curiosity", "very")]
+
+
+def test_register_header_sets_params_segment_and_opening_cue(data):
+    out = render("[[register: sad]] Hello. Still here.", "fish_s2", data=data)
+    assert out.text == "[sad] Hello. Still here."
+    assert out.group == "sadness" and out.params == {"speed": 0.92}
+    assert [s.group for s in out.plan.segments] == ["sadness", "sadness"]
+    assert not [d for d in out.dropped if d.kind == "header"]
+    assert check(parse("[[register: sad]] Hello."), out, data) == []
+
+
+def test_register_header_with_a_leading_sentence_cue(data):
+    out = render("[[register: sad]] [happy] Good. Fine.", "fish_s2", data=data)
+    assert out.text == "[happy] Good. Fine."
+    assert out.params == {"speed": 0.92}
+    assert [s.group for s in out.plan.segments] == ["happiness", "happiness"]
+    assert any("register header" in note for note in out.notes)
+
+
+def test_register_header_on_tagless_and_with_forbidden_words(data):
+    out = render("[[register: sad]] Hello.", "tagless", data=data)
+    assert out.text == "Hello." and [d.kind for d in out.dropped] == ["header"]
+    out = render("[[register: sobbing]] Hello.", "fish_s2", data=data)
+    assert "sobbing" not in out.text and out.group is None
+    assert ("header", "register: sobbing", "assistant_ok:false") in [(d.kind, d.value, d.reason) for d in out.dropped]
+    assert render("[[register: sad; sobbing]] Hi.", "fish_s2", data=data).text == "[sad] Hi."
+
+
+def test_assistant_ok_false_rows_are_enforced(tmp_path):
+    root = fixture_copy(tmp_path)
+    path = root / "emotions.yaml"
+    rows = yaml.safe_load(path.read_text())
+    next(r for r in rows if r["id"] == "happy")["assistant_ok"] = False
+    path.write_text(yaml.safe_dump(rows, sort_keys=False))
+    out = render("[happy, curious] Hi.", "fish_s2", data=load_data(root))
+    assert out.text == "[curious] Hi." and "assistant_ok:false" in [d.reason for d in out.dropped]
+
+
+def test_parse_uses_the_active_data_events(tmp_path):
+    root = fixture_copy(tmp_path)
+    path = root / "sounds.yaml"
+    sounds = yaml.safe_load(path.read_text())
+    sounds["events"]["hum"] = {"kind": "affect"}
+    path.write_text(yaml.safe_dump(sounds, sort_keys=False))
+    local = load_data(root)
+    assert isinstance(parse("[hum] a.", local).sentences[0].tokens[0], Event)
+    assert not isinstance(parse("[hum] a.").sentences[0].tokens[0], Event)
+    out = render("[hum] a. [laugh] b.", "fish_s2", {"sounds_per_turn": 1}, local)
+    assert ("event", "laugh", "sounds_per_turn") in [(d.kind, d.value, d.reason) for d in out.dropped]
+
+
+@pytest.mark.parametrize("value,expected", [(2, 1.0), (-1, 0.0), (0.6, 0.6)])
+def test_eleven_similarity_is_clamped(value, expected, data):
+    assert render("Hi.", "eleven_v4", {"eleven_similarity": value}, data).params["similarity_boost"] == expected
+
+
+@pytest.mark.parametrize("template", ["{missing}", "{text} {0}", "{text", "plain"])
+def test_span_templates_must_use_only_text(tmp_path, template):
+    root = fixture_copy(tmp_path)
+    path = root / "dialects" / "fish_s2.yaml"
+    table = yaml.safe_load(path.read_text())
+    table["spans"]["soft"] = template
+    path.write_text(yaml.safe_dump(table, sort_keys=False))
+    with pytest.raises(ValueError, match="placeholder"):
+        load_data(root)

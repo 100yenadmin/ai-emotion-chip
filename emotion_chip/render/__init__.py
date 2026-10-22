@@ -4,7 +4,7 @@ import re
 from ..data import load_data
 from ..model import Cue, DeliveryPlan, Dropped, Event, Rendered, Segment, Span, Speaker, Text, option
 from ..policy import apply_policy
-from ..score import parse
+from ..score import header_cue, parse
 
 
 class Dialect(str):
@@ -18,8 +18,11 @@ class Dialect(str):
 
 def dialect_for(backend, model):
     if backend == "fish":
-        if model in {"s2.1-pro", "s2.1-pro-free", "s2-pro", "s1"}:
+        if model in {"s2.1-pro", "s2.1-pro-free", "s2-pro"}:
             return Dialect("fish_s2")
+        if model == "s1":
+            # S1 takes only its fixed cue list and deletes the rest, so cues drop here where they are logged.
+            return Dialect("tagless", notes=["fish s1 takes fixed cues only; rendering tagless"])
         if model in {"drama-3", "drama-3-preview"}:
             return Dialect("fish_drama3")
     if backend == "eleven":
@@ -54,7 +57,7 @@ def _params(dialect, group, data, options):
         return {"speed": max(0.85, min(1.10, row.get("fish_speed", 1.0) + offset))}
     if dialect == "eleven_v4":
         return {"stability": max(0.0, min(1.0, option(options, "eleven_stability", 0.5) + row.get("el_stability_offset", 0.0))),
-                "similarity_boost": option(options, "eleven_similarity", 0.75)}
+                "similarity_boost": max(0.0, min(1.0, option(options, "eleven_similarity", 0.75)))}
     return {}
 
 
@@ -67,13 +70,17 @@ def render(text_or_score, dialect, options=None, data=None):
         dialect = "tagless"
     name = str(dialect)
     table = data.dialects[name]
-    original = parse(text_or_score) if isinstance(text_or_score, str) else text_or_score
+    original = parse(text_or_score, data) if isinstance(text_or_score, str) else text_or_score
     score, policy_drops = apply_policy(original, data, options)
     dropped = list(original.dropped) + policy_drops
-    if score.header is not None:
+    tagless = name in {"tagless", "prose"}
+    # The register header is the reply's delivery: it sets params and the opening segment, and on tag dialects it
+    # is voiced as an opening cue unless the first sentence leads with its own. Its brackets are never spoken.
+    opener = header_cue(score.header)
+    if score.header is not None and (tagless or opener is None):
         dropped.append(Dropped("header", score.header.raw, "not spoken"))
-    # Params follow the first cue that survives policy, so a dropped forbidden cue never sets them.
-    first = _first_cue(score)
+    # Params follow the header, else the first cue that survives policy, so a dropped forbidden cue never sets them.
+    first = opener or _first_cue(score)
     override = option(options, "params_from")
     group = override if isinstance(override, str) else _group(first, data)
     if isinstance(override, str) and group not in data.groups:
@@ -81,15 +88,23 @@ def render(text_or_score, dialect, options=None, data=None):
     params = _params(name, group, data, options)
     segments = []
     output = []
-    tagless = name in {"tagless", "prose"}
     # Each segment carries its own group and rung (the plan feeds non-voice channels); params stay one set per call.
     # An override names the group from the start; a rung is only ever taken from a cue already seen.
-    seg_group, seg_rung = (group if isinstance(override, str) else None), "plain"
+    if isinstance(override, str):
+        seg_group, seg_rung = group, "plain"
+    else:
+        seg_group, seg_rung = (_group(opener, data), opener.rung) if opener else (None, "plain")
     for index, sentence in enumerate(score.sentences):
         lead = next((t for t in sentence.tokens if isinstance(t, Cue)), None)
         if lead is not None:
             seg_group, seg_rung = _group(lead, data), lead.rung
         chunks = []
+        if index == 0 and opener is not None and not tagless:
+            leading = next((t for t in sentence.tokens if not (isinstance(t, Text) and not t.s.strip())), None)
+            if isinstance(leading, Cue):
+                notes.append("register header sets params; the first sentence's own cue leads")
+            else:
+                chunks.append("[" + opener.raw + "] ")
         plain = []
         cues, spans, events = [], [], []
         for token in sentence.tokens:

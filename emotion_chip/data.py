@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 import re
+import string
 
 import yaml
 
@@ -90,6 +91,12 @@ def validate(data):
         for kind in ("spans", "events"):
             for op, template in _mapping(dialect.get(kind), f"dialect {name} {kind}").items():
                 _require(template is None or isinstance(template, str), f"dialect {name}: invalid template")
+                if kind == "spans" and template not in (None, "uppercase"):
+                    try:
+                        fields = {f for _, f, _, _ in string.Formatter().parse(template) if f is not None}
+                    except ValueError:
+                        fields = {None}
+                    _require(fields == {"text"}, f"dialect {name}: span {op} must use exactly the {{text}} placeholder")
                 for literal in LITERALS.findall(template or ""):
                     _require(literal in phrases, f"dialect {name}: emitted phrase {literal} not in whitelist")
                     _require(literal in inverse, f"dialect {name}: missing inverse for {literal}")

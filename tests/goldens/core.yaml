@@ -604,34 +604,30 @@
   input: '[[conversational]] Hello.'
   dialect: fish_s2
   options: {}
-  expected_text: Hello.
+  expected_text: '[conversational] Hello.'
   expected_params: *id001
-  expected_dropped_kinds:
-  - header
+  expected_dropped_kinds: []
 - name: header-fields
   input: '  [[register: warm; pace: calm]] Hello.'
   dialect: fish_drama3
   options: {}
-  expected_text: Hello.
+  expected_text: '[warm, calm] Hello.'
   expected_params: *id002
-  expected_dropped_kinds:
-  - header
+  expected_dropped_kinds: []
 - name: header-cleanup-dot
   input: '[[register: warm]]. Hello.'
   dialect: eleven_v4
   options: {}
-  expected_text: Hello.
+  expected_text: '[warm] Hello.'
   expected_params: *id003
-  expected_dropped_kinds:
-  - header
+  expected_dropped_kinds: []
 - name: header-spaced-dot
   input: '[[register: warm]] . Hello.'
   dialect: fish_s2
   options: {}
-  expected_text: Hello.
+  expected_text: '[warm] Hello.'
   expected_params: *id001
-  expected_dropped_kinds:
-  - header
+  expected_dropped_kinds: []
 - name: misplaced-header
   input: 'Hello [[register: warm]] there.'
   dialect: fish_s2

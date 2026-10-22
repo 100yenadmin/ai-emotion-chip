@@ -2,13 +2,15 @@
 import re
 
 from .model import Cue, Finding
-from .score import cue
+from .score import cue, header_cue
 
 
 def check(score, rendered, data):
     inverse = data.dialects[rendered.dialect]["inverse"]
     authored = {word for sentence in score.sentences for token in sentence.tokens
                 if isinstance(token, Cue) for word in token.words}
+    opener = header_cue(score.header)
+    authored |= set(opener.words) if opener else set()
     # Authorship is checked against the agent's raw text too, so a parser rewrite cannot vouch for itself.
     raw_tokens = set(re.findall(r"[a-z]+", score.source.lower()))
     findings = []
