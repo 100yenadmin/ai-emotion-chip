@@ -533,9 +533,9 @@ def test_duplicate_yaml_keys_are_rejected(tmp_path):
 
 
 @pytest.mark.parametrize("text,dialect,expected", [
-    ("hap[hysterical]py.", "fish_s2", "hap py."),
-    ("foo[pause]bar.", "tagless", "foo bar."),
-    ("one[breath]two.", "fish_s2", "one two."),
+    ("one[[register: sad]]two.", "fish_s2", "one two."),
+    ("foo[pause [laugh]]bar.", "tagless", "foo bar."),
+    ("hap[soft: x", "tagless", "hap x"),
     ("[speaker: 1]Hi.", "fish_drama3", "Hi."),
     ("a[whisper: b]c.", "prose", "a b c."),
 ])
@@ -545,8 +545,16 @@ def test_dropped_tokens_never_fuse_words(data, text, dialect, expected):
 
 
 def test_segment_text_keeps_word_boundaries_at_kept_tokens(data):
-    out = render("ha[laugh]ha.", "fish_s2", data=data)
-    assert out.text == "ha[laughing]ha." and out.plan.segments[0].text == "ha ha."
+    out = render("ha[happy [laugh]]ha.", "fish_s2", data=data)
+    assert out.text == "ha[happy] [laughing]ha." and out.plan.segments[0].text == "ha ha."
+
+
+@pytest.mark.parametrize("dialect", DIALECTS)
+def test_a_group_attached_to_a_word_is_text_not_score(dialect, data):
+    text = "Call handlers[pause], dict[key] and x_1[laugh] now."
+    out = render(text, dialect, data=data)
+    assert out.text == text and not out.dropped
+    assert [type(t).__name__ for t in parse("Call it. [pause] Now.", data).sentences[1].tokens] == ["Event", "Text"]
 
 
 @pytest.mark.parametrize("quoted", ['He said "go."', "He said 'go.'", "He said “go.”", "(It went.)", '(He said "go.")'])
