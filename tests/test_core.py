@@ -733,7 +733,7 @@ def test_a_rewrite_after_a_word_or_call_stays_score_syntax(text, tagless, data):
      "See Mercury (https://en.wikipedia.org/wiki/Mercury_(planet)) now."),
     ("Take v[start..end] and wait.. what.", "eleven_v4", "Take v[start..end] and wait… what."),
     ("Use ../docs/Guide.md here.", "eleven_v4", "Use ../docs/Guide.md here."),
-    ("Okay. [[warm]] Here.", "fish_s2", "Okay. Here."),
+    ("Okay. [[sad]] Here.", "fish_s2", "Okay. Here."),
     ("Wait [[pause]] go.", "fish_s2", "Wait go."),
     ("Café[[Menu]]is open.", "tagless", "Café Menu is open."),
     ("Read x[a.  b] now.", "tagless", "Read x[a.  b] now."),
