@@ -561,6 +561,7 @@ def test_sentence_ends_before_a_closing_quote(quoted, data):
     ('[soft: He said "go."] Then.', 2),
     ("[soft: Ask Dr.] Smith.", 1),
     ("[soft: Two.][exhale] Three.", 1),
+    ("[breath] [soft: One. Two.] [exhale] Three.", 3),
 ])
 def test_a_span_can_end_its_sentence(data, text, count):
     score = parse(text, data)
@@ -607,8 +608,8 @@ def test_titles_do_not_end_sentences(data):
     assert [(d.value, d.reason) for d in apply_policy(score, data)[1]] == [("exhale", "breath density")]
 
 
-@pytest.mark.parametrize("text", ["[" * 20000, "[[" * 10000, "[soft: " + "[" * 10000 + "]", "a [" * 10000],
-                         ids=["openers", "doubles", "span", "words"])
+@pytest.mark.parametrize("text", ["[" * 20000, "[[" * 10000, "[soft: " + "[" * 10000 + "]", "a [" * 10000,
+                                  "[soft: ]" * 4000], ids=["openers", "doubles", "span", "words", "empty-spans"])
 def test_unmatched_brackets_parse_in_linear_time(data, text):
     import time
     start = time.perf_counter()
