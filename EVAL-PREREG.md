@@ -166,7 +166,7 @@ any data exists for that product.
   - E1, E3 and E5 to E8 apply unchanged. Later changes to scope A3 go in new dated amendments, and its bars never move
     after their data exists.
 - **Run-1 (2026-10-22) is void** under the stop rules, as an infrastructure failure. Every generation call loaded about
-  21k tokens of unrelated agent instructions from the working directory's parent folders, the same in every arm, so it
+  20.5k tokens of unrelated agent instructions from the working directory's parent folders, the same in every arm, so it
   does not measure the plugin. The evidence is the calls' own token counts, which do not depend on the results. The
   failed run is recorded in `evidence/run-1/`.
 - **E4 is parked.** `signals` ships `off`, which needs no data. The pilot runs only if the feature comes back.

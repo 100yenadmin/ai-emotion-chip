@@ -30,9 +30,11 @@ The calls' own usage records show it. Median prompt tokens per call (input plus 
 | NATIVE | 23,091 | 23,091 |
 | ON | 23,256 | 23,254 |
 
-The OFF arm's own text (the 40-word base system prompt and one user message) is about 55 tokens, so about 21k tokens
-of outside context reached every call, the same in every arm. ON and NATIVE differ from OFF by the size of their
-guides, as designed. Six Fable replies (in G1 and E3, in all three arms) contained raw tool-call markup for shell
+A control call (`claude-haiku-5-5`, the same OFF prompt) uses 496 prompt tokens when `claude -p` runs in an empty
+directory: the bench's own text plus the CLI's. Run the old way, from inside the repository, it uses 21,026. So about
+20.5k tokens of outside context reached every call, the same in every arm. ON and NATIVE differ from OFF by the size
+of their guides, as designed. The generator fix lands with the bench code: it runs `claude -p` in an empty temporary
+directory. Six Fable replies (in G1 and E3, in all three arms) contained raw tool-call markup for shell
 commands, although nothing in the bench's prompts mentions tools or a shell.
 
 The evidence is the token counts, which do not depend on the results. The next harness (amendment A3) generates
