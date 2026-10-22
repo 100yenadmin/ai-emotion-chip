@@ -35,7 +35,8 @@ import tarfile
 from .bench_probe.probe import FIXED_CANARIES
 
 HOME = Path.home()
-FISH_REF, CHIP_REF = "f7ae982", "m1-plugin-v2"
+# The chip plugin is archived from main; each run records the commit it resolved to.
+FISH_REF, CHIP_REF = "f7ae982", "main"
 PROVIDER = "claude-subscription-directsdk-experimental"
 # Where things live on the bench machine comes from a local JSON file this variable names (see paths.example.json),
 # so no machine path is kept in the repo.
