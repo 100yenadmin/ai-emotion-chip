@@ -3,7 +3,7 @@ from dataclasses import replace
 import importlib
 import re
 
-from ..model import Cue, option
+from ..model import SPAN_OPS, Cue, option
 from ..render import render
 from ..score import parse
 
@@ -14,15 +14,35 @@ def fish_adapter(fish):
     return importlib.import_module(package + ".tags").adapt_tags
 
 
-# A (cue) paren that only bracket tokens precede in its sentence ("[sad] (sobbing) Sorry."). Fish leaves it alone, and
-# what each model does with it is not documented, so the chip converts it too and policy sees it.
-_LEADING = re.compile(r"((?:^|[.!?。！？\n])(?:\s*(?:\[\[[^\[\]]*\]\]|\[[^\[\]]*\]))+\s*)(\([^()\n]{1,64}\))")
+# A (cue) paren that only unspoken bracket tokens precede in its sentence ("[sad] (sobbing) Sorry."). Fish leaves it
+# alone, and what each model does with it is not documented, so the chip converts it too and policy sees it. A span
+# carries spoken words, so a paren after one is prose.
+_TOKEN = r"(?:\[\[[^\[\]]*\]\]|\[(?!\s*(?:" + "|".join(SPAN_OPS) + r"):)[^\[\]]*\])"
+_LEADING = re.compile(rf"({_TOKEN}(?:\s*{_TOKEN})*\s*)(\([^()\n]{{1,64}}\))", re.I)
+# Fish's opaque regions (fish_audio/tags.py): backtick spans, an unclosed backtick to the end, and <|...|> markup.
+_PROTECTED = re.compile(r"(`+)[\s\S]*?\1|<\|[\s\S]*?\|>|`+[\s\S]*$")
+
+
+def _leading(text, adapt):
+    """Convert leading parens outside Fish's opaque regions; the sentence boundary is read in the whole text."""
+    def outside(segment, offset):
+        def replace(match):
+            before = text[:offset + match.start()].rstrip(" \t\r")
+            if before and before[-1] not in ".!?。！？\n":
+                return match[0]
+            return match[1] + adapt(match[2], "S2")
+        return _LEADING.sub(replace, segment)
+    result, offset = [], 0
+    for protected in _PROTECTED.finditer(text):
+        result += [outside(text[offset:protected.start()], offset), protected[0]]
+        offset = protected.end()
+    return "".join(result + [outside(text[offset:], offset)])
 
 
 def adapt_all(text, adapt):
     """Fish's S2 paren adaptation, plus parens that lead their sentence after bracket tokens, until nothing changes."""
     for _ in range(text.count("(") + 1):
-        new = _LEADING.sub(lambda m: m[1] + adapt(m[2], "S2"), adapt(text, "S2"))
+        new = _leading(adapt(text, "S2"), adapt)
         if new == text:
             break
         text = new

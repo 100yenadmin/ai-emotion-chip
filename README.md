@@ -80,7 +80,9 @@ recorded. It never adds or upgrades an emotion word.
 - Spoken replies, read-aloud and voice mode speak the reply text. A cue written in a reply would also appear in the
   chat text, so the guide asks for cues in the tool text. A Hermes change to split displayed text from spoken text
   is planned.
-- Hermes's full-duplex voice mode does not use speech providers, so the plugin does not reach it.
+- Hermes's GPT-Live voice chat mode (`voice.voice_chat_mode: gpt-live`) speaks through OpenAI's live voice model,
+  not a speech provider, so the plugin does not reach it. CLI continuous voice mode speaks replies through the speech
+  provider, like other spoken replies.
 
 ## Grounding
 

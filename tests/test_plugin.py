@@ -17,6 +17,7 @@ import yaml
 from emotion_chip.data import DIALECTS, load_data
 from emotion_chip.guide import build_prompt_section
 from emotion_chip.hermes import fishtags as fishtags_module
+from emotion_chip.hermes.fishtags import adapt_all
 from emotion_chip.hermes import provider as provider_module
 from emotion_chip.hermes import log as log_module
 from emotion_chip.hermes.hooks import HOOKS
@@ -859,12 +860,44 @@ def test_status_prompt_and_skill_follow_tts_model(rig, tmp_path):
     ("[[register: sad]] [hysterical] (sobbing) Sorry.", "[sad] Sorry."),
     ("Done. [hysterical] " + "(sobbing) " * 9 + "Sorry.", "Done. Sorry."),
     ("I was (sobbing) yesterday.", "I was (sobbing) yesterday."),
+    # Fish's opaque regions stay as written: the paren is not converted there.
+    ("`Example. [sad] (sobbing) text`", "`Example. [sad] (sobbing) text`"),
+    ("Hi. `code [sad] (sobbing) here", "Hi. `code [sad] (sobbing) here"),
 ])
 def test_every_leading_paren_cue_passes_policy(fish_tags, model, text, voiced):
     ctx, fish, host, *_ = fish_tags
     host["tts.fish-audio.model"] = fish.pinned_model = model
     ctx.provider.synthesize(text, "out.mp3")
     assert fish.calls[-1][1] == voiced and fish.spoken[-1] == voiced
+
+
+@pytest.mark.parametrize("model,voiced", [("s2.1-pro", "[soft tone] I was (sobbing) yesterday."),
+                                         ("drama-3", "<soft>I was</soft> (sobbing) yesterday.")])
+def test_a_paren_after_a_span_is_prose(fish_tags, model, voiced):
+    ctx, fish, host, *_ = fish_tags
+    host["tts.fish-audio.model"] = fish.pinned_model = model
+    ctx.provider.synthesize("[soft: I was] (sobbing) yesterday.", "out.mp3")
+    assert fish.calls[-1][1] == voiced
+    host["tts.provider"] = "fish-audio"
+    host["tts.model"] = model
+    assert ctx.middleware(tool_name="text_to_speech", args={"text": "[soft: I was] (sobbing) yesterday."}
+                          )["args"]["text"] == voiced
+
+
+def test_adapt_all_settles_chains_outside_opaque_regions():
+    assert adapt_all("Done. [sad] (happy) (sobbing) Bye.", fish_like_adapt_tags) == "Done. [sad] [happy] [sobbing] Bye."
+    assert adapt_all("<|. [sad] (sobbing) x|> Ok.", fish_like_adapt_tags) == "<|. [sad] (sobbing) x|> Ok."
+    # The sentence boundary is read in the whole text, so an opaque region does not start a sentence.
+    assert adapt_all("See `x` [sad] (happy) now.", fish_like_adapt_tags) == "See `x` [sad] (happy) now."
+    assert adapt_all("Ok. [Soft: a] (happy) b.", fish_like_adapt_tags) == "Ok. [Soft: a] (happy) b."
+
+
+def test_compat_path_adapts_parens_on_drama3(fish_tags):
+    ctx, fish, host, *_ = fish_tags
+    host["tts.provider"] = "fish-audio"
+    host["tts.model"] = host["tts.fish-audio.model"] = "drama-3"
+    result = ctx.middleware(tool_name="text_to_speech", args={"text": "Done. [hysterical] (sobbing) Sorry. (happy) Ok."})
+    assert result["args"]["text"] == "Done. Sorry. [happy] Ok."
 
 
 def test_settling_keeps_the_register_params(fish_tags):
