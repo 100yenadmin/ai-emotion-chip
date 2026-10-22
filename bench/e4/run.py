@@ -62,8 +62,11 @@ def run_directory(value):
     return outside_repo(path)
 
 
+TMP = Path(os.path.realpath("/tmp"))
+
+
 def outside_repo(path):
-    if path == ROOT or ROOT in path.parents or Path(os.path.realpath('/tmp')) in path.parents:
+    if path == ROOT or ROOT in path.parents or TMP in path.parents:
         raise ValueError("results must be outside the repository and temporary storage")
     return path
 
@@ -76,7 +79,7 @@ def work_root(value=None):
         # A random name can spell a tell ("we4..."); draw again rather than abort the pilot.
         path = next(p for p in (Path(tempfile.gettempdir()).resolve() / f"w{secrets.token_hex(4)}" for _ in range(1000))
                     if not leaks(p.name))
-    if leaks(path) or path == Path(os.path.realpath('/tmp')) or Path(os.path.realpath('/tmp')) in path.parents:
+    if leaks(path) or path == TMP or TMP in path.parents:
         raise ValueError("workspace root must be neutral and outside /tmp")
     return path
 

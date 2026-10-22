@@ -374,11 +374,12 @@ def test_full_fake_gate_g1_report_only_and_g3_verdicts(tmp_path, monkeypatch):
     assert report.build_report(tmp_path, tagged=changed)["verdict"] == "unverified"
 
 
-def test_cli_output_location_guard(tmp_path):
-    assert items.run_directory(tmp_path / "test-run") == (tmp_path / "test-run").resolve()
-    for bad in (items.ROOT, items.ROOT / "bench" / "run", Path("/tmp/run"), Path("/private/tmp/run"), Path("/")):
+def test_cli_output_location_guard(tmp_path, request):
+    for bad in (items.ROOT, items.ROOT / "bench" / "run", Path("/tmp/run"), items.TMP / "run", Path("/")):
         with pytest.raises(ValueError):
             items.run_directory(bad)
+    request.getfixturevalue("bench_temp_root")
+    assert items.run_directory(tmp_path / "test-run") == (tmp_path / "test-run").resolve()
 
 
 def test_cue_rate_uses_sentence_observations():

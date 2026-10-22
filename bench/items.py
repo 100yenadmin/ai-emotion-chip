@@ -95,10 +95,12 @@ def read_json(path):
     return json.loads(Path(path).read_text(encoding="utf-8"))
 
 
+TMP = Path("/tmp").resolve()
+
+
 def run_directory(path):
     """A run-id directory for bench output: outside the source tree and outside /tmp."""
     path = Path(path).expanduser().resolve()
-    temp = Path("/tmp").resolve()
-    if path == ROOT or ROOT in path.parents or path == temp or temp in path.parents or path.parent == path:
+    if path == ROOT or ROOT in path.parents or path == TMP or TMP in path.parents or path.parent == path:
         raise ValueError("bench output goes in a run-id directory outside the repository and /tmp")
     return path

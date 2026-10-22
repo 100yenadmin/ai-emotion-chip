@@ -25,7 +25,7 @@ def no_external_process(monkeypatch):
 
 
 @pytest.fixture
-def neutral():
+def neutral(bench_temp_root):
     """Agent workspaces need a path without study words; the pytest basetemp may carry them."""
     with tempfile.TemporaryDirectory(prefix="w") as path:
         yield Path(path)
@@ -435,7 +435,7 @@ def test_output_location_rejected(path):
         run.run_directory(run.ROOT / path)
 
 
-def test_generated_work_root_redraws_a_tell(monkeypatch):
+def test_generated_work_root_redraws_a_tell(monkeypatch, bench_temp_root):
     draws = iter(["e4abc123", "0badf00d"])
     monkeypatch.setattr(run.secrets, "token_hex", lambda n: next(draws))
     assert run.work_root().name == "w0badf00d"
