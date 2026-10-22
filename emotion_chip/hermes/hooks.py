@@ -8,10 +8,11 @@ HOOKS = ("pre_llm_call", "post_tool_call", "api_request_error", "on_session_star
 
 
 class Hooks:
-    def __init__(self, settings, situation, env=None):
+    def __init__(self, settings, situation, env=None, *, start_turn=None):
         self.settings = settings
         self.situation = situation
         self.env = env or session_env
+        self.start_turn = start_turn
 
     def _remember(self, kwargs):
         # A delegated subagent runs with its parent's session key still bound; mapping the key to the child
@@ -58,6 +59,8 @@ class Hooks:
                                   lambda row: row.update(interruptions=row["interruptions"] + 1))
 
     def pre_llm_call(self, **kwargs):
+        if self.start_turn and not (kwargs.get("parent_session_id") or kwargs.get("platform") == "subagent"):
+            self.start_turn(kwargs.get("session_id") or session_identity(self.env, self.situation))
         mode = self.settings.get("signals")
         now = self.situation.clock()
         line = ""

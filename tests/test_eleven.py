@@ -111,11 +111,38 @@ def test_formats(rig, format, query):
         assert path.read_bytes() == b"\x01\x00" * 5000
 
 
-def test_unknown_format(rig):
+@pytest.mark.parametrize("requested,supported", [("flac", "wav"), ("bad", "mp3")])
+@pytest.mark.parametrize("string_path", [False, True])
+def test_unsupported_format_returns_written_path(rig, requested, supported, string_path):
     ctx, _, _, _, calls, directory = rig
-    with pytest.raises(ValueError, match="Unknown ElevenLabs format"):
-        ctx.provider.synthesize("Hi.", directory / "out.bad", format="bad")
-    assert calls == [] and not (directory / "out.bad").exists()
+    path = directory / ("out." + requested)
+    written = ctx.provider.synthesize("Words.", str(path) if string_path else path, format=requested)
+    expected = path.with_suffix("." + supported)
+    assert written == (str(expected) if string_path else expected)
+    assert not path.exists() and expected.is_file()
+    query = "pcm_24000" if supported == "wav" else "mp3_44100_128"
+    assert calls[-1][0].full_url.endswith("?output_format=" + query)
+    if supported == "wav":
+        with wave.open(str(written), "rb") as handle:
+            assert (handle.getnchannels(), handle.getsampwidth(), handle.getframerate()) == (1, 2, 24000)
+            assert handle.readframes(5000) == b"\x01\x00" * 5000
+    else:
+        assert expected.read_bytes() == b"\x01\x00" * 5000
+
+
+@pytest.mark.parametrize("streaming", [False, True])
+def test_why_and_log_use_effective_eleven_params(rig, streaming):
+    ctx, _, _, _, calls, directory = rig
+    ctx.set_config("eleven_style", 0.3)
+    ctx.set_config("eleven_speed", 0.9)
+    if streaming:
+        list(ctx.provider.stream("Neutral words."))
+    else:
+        ctx.provider.synthesize("Neutral words.", directory / "out.mp3")
+    sent = payload(calls)["voice_settings"]
+    assert sent == {"stability": 0.5, "similarity_boost": 0.75, "style": 0.3, "speed": 0.9}
+    assert f"params: {sent}" in ctx.command("why")
+    assert json.loads((directory / "delivery.jsonl").read_text())["params"] == sent
 
 
 def test_stream_chunks_and_capabilities(rig):

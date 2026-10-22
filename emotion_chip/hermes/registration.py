@@ -64,7 +64,7 @@ def register_all(ctx, *, reader=None, data_dir=None, env=None, clock=None):
                             if line.startswith("description:")), "")
         ctx.register_skill("emotion-chip-voice", path, description=description)
     if hasattr(ctx, "register_hook"):
-        hooks = Hooks(settings, situation, environment)
+        hooks = Hooks(settings, situation, environment, start_turn=provider.start_turn)
         for name in HOOKS:
             ctx.register_hook(name, getattr(hooks, name))
     if hasattr(ctx, "register_middleware"):

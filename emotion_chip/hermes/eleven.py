@@ -38,7 +38,9 @@ class ElevenClient:
 
     def synthesize(self, text, output_path, *, voice, model, params, format="mp3", previous_request_ids=()):
         if format not in FORMATS:
-            raise ValueError(f"Unknown ElevenLabs format: {format}")
+            format = "wav" if format == "flac" else "mp3"
+            path = Path(output_path).with_suffix("." + format)
+            output_path = str(path) if isinstance(output_path, str) else path
         with self._open(text, voice, model, params, FORMATS[format],
                         previous_request_ids=previous_request_ids) as response:
             audio, request_id = response.read(), response.headers.get("request-id")
@@ -50,7 +52,7 @@ class ElevenClient:
                 handle.writeframes(audio)
         else:
             Path(output_path).write_bytes(audio)
-        return request_id
+        return output_path, request_id
 
     def stream(self, text, *, voice, model, params):
         with self._open(text, voice, model, params, "pcm_24000", streaming=True) as response:

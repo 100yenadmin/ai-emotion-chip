@@ -1,5 +1,5 @@
 """Render agent-authored scores and send them to the selected voice backend."""
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from threading import RLock
 import math
 import os
@@ -81,6 +81,11 @@ class EmotionChipTTSProvider(TTSProvider):
         fish = _fish()
         return fish is not None and fish.is_available()
 
+    def start_turn(self, session_id):
+        """Carry belongs to the streamed pieces of one reply, never the next turn."""
+        with self._lock:
+            self._carried.pop(session_id, None)
+
     def _prepare(self, text, model, speed, streaming=False):
         backend = self.settings.get("backend")
         models = self.settings.resolve_fish_model(model) if backend == "fish" else None
@@ -121,6 +126,9 @@ class EmotionChipTTSProvider(TTSProvider):
         if models:
             base = _base_speed(self.settings.host("tts.fish-audio.speed", 1.0) if speed is None else speed)
             final = max(0.5, min(2.0, base * rendered.params.get("speed", 1.0)))
+            rendered = replace(rendered, params=dict(rendered.params, speed=final))
+        else:
+            rendered = replace(rendered, params=self._eleven_params(rendered))
         if models and models.pinned and models.requested and models.pinned != models.requested:
             notes.append(f"Fish pinned model wins: {models.pinned} over requested {models.requested}")
         rendered.notes.extend(notes)
@@ -166,9 +174,9 @@ class EmotionChipTTSProvider(TTSProvider):
                                      for k, ids in self._request_ids.items()}
                 self._request_ids = {k: ids for k, ids in self._request_ids.items() if ids}
                 previous = [rid for rid, _ in self._request_ids.get(session_id, [])] if stitch else []
-            request_id = self.eleven.synthesize(rendered.text, output_path, voice=self.settings.eleven_voice(voice),
-                                                model=effective, params=self._eleven_params(rendered), format=format,
-                                                previous_request_ids=previous)
+            output_path, request_id = self.eleven.synthesize(
+                rendered.text, output_path, voice=self.settings.eleven_voice(voice),
+                model=effective, params=rendered.params, format=format, previous_request_ids=previous)
             if stitch and request_id:
                 with self._lock:
                     self._request_ids[session_id] = (self._request_ids.get(session_id, []) +
@@ -183,7 +191,7 @@ class EmotionChipTTSProvider(TTSProvider):
         if self.settings.get("backend") == "eleven":
             rendered, effective, _ = self._prepare(text, model, extra.get("speed"), streaming=True)
             return self.eleven.stream(rendered.text, voice=self.settings.eleven_voice(voice), model=effective,
-                                      params=self._eleven_params(rendered))
+                                      params=rendered.params)
         fish = self._required_fish()
         rendered, effective, final = self._prepare(text, model, extra.get("speed"), streaming=True)
         return fish.stream(rendered.text, voice=voice, model=effective, speed=final, format=format)

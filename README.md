@@ -56,6 +56,8 @@ The plugin's own settings, under `plugins.entries.emotion-chip.settings` (also s
 | `signals` | `off` | `facts` gives the agent dated task facts (tool errors in a row, retries, session length). `facts+affordance` adds "stopping and reporting is fine". Off until its pilot is measured. |
 | `delivery_log` | `true` | A local log of cue words, dialect, parameters and drops. It never stores the spoken text. |
 
+Hermes keeps the plugin's host-managed state in its own namespaced folder under `plugin-data/`; the chip's own files are under `plugin-data/emotion-chip/`.
+
 If you keep `tts.provider: fish-audio`, the plugin still renders a score the agent writes in a `text_to_speech` call
 (with `guide_mode: generate`), but it adds the delivery guide to the prompt only when it is the speech provider.
 

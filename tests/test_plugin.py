@@ -168,6 +168,41 @@ def test_stream_carry_session_and_expiry(rig):
     assert fish.calls[-1][2]["speed"] == 1.03
 
 
+@pytest.mark.parametrize("gateway", [False, True])
+def test_new_turn_clears_stream_carry(rig, gateway):
+    ctx, fish, _, session, _, _ = rig
+    session.update(HERMES_SESSION_ID="" if gateway else "session-a", HERMES_SESSION_KEY="chat-a")
+    ctx.hooks["pre_llm_call"](session_id="session-a", turn_id="turn-1")
+    list(ctx.provider.stream("[[register: sad]] First reply."))
+    assert fish.calls[-1][2]["speed"] == 0.92
+    parent = dict(ctx.state["sessions"]["session-a"])
+    for child in ({"parent_session_id": "session-a"}, {"platform": "subagent"}):
+        ctx.hooks["pre_llm_call"](session_id="child-a", **child)
+        list(ctx.provider.stream("Another piece of the first reply."))
+        assert fish.calls[-1][2]["speed"] == 0.92
+    assert ctx.state["session_keys"] == {"chat-a": "session-a"}
+    assert ctx.state["sessions"]["session-a"] == parent
+    ctx.hooks["pre_llm_call"](session_id="session-a", turn_id="turn-2")
+    list(ctx.provider.stream("A fresh neutral reply."))
+    assert fish.calls[-1][2]["speed"] == 1.0
+
+
+@pytest.mark.parametrize("streaming", [False, True])
+@pytest.mark.parametrize("speed", [None, 1.1, 3.0])
+def test_why_and_log_use_final_fish_speed(rig, streaming, speed):
+    ctx, fish, host, _, _, directory = rig
+    host["tts.fish-audio.speed"] = 1.3
+    if streaming:
+        list(ctx.provider.stream("[sad] Again.", speed=speed))
+    else:
+        ctx.provider.synthesize("[sad] Again.", "out.mp3", speed=speed)
+    expected = max(0.5, min(2.0, (1.3 if speed is None else speed) * 0.92))
+    sent = fish.calls[-1][2]["speed"]
+    assert sent == expected
+    assert f"params: {{'speed': {sent}}}" in ctx.command("why")
+    assert json.loads((directory / "delivery.jsonl").read_text())["params"] == {"speed": sent}
+
+
 def test_stream_concurrent_carry(rig, monkeypatch):
     ctx, fish, *_ = rig
     original = fishtags_module.render
