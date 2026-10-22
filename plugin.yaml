@@ -1,6 +1,6 @@
 name: emotion-chip
 version: 0.1.0.dev0
-description: "Hermes Emotion Chip renders the agent's own voice delivery score with Fish Audio. It measures nothing about feelings. Fish synthesis calls are billed to your Fish account."
+description: "Hermes Emotion Chip renders the agent's own voice delivery score with Fish Audio or ElevenLabs. It measures nothing about feelings. Synthesis calls are billed to your backend account."
 kind: standalone
 manifest_version: 2
 api_version: 1
@@ -12,16 +12,37 @@ provides_middleware: [tool_request]
 config_schema:
   backend:
     type: str
-    choices: [fish]
+    choices: [fish, eleven]
     default: fish
     label: "Voice backend"
-    description: "Render the agent's score for Fish Audio."
+    description: "Render the agent's score for Fish Audio or ElevenLabs."
   fish_model:
     type: str
     choices: [s2.1-pro, s2.1-pro-free, s2-pro, drama-3]
     default: s2.1-pro
     label: "Fish model"
     description: "Requested model when the call has no Fish model; Fish tts.fish-audio.model takes precedence."
+  eleven_model:
+    type: str
+    choices: [eleven_v4, eleven_v4_turbo, eleven_v3]
+    default: eleven_v4
+    label: "ElevenLabs model"
+    description: "Model to use unless tts.elevenlabs.model_id names one of these models."
+  eleven_voice_id:
+    type: str
+    default: ""
+    label: "ElevenLabs voice id"
+    description: "Voice fallback after the call's voice and tts.elevenlabs.voice_id."
+  eleven_style:
+    type: float
+    default: null
+    label: "ElevenLabs style"
+    description: "Optional voice style; omitted from requests when unset."
+  eleven_speed:
+    type: float
+    default: null
+    label: "ElevenLabs speed"
+    description: "Optional voice speed; omitted from requests when unset."
   guide_mode:
     type: str
     choices: [generate, defer]

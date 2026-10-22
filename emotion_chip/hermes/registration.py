@@ -35,7 +35,7 @@ def register_all(ctx, *, reader=None, data_dir=None, env=None, clock=None):
     provider = EmotionChipTTSProvider(settings, situation, env=environment, clock=clock, data_dir=directory)
     data = load_data()
     # Hermes passes tts.model as the call's model on the provider path; the prompt and skill teach that dialect.
-    dialect = dialect_for("fish", settings.fish_model(settings.host("tts.model")))
+    dialect = dialect_for(settings.get("backend"), settings.model(settings.host("tts.model")))
     for name in DIALECTS:
         for key in data.models:
             try:
@@ -47,7 +47,7 @@ def register_all(ctx, *, reader=None, data_dir=None, env=None, clock=None):
     def content_fn(info):
         if settings.get("guide_mode") != "generate" or settings.tts_provider() != "emotion-chip":
             return ""
-        return build_prompt_section(dialect_for("fish", settings.fish_model(settings.host("tts.model"))),
+        return build_prompt_section(dialect_for(settings.get("backend"), settings.model(settings.host("tts.model"))),
                                     model_key(info.get("model")), data)
 
     if hasattr(ctx, "register_tts_provider"):

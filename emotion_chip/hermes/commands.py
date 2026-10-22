@@ -16,8 +16,14 @@ def make_handler(settings, situation, env):
         session_id = session_identity(env, situation)
         if args == ["status"]:
             values = {key: settings.get(key) for key in ("backend", "fish_model", "guide_mode", "signals")}
-            model = settings.fish_model(settings.host("tts.model"))
-            values.update(fish_model=model, session_id=session_id, dialect=str(dialect_for("fish", model)),
+            backend = settings.get("backend")
+            model = settings.model(settings.host("tts.model"))
+            if backend == "eleven":
+                values.pop("fish_model")
+                values.update(eleven_model=model, eleven_voice_id=settings.eleven_voice())
+            else:
+                values["fish_model"] = model
+            values.update(session_id=session_id, dialect=str(dialect_for(backend, model)),
                           quiet="on" if situation.get("quiet", False) else "off",
                           delivery_log="on" if settings.get("delivery_log") else "off")
             return "; ".join(f"{key}: {value}" for key, value in values.items())
@@ -26,7 +32,8 @@ def make_handler(settings, situation, env):
                 row = deepcopy(last_render.get(session_id, {}))
             if row:
                 dropped = "; ".join(f"{d['kind']} {d['value']}: {d['reason']}" for d in row["dropped"]) or "none"
-                text = (f"Dialect: {row['dialect']}; Fish model: {row['fish_model']}; authored cue words: {', '.join(row['cue_words']) or 'none'}; "
+                backend = "ElevenLabs" if row.get("backend") == "eleven" else "Fish"
+                text = (f"Dialect: {row['dialect']}; {backend} model: {row['fish_model']}; authored cue words: {', '.join(row['cue_words']) or 'none'}; "
                         f"dropped: {dropped}; "
                         f"params: {row['params']}")
                 if row["notes"]:

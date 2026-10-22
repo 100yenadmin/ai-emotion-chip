@@ -5,10 +5,12 @@ from pathlib import Path
 
 DEFAULTS = {
     "backend": "fish", "fish_model": "s2.1-pro", "guide_mode": "generate",
+    "eleven_model": "eleven_v4", "eleven_voice_id": "", "eleven_style": None, "eleven_speed": None,
     "signals": "off",
     "delivery_log": True,
 }
 FISH_MODELS = {"s2.1-pro", "s2.1-pro-free", "s2-pro", "drama-3", "s1", "drama-3-preview"}
+ELEVEN_MODELS = ("eleven_v4", "eleven_v4_turbo", "eleven_v3")
 
 
 @dataclass(frozen=True)
@@ -93,3 +95,13 @@ class Settings:
 
     def fish_model(self, model=None):
         return self.resolve_fish_model(model).effective
+
+    def eleven_model(self):
+        host = self.host("tts.elevenlabs.model_id")
+        return host if host in ELEVEN_MODELS else self.get("eleven_model")
+
+    def eleven_voice(self, voice=None):
+        return voice or self.host("tts.elevenlabs.voice_id") or self.get("eleven_voice_id")
+
+    def model(self, model=None):
+        return self.eleven_model() if self.get("backend") == "eleven" else self.fish_model(model)
