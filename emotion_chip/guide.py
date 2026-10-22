@@ -8,6 +8,8 @@ def _assemble(template, dialect, model, data, overlay):
     table = data.dialects[dialect]
     licence = data.guide["licence"]
     model_note = data.models.get(model, {}).get("note", "")
+    if not isinstance(model_note, str):
+        raise ValueError(f"model note {model}: must be a mapping with a string note")
     # The agent writes score forms only; vendor syntax stays inside the renderer.
     forms = ["- `[word]` or `[word, word]` before a sentence sets its delivery; add `slightly` or `very` for intensity.",
              "- `[[register: word; word]]` at the very start sets the whole reply's register. It is never spoken."]

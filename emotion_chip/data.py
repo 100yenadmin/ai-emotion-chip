@@ -7,6 +7,8 @@ import json
 import re
 import string
 
+from .model import SPAN_OPS
+
 DIALECTS = ("fish_s2", "fish_drama3", "eleven_v4", "tagless", "prose")
 LITERALS = re.compile(r"\[[^\[\]]+\]|</?\w+>")
 DATA_ROOT = Path(__file__).with_name("data")
@@ -117,6 +119,7 @@ def validate(data):
     for alias, target in _mapping(sounds.get("aliases", {}), "sound aliases").items():
         _require(isinstance(alias, str) and alias.strip() and target in sounds["events"],
                  f"sound alias {alias}: target {target} is not an event")
+        _require(alias.lower() not in sounds["events"], f"sound alias {alias} would override the event {alias}")
     for name in DIALECTS:
         dialect = _mapping(data.dialects.get(name), f"dialect {name}")
         _require(isinstance(dialect.get("dialect_version"), str), f"dialect {name}: missing dialect_version")
@@ -126,6 +129,8 @@ def validate(data):
         for kind in ("spans", "events"):
             for op, template in _mapping(dialect.get(kind), f"dialect {name} {kind}").items():
                 _require(template is None or isinstance(template, str), f"dialect {name}: invalid template")
+                if kind == "spans":
+                    _require(op in SPAN_OPS, f"dialect {name}: span {op} is not in the score grammar")
                 if kind == "spans" and template not in (None, "uppercase"):
                     try:
                         fields = [(f, spec, conv) for _, f, spec, conv in string.Formatter().parse(template)
@@ -140,10 +145,14 @@ def validate(data):
                 for literal in LITERALS.findall(template or ""):
                     _require(literal in phrases, f"dialect {name}: emitted phrase {literal} not in whitelist")
                     _require(literal in inverse, f"dialect {name}: missing inverse for {literal}")
-                if template not in (None, "uppercase"):
+                if kind == "spans" and template not in (None, "uppercase"):
                     # Only declared vendor literals and whitespace may surround {text}: no unmarked spoken words.
                     rest = LITERALS.sub("", template.replace("{text}", ""))
-                    _require(not rest.strip(), f"dialect {name}: {kind[:-1]} {op} adds unmarked text {rest.strip()!r}")
+                    _require(not rest.strip(), f"dialect {name}: span {op} adds unmarked text {rest.strip()!r}")
+                if kind == "events" and template is not None:
+                    # An event is emitted as written: one or more declared literals, nothing spoken.
+                    _require(LITERALS.search(template) and not LITERALS.sub("", template).strip(),
+                             f"dialect {name}: event {op} must be declared vendor literals only")
         if name == "eleven_v4":
             variants = _mapping(dialect.get("variants"), "dialect eleven_v4 variants")
             _require(all(isinstance(k, str) and isinstance(v, int) and not isinstance(v, bool) and v > 0
@@ -156,6 +165,12 @@ def validate(data):
             except ValueError:
                 fields = []
             _require(fields == [("id", "", None)], f"dialect {name}: speaker must use exactly one plain {{id}} placeholder")
+            # The static part must be vendor marker syntax, which is never spoken ("<|speaker:{id}|>").
+            _require(re.fullmatch(r"<\|[^\s<>|{}]*\{id\}[^\s<>|{}]*\|>", dialect["speaker"]) is not None,
+                     f"dialect {name}: speaker must be one <|...{{id}}...|> marker")
+    for model, note in _mapping(data.models, "models").items():
+        _require(isinstance(note, dict) and isinstance(note.get("note"), str) and note["note"].strip(),
+                 f"model note {model}: must be a mapping with a nonempty string note")
     return data
 
 

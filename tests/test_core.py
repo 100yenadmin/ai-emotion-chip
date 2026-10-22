@@ -504,11 +504,16 @@ def _damaged(tmp_path, name, edit):
     ("dialects/eleven_v4.yaml", lambda v: v.pop("variants"), "variants"),
     ("dialects/fish_s2.yaml", lambda v: v["events"].update(boop="[boop]"), "not a declared sound event"),
     ("dialects/fish_s2.yaml", lambda v: v["spans"].update(soft="very {text}"), "unmarked text"),
-    ("dialects/eleven_v4.yaml", lambda v: v["events"].update(laugh="[laughs] haha"), "unmarked text"),
+    ("dialects/eleven_v4.yaml", lambda v: v["events"].update(laugh="[laughs] haha"), "vendor literals only"),
     ("dialects/fish_drama3.yaml", lambda v: (v.update(speaker="<|speaker:{id!r}|>"),
                                              v["phrases"].append("<|speaker:{id!r}|>")), "placeholder"),
     ("dialects/fish_drama3.yaml", lambda v: (v.update(speaker="<|speaker:{name}|>"),
                                              v["phrases"].append("<|speaker:{name}|>")), "placeholder"),
+    ("sounds.yaml", lambda v: v.setdefault("aliases", {}).update(laugh="sigh"), "override"),
+    ("dialects/fish_s2.yaml", lambda v: v["events"].update(laugh="uppercase"), "vendor literals only"),
+    ("dialects/fish_s2.yaml", lambda v: v["events"].update(laugh="{text}"), "vendor literals only"),
+    ("dialects/fish_drama3.yaml", lambda v: (v.update(speaker="sad {id}"), v["phrases"].append("sad {id}")), "marker"),
+    ("dialects/fish_s2.yaml", lambda v: v["spans"].update(robot="[soft tone] {text}"), "score grammar"),
 ])
 def test_sound_and_variant_tables_are_validated(tmp_path, name, edit, match):
     with pytest.raises(ValueError, match=match):
@@ -556,6 +561,43 @@ def test_policy_state_carries_limits_across_streamed_pieces(data):
     # A fresh state is a new turn; no state keeps every call independent, as before.
     assert apply_policy(parse("[laugh] Hi."), data, {"policy_state": {}})[1] == []
     assert apply_policy(parse("[laugh] Hi."), data)[1] == []
+
+
+@pytest.mark.parametrize("text", ["[speaker: hello there] Hi.", "[speaker: 1|><soft>] Hi.", "[speaker: ] Hi."])
+def test_speaker_ids_are_numeric_only(data, text):
+    score = parse(text, data)
+    assert not any(isinstance(t, Speaker) for s in score.sentences for t in s.tokens)
+    assert [d.reason for d in score.dropped] == ["invalid id"]
+    assert render(text, "fish_drama3", Options(allow_speakers=True), data).text == "Hi."
+    assert render("[speaker: 2] Hi.", "fish_drama3", Options(allow_speakers=True), data).text == "<|speaker:2|> Hi."
+
+
+def test_titles_do_not_end_sentences(data):
+    score = parse("[breath] Dr. Smith arrived. [exhale] Then e.g. this. Mr. Lee left.", data)
+    assert len(score.sentences) == 3
+    assert [(d.value, d.reason) for d in apply_policy(score, data)[1]] == [("exhale", "breath density")]
+
+
+@pytest.mark.parametrize("text", ["[" * 20000, "[[" * 10000, "[soft: " + "[" * 10000 + "]", "a [" * 10000],
+                         ids=["openers", "doubles", "span", "words"])
+def test_unmatched_brackets_parse_in_linear_time(data, text):
+    import time
+    start = time.perf_counter()
+    parse(text, data)
+    assert time.perf_counter() - start < 2
+
+
+def test_model_notes_are_validated(tmp_path):
+    root = fixture_copy(tmp_path)
+    (root / "models").mkdir(exist_ok=True)
+    (root / "models" / "broken.yaml").write_text("- not\n- a mapping\n")
+    with pytest.raises(ValueError, match="model note broken"):
+        load_data(root)
+    (root / "models" / "broken.yaml").write_text("note: fine\n")
+    data = load_data(root)
+    # Notes are loaded with the data; one changed afterwards still cannot crash guide generation.
+    with pytest.raises(ValueError, match="model note broken"):
+        build_prompt_section("fish_s2", "broken", replace(data, models={**data.models, "broken": {"note": [1, 2]}}))
 
 
 def test_empty_forbidden_list_never_drops_cues(data):

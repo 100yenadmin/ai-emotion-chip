@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from typing import Literal
 
 Rung = Literal["slightly", "plain", "very"]
+# The span operators the score grammar parses; dialect tables may only define templates for these.
+SPAN_OPS = ("soft", "stress", "slow", "fast", "whisper", "smiling", "emphasis", "forceful")
 
 
 @dataclass(frozen=True)
