@@ -576,7 +576,8 @@ def test_titles_do_not_end_sentences(data):
     assert [(d.value, d.reason) for d in apply_policy(score, data)[1]] == [("exhale", "breath density")]
 
 
-@pytest.mark.parametrize("text", ["[" * 20000, "[[" * 10000, "[soft: " + "[" * 10000 + "]", "a [" * 10000])
+@pytest.mark.parametrize("text", ["[" * 20000, "[[" * 10000, "[soft: " + "[" * 10000 + "]", "a [" * 10000],
+                         ids=["openers", "doubles", "span", "words"])
 def test_unmatched_brackets_parse_in_linear_time(data, text):
     import time
     start = time.perf_counter()
