@@ -212,7 +212,7 @@ def parse(text: str, data=None) -> Score:
             continue
         content = body[i + 1:end]
         raw = content.strip()
-        low = raw.lower()
+        low = re.sub(r"\s+", " ", raw).lower()
         span = SPAN.match(raw)
         speaker = re.match(r"^speaker:\s*(.*)$", raw, re.I | re.S)
         if low in events:

@@ -511,6 +511,13 @@ def _damaged(tmp_path, name, edit):
     ("dialects/fish_s2.yaml", lambda v: v["events"].update(laugh="{text}"), "vendor literals only"),
     ("dialects/fish_drama3.yaml", lambda v: (v.update(speaker="sad {id}"), v["phrases"].append("sad {id}")), "marker"),
     ("dialects/fish_s2.yaml", lambda v: v["spans"].update(robot="[soft tone] {text}"), "score grammar"),
+    ("dialects/fish_s2.yaml", lambda v: (v["spans"].update(soft="[angry] {text}"), v["phrases"].append("[angry]"),
+                                         v["inverse"].update({"[angry]": "angry"})), "is an emotion cue"),
+    ("dialects/fish_s2.yaml", lambda v: (v["events"].update(laugh="[very happy]"), v["phrases"].append("[very happy]"),
+                                         v["inverse"].update({"[very happy]": "laugh"})), "is an emotion cue"),
+    ("sounds.yaml", lambda v: v.setdefault("aliases", {}).update(happy="laugh"), "emotion cue or score form"),
+    ("sounds.yaml", lambda v: v.setdefault("aliases", {}).update({"speaker: 1": "laugh"}), "emotion cue or score form"),
+    ("sounds.yaml", lambda v: v["events"].update(soft={"kind": "affect"}), "emotion cue or score form"),
 ])
 def test_sound_and_variant_tables_are_validated(tmp_path, name, edit, match):
     with pytest.raises(ValueError, match=match):
@@ -602,6 +609,23 @@ def test_streamed_pieces_keep_neutral_params(data):
     assert full.group is None and full.params == {"speed": 1.0}
     for piece in ("[mystery] One.", "[sad] Two."):
         assert render(piece, "fish_s2", {"params_from": full.params}, data).params == full.params
+
+
+def test_params_dict_override_reports_no_cue_group(data):
+    full = render("[sad] One. Two.", "fish_s2", data=data)
+    piece = render("[happy] Two.", "fish_s2", {"params_from": full.params}, data)
+    assert piece.params == full.params and piece.group is None
+    assert render("Two.", "fish_s2", {"params_from": full.group}, data).group == full.group
+
+
+def test_sound_names_match_across_whitespace(data):
+    for text in ("[long  pause] Hi.", "[long\npause] Hi.", "[Laughs \t harder] Hi."):
+        token = parse(text, data).sentences[0].tokens[0]
+        assert isinstance(token, Event), text
+
+
+def test_guide_sound_cap_counts_affect_sounds_only():
+    assert "Pauses and\nbreaths do not count toward it." in build_prompt_section("fish_s2", "absent", load_data())
 
 
 def test_misplaced_header_and_removed_cues_keep_boundaries(data):
