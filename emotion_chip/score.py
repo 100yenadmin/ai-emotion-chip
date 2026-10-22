@@ -197,8 +197,9 @@ def parse(text: str, data=None) -> Score:
                 continue
             inner = body[opener.end():close]
             if not inner.strip():
+                # Skip it in place: rebuilding the body would rescan it once per empty span.
                 dropped.append(Dropped("span", op, "empty"))
-                body = body[:i] + body[close + 1:]
+                i = close + 1
                 continue
             if "[" in inner or "]" in inner:
                 # A sound or cue inside a span splits the span around it: [soft: a [laugh] b] → [soft: a] [laugh] [soft: b].
@@ -242,14 +243,14 @@ def parse(text: str, data=None) -> Score:
                 dropped.append(Dropped("span", op, "crossed sentence"))
             else:
                 tokens.append(Span(op, span[2], raw))
-                # A span that ends its sentence ("[soft: Two.] Three.") holds the punctuation; the space after it
-                # is outside, so the boundary is checked here.
-                gap = SPACE.match(body, end + 1)
-                if gap and BOUNDARY.match(span[2] + " ", len(span[2])):
-                    sentences.append(Sentence(tokens))
-                    tokens = []
-                    i = gap.end()
-                    continue
+            # A span that ends its sentence ("[soft: Two.] Three.") holds the punctuation; the space after it is
+            # outside, so the boundary is checked here, for a crossed span too.
+            gap = SPACE.match(body, end + 1)
+            if gap and BOUNDARY.match(span[2] + " ", len(span[2])):
+                sentences.append(Sentence(tokens))
+                tokens = []
+                i = gap.end()
+                continue
         elif speaker and SPEAKER_ID.fullmatch(speaker[1].strip()):
             tokens.append(Speaker(speaker[1].strip(), raw))
         elif speaker:
