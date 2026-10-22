@@ -77,10 +77,7 @@ def test_cleanup_positive_control():
 @pytest.mark.parametrize("case", GOLDENS, ids=lambda c: c["name"])
 def test_streaming_cuts(case, data):
     full = render(case["input"], case["dialect"], case["options"], data)
-    options = {**case["options"], "params_from": full.group}
-    # A caller can pass the full parameter dict when it originally overrode params.
-    if isinstance(case["options"].get("params_from"), dict):
-        options["params_from"] = full.params
+    options = {**case["options"], "params_from": full.params}
     for piece in re.compile(r"(?<=[.!?])(?:\s|\n)|(?:\n\n)").split(case["input"]):
         out = render(piece, case["dialect"], options, data)
         assert out.params == full.params
@@ -598,6 +595,19 @@ def test_model_notes_are_validated(tmp_path):
     # Notes are loaded with the data; one changed afterwards still cannot crash guide generation.
     with pytest.raises(ValueError, match="model note broken"):
         build_prompt_section("fish_s2", "broken", replace(data, models={**data.models, "broken": {"note": [1, 2]}}))
+
+
+def test_streamed_pieces_keep_neutral_params(data):
+    full = render("[mystery] One. [sad] Two.", "fish_s2", data=data)
+    assert full.group is None and full.params == {"speed": 1.0}
+    for piece in ("[mystery] One.", "[sad] Two."):
+        assert render(piece, "fish_s2", {"params_from": full.params}, data).params == full.params
+
+
+def test_misplaced_header_and_removed_cues_keep_boundaries(data):
+    assert render("hap[[register: sad]]py.", "fish_s2", data=data).text == "hap py."
+    out = render("[[register: sad]] [hysterical] [happy] Hi.", "fish_s2", data=data)
+    assert out.text == "[happy] Hi." and out.params == {"speed": 0.92}
 
 
 def test_empty_forbidden_list_never_drops_cues(data):

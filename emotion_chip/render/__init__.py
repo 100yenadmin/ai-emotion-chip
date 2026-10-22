@@ -100,7 +100,9 @@ def render(text_or_score, dialect, options=None, data=None):
             seg_group, seg_rung = _group(lead, data), lead.rung
         chunks = []
         if index == 0 and opener is not None and not tagless:
-            leading = next((t for t in sentence.tokens if not (isinstance(t, Text) and not t.s.strip())), None)
+            # A removed token's gap marker counts as blank, so a surviving cue still leads.
+            leading = next((t for t in sentence.tokens
+                            if not (isinstance(t, Text) and not t.s.replace(GAP, "").strip())), None)
             if isinstance(leading, Cue):
                 notes.append("register header sets params; the first sentence's own cue leads")
             else:

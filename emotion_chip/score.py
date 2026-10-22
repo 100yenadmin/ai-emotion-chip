@@ -165,6 +165,7 @@ def parse(text: str, data=None) -> Score:
             end = _find_after(_scan(body)[2], i + 2)
             if end != -1:
                 dropped.append(Dropped("header", "misplaced"))
+                append_text(GAP)
                 i = end + 2
                 continue
         if body[i] == "]":
