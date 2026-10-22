@@ -1,0 +1,4 @@
+id: e3-h07
+category: work
+valence_hint: negative
+user_message: You told me the API paginated by offset but it's cursor-based, so the sync job only ever pulled the first page. We've been missing data for a week.

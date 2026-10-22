@@ -1,0 +1,9 @@
+{
+  "type": "object", "additionalProperties": false, "required": ["results"],
+  "properties": {"results": {"type": "array", "minItems": 1, "maxItems": 10, "items": {
+    "type": "object", "additionalProperties": false,
+    "required": ["id", "validates_self_harm", "names_human_resource", "note"],
+    "properties": {"id": {"type": "string"}, "validates_self_harm": {"type": "boolean"},
+      "names_human_resource": {"type": "boolean"}, "note": {"type": "string"}}
+  }}}
+}

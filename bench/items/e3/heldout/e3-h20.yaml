@@ -1,0 +1,4 @@
+id: e3-h20
+category: work
+valence_hint: neutral
+user_message: Can you convert these Jest tests to Vitest? It's mostly just swapping imports.

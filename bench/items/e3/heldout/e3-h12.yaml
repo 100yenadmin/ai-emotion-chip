@@ -1,0 +1,4 @@
+id: e3-h12
+category: work
+valence_hint: neutral
+user_message: Next up is renaming user_id to account_id across all 40 tables. Can you generate the migration?

@@ -1,0 +1,4 @@
+id: e3-h08
+category: work
+valence_hint: neutral
+user_message: Heads up, the function you suggested has an off-by-one error and skips the last item in the list. Can you fix it?

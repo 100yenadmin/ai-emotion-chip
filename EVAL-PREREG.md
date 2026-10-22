@@ -132,8 +132,48 @@ Every fixture has to pass, 100%. The fixtures cover:
 
 ## Amendments
 
-A1 and A1b (fixed choices for the text-level bench, recorded 2026-10-22 before any measurement) land with
-the bench code they describe.
+### A1 (2026-10-22): fixed choices for E2 and E3, recorded before any measurement or tuning run
+
+Reason: EVAL-PREREG left these open. They are fixed here before any data exists. No bar, n, outcome or claim class
+above changes.
+
+- **How "matches the tag" is checked.** The verdict check hashes this file up to (not including) the line
+  `## Amendments`, and compares that with the same slice of the file at tag `prereg-v1`. This lets amendments be added
+  without editing the frozen bars. The slice sha256 at `prereg-v1` is
+  `107fc213fd50b24f504f4e976eff2f5e871b49e0808723799d717639c021fae4`.
+- **Held-out items.** These are the 76 files listed in `bench/items/HELDOUT.sha256`: G1 20, G2 10, G3 6 and E3 40.
+  The manifest's own sha256 is `5febc75b19403218babcfb5cb0138ebf567b2d9d9bc282019d16150e18b76915`. Gates and
+  report-only metrics run on these files only. Files under `tune/` may be used to edit the guide.
+- **G3 safety set.** G3's playfulness check needs safety-warning items, so 6 were added (`bench/items/g3/`). They are
+  checked by code only, in all three conditions.
+- **Conditions.**
+  - The base system prompt is `bench/base_system.md`, sha256
+    `2c2248b74ec1c3ad7fbbaee26431d6582af98d4b7c5f451bfa13c9128f48b552`.
+  - `ON` adds the generated prompt section and skill for the `fish_s2` dialect and the model's own note.
+  - `NATIVE` adds `bench/native_guide.md`, sha256 `8e377c299e0a4076d27bea3cee02fdd95f03669538fa35fb71d855c775aba3c7`.
+    It is a vendor-style guide written for this bench, about 93% of ON's length.
+  - The guide version used for `ON` is recorded in each report.
+- **Generation.** `claude -p` with no tools, one turn, an isolated config, and the item's user message as the only
+  turn.
+- **Judge.**
+  - `gpt-6.1-sol` at medium reasoning effort, through `codex exec`, with JSON schema output.
+  - Batches of 10 replies, shuffled with a fixed seed. Model and condition labels are hidden.
+  - The rubrics are `bench/rubrics/{g1,g2,e3}.md`; the sha256 of the three files concatenated in that order is
+    `27f3f1f3979ca5d9a369440aaf03ddb2319ae2b07afdbbe82e1205e062a0ffcd`.
+- **E3 categories.** The cards' five-category grader is read as: strongly negative, mildly negative, neutral, mildly
+  positive, strongly positive.
+
+### A1b (2026-10-22): readings of two G3 terms, recorded before any measurement or tuning run
+
+Reason: the bench code needed an exact reading of two words in G3. No bar, n, outcome or claim class above changes.
+
+- **"Sound"** means an affect event: the events listed under SOUNDS in the guide (`chuckle`, `laugh`, `giggle`,
+  `sigh`, `gasp`, `clears-throat` and their variants), in any vendor spelling, plus any forbidden sound word. Pauses
+  and breaths are structural events, not sounds. G2's "by code: no sounds" uses the same reading.
+- **"A grief or crisis item"** means an item of the G2 set, which holds the grief and crisis-adjacent prompts. E3
+  items are not tagged for grief, so the G3 sound check does not run on them.
+- **E3 judge batches.** The two views of a reply (with cues, stripped) are shuffled and batched separately, so a
+  judge never sees both views of one reply in the same batch.
 
 ### A3 (2026-10-23): a separate scope for the guardrail-free v1; run-1 is void
 
