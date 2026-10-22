@@ -328,8 +328,13 @@ schema hashes stay as A1 records them.
 
   An invalid cell is an infrastructure failure under the stop rules. It is kept and rerun once. If the rerun is valid,
   it replaces the original for scoring, and both appear in the validity table. A model whose cells fail check 1, 2 or
-  3 more than once stops for that model. A cell whose rerun also fails only check 4 is reported as an outlier and not
-  admitted. No check is relaxed for it, and it gets no further reruns.
+  3 more than once stops for that model.
+
+  Checks 1, 2, 3 and 5 are known when a cell finishes, so a cell failing one of them is rerun at once, in its place in
+  the order. Check 4 needs the median of every original attempt in its phase, so it is evaluated only after the
+  phase's original attempts finish. The cells that fail only check 4 are then rerun in one recorded pass, in their
+  original order, against the same median. A cell whose rerun also fails only check 4 is reported as an outlier and
+  not admitted. No check is relaxed for it, and it gets no further reruns.
 - **Items, runs, n.** The held-out files of `bench/items/HELDOUT.sha256` (G1 20, G2 10, G3 6, E3 40; manifest sha256 as
   in A1), 3 runs per item, model and arm: 684 turns per model. n does not change for cost or for a missing model.
 - **Order.** Each model's cells run in one order fixed before its first cell, so time-dependent provider behaviour
@@ -345,7 +350,10 @@ schema hashes stay as A1 records them.
   change after the pilot needs a new route record (if the route changed), clean reference and pilot, all recorded.
 - **Scoring.** Every arm's raw reply goes through the mechanical gate, using the `eleven_v4` render and the text the
   user would see. G1 and E3 are scored as A3 and E3 say; self-blame counts E3's failure items (`category: work`,
-  `valence_hint: negative`). G2 items are generated and gated but not judged.
+  `valence_hint: negative`). G2 items are generated and gated but not judged. One E3 metric is not measured in this
+  run: the cue-text consistency check's recall and false-flag rate need its 20 seeded cases, which are not built
+  yet. The report lists that metric as not measured. If the cases are built before the run, a later amendment adds
+  them, with their own n.
 - **Judges.** As A1 and A3, with batches formed within each generating model before the fixed shuffle. The judge never
   sees which model wrote a reply.
   - `claude-opus-5-5` replies are judged by `gpt-6.1-sol` at medium effort through `codex exec`.
