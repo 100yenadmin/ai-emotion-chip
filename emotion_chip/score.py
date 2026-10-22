@@ -198,13 +198,26 @@ def parse(text: str, data=None) -> Score:
                 return ident(j)
         return False
 
+    def guard(i):
+        """The boundary a rewrite leads with, so its first cue is read as a cue, not as part of a word or code."""
+        return GAP if lead(i) or in_code(i) else ""
+
     i = 0
     while i < len(body):
         if body.startswith("[[", i):
             end = _find_after(_scan(body)[2], i + 2)
             if end != -1:
-                dropped.append(Dropped("header", "misplaced"))
-                append_text(GAP)
+                inner = body[i + 2:end]
+                if any(c in inner for c in ":;[") or not inner.strip():
+                    dropped.append(Dropped("header", "misplaced"))
+                    append_text(GAP)
+                elif in_code(i):
+                    # Code such as pandas columns ("df[['a', 'b']]") is text.
+                    plain(body[i:end + 2])
+                    kept = end + 1
+                else:
+                    # A wiki link ("[[Project Plan]]") is not header syntax: its words are spoken.
+                    plain(inner.strip())
                 i = end + 2
                 continue
         if body[i] == "]":
@@ -225,8 +238,7 @@ def parse(text: str, data=None) -> Score:
             if close == -1:
                 # Never closed: keep the delivery as a sentence cue so "soft:" is not spoken.
                 dropped.append(Dropped("span", op, "unterminated"))
-                body = body[:i] + lead(i) + f"[{op}] " + body[opener.end():]
-                kept = -1  # a rewrite's output is score syntax, never a chained subscript
+                body = body[:i] + guard(i) + f"[{op}] " + body[opener.end():]
                 continue
             inner = body[opener.end():close]
             if not inner.strip():
@@ -236,22 +248,23 @@ def parse(text: str, data=None) -> Score:
                 continue
             if "[" in inner or "]" in inner:
                 # A sound or cue inside a span splits the span around it: [soft: a [laugh] b] → [soft: a] [laugh] [soft: b].
-                body = body[:i] + " ".join(_flatten(op, inner, dropped)) + body[close + 1:]
+                body = body[:i] + guard(i) + " ".join(_flatten(op, inner, dropped)) + body[close + 1:]
                 continue
         end = _find_after(_scan(body)[1], i + 1)
         nested = body.find("[", i + 1, end if end != -1 else len(body))
-        if not opener and end != -1 and nested == -1 and in_code(i):
-            # A plain group attached to a word is code or a citation ("handlers[pause]", "x[key]"), not score syntax.
-            # A span ("hap[stress: pi]ness") names its operator, so it stays score syntax.
-            plain(body[i:end + 1])
-            kept, i = end, end + 1
-            continue
+        if not opener and end != -1 and in_code(i):
+            # A group that continues an identifier or a code expression is text: handlers[pause], x[i][j], f()[k],
+            # Dict[str, List[int]]. A span ("hap[stress: pi]ness") names its operator, so it stays score syntax.
+            close = end if nested == -1 else _close(body, i)
+            if close != -1 and not SPAN_OPEN.search(body, i + 1, close):
+                plain(body[i:close + 1])
+                kept, i = close, close + 1
+                continue
         if nested != -1:
             close = _close(body, i)
             if close != -1:
                 # [happy [laugh]] → [happy] [laugh]: the cue's words stay a cue instead of being spoken.
-                body = body[:i] + lead(i) + " ".join(_unwrap(body[i + 1:close], None, dropped)) + body[close + 1:]
-                kept = -1  # a rewrite's output is score syntax, never a chained subscript
+                body = body[:i] + guard(i) + " ".join(_unwrap(body[i + 1:close], None, dropped)) + body[close + 1:]
                 continue
         if end == -1 or nested != -1:
             # Drop only this bracket and keep scanning, so a later opener is still parsed.
@@ -268,7 +281,7 @@ def parse(text: str, data=None) -> Score:
             continue
         if raw and not LETTER.search(raw):
             append_text(body[i:end + 1])
-            kept, i = end, end + 1
+            i = end + 1
             continue
         low = re.sub(r"\s+", " ", raw).lower()
         span = SPAN.match(raw)

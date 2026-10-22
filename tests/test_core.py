@@ -534,7 +534,7 @@ def test_duplicate_yaml_keys_are_rejected(tmp_path):
 
 @pytest.mark.parametrize("text,dialect,expected", [
     ("one[[register: sad]]two.", "fish_s2", "one two."),
-    ("foo[pause [laugh]]bar.", "tagless", "foo bar."),
+    ("今日[pause [laugh]]明日。", "tagless", "今日 明日。"),
     ("hap[soft: x", "tagless", "hap x"),
     ("[speaker: 1]Hi.", "fish_drama3", "Hi."),
     ("a[whisper: b]c.", "prose", "a b c."),
@@ -545,14 +545,14 @@ def test_dropped_tokens_never_fuse_words(data, text, dialect, expected):
 
 
 def test_segment_text_keeps_word_boundaries_at_kept_tokens(data):
-    out = render("ha[happy [laugh]]ha.", "fish_s2", data=data)
-    assert out.text == "ha[happy] [laughing]ha." and out.plan.segments[0].text == "ha ha."
+    out = render("café[happy [laugh]]ha.", "fish_s2", data=data)
+    assert out.text == "café[happy] [laughing]ha." and out.plan.segments[0].text == "café ha."
 
 
 @pytest.mark.parametrize("dialect", DIALECTS)
 def test_a_group_attached_to_a_word_is_text_not_score(dialect, data):
     text = ('Call handlers[pause], dict[key] and x_1[laugh], then matrix[i][j], factory()[pause], f(g(x))[laugh], '
-            'items[0][pause] and data["k"][happy] now.')
+            'items[0][pause], data["k"][happy], Dict[str, List[int]], handlers[names[pause]] and df[["a", "b"]] now.')
     out = render(text, dialect, data=data)
     assert out.text == text and not out.dropped
     assert [type(t).__name__ for t in parse("Call it. [pause] Now.", data).sentences[1].tokens] == ["Event", "Text"]
@@ -563,6 +563,7 @@ def test_a_group_attached_to_a_word_is_text_not_score(dialect, data):
     ("Fine. [sad][laugh] Yes.", ["Cue", "Event", "Text"]),
     ("x[a] [laugh] y.", ["Text", "Event", "Text"]),
     ("今日は疲れた[sigh]。", ["Text", "Event", "Text"]),
+    ("See [1][sigh] it.", ["Text", "Event", "Text"]),
 ])
 def test_prose_and_adjacent_cues_stay_score_syntax(text, kinds, data):
     assert [type(t).__name__ for s in parse(text, data).sentences for t in s.tokens][-len(kinds):] == kinds
@@ -709,3 +710,19 @@ def test_cli_can_render_speakers(monkeypatch, capsys):
     monkeypatch.setattr(sys, "stdin", io.StringIO("[speaker: 1] Hi."))
     main(["render", "--dialect", "fish_drama3"])
     assert capsys.readouterr().out.strip() == "Hi."
+
+
+def test_a_wiki_link_speaks_its_words_and_a_misplaced_header_is_dropped(data):
+    assert render("See [[Project Plan]] for details.", "fish_s2", data=data).text == "See Project Plan for details."
+    assert render("Hello [[register: warm]] there.", "fish_s2", data=data).text == "Hello there."
+
+
+@pytest.mark.parametrize("text, tagless", [
+    ("Okay[soft: [sigh] fine.]", "Okay fine."),
+    ("Call f()[soft: then rest", "Call f() then rest"),
+])
+def test_a_rewrite_after_a_word_or_call_stays_score_syntax(text, tagless, data):
+    assert render(text, "tagless", data=data).text == tagless
+    score = parse(text, data)
+    for dialect in ("fish_s2", "eleven_v4"):
+        assert check(score, render(score, dialect, data=data), data) == []
