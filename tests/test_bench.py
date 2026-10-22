@@ -146,6 +146,24 @@ def test_resume_and_input_drift(tmp_path):
         gen.generate("g1", tmp_path, concurrency=5, generate_fn=fake)
 
 
+def test_generation_stops_when_a_later_call_fails_while_an_earlier_one_runs(tmp_path):
+    import threading
+    calls, lock = [], threading.Lock()
+    def generate_fn(*args):
+        with lock:
+            calls.append(len(calls) + 1)
+            index = calls[-1]
+        if index == 1:
+            threading.Event().wait(0.5)  # an earlier call is still running when the next one fails
+            return {"result": "slow but fine"}
+        raise RuntimeError("fake expired credential")
+    with pytest.raises(RuntimeError, match="expired"):
+        gen.generate("g1", tmp_path, models=[items.MODELS[0]], conditions=["OFF"], limit=4, concurrency=2,
+                     generate_fn=generate_fn)
+    assert len(calls) == 2  # 12 rows were queued; none started after the failure
+    assert len(list((tmp_path / "generation").rglob("*.json"))) == 1
+
+
 def test_interrupted_generation_keeps_completed_results(tmp_path):
     count = 0
     def interrupted(*args):
@@ -159,7 +177,7 @@ def test_interrupted_generation_keeps_completed_results(tmp_path):
         gen.generate("g1", tmp_path, generate_fn=interrupted, **kwargs)
     completed = list((tmp_path / "generation").rglob("*.json"))
     assert len(completed) == 1
-    assert count <= 3  # the queue stops at the first failure; it does not call for every remaining row
+    assert count == 2  # the queue stops at the first failure; no queued call starts after it
     before = completed[0].read_bytes()
     gen.generate("g1", tmp_path, generate_fn=lambda *args: {"result": "remaining"}, **kwargs)
     assert completed[0].read_bytes() == before

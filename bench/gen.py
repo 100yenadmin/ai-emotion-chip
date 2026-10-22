@@ -1,11 +1,12 @@
 """Isolated three-run text generation. Importing this module accesses no credentials."""
 import argparse
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import os
 from pathlib import Path
 import subprocess
 import tempfile
+import threading
 
 from emotion_chip.data import load_data
 from emotion_chip.guide import build_prompt_section, build_skill
@@ -124,14 +125,25 @@ def generate(set_name, out, models=MODELS, conditions=CONDITIONS, limit=None, co
 
     rows = [{"set": set_name, "split": "heldout", "model": m, "condition": c, "item": item, "run": run}
             for item in items for m in models for c in conditions for run in RUNS]
-    with ThreadPoolExecutor(max_workers=concurrency) as executor:
-        futures = [executor.submit(one, row) for row in rows]
+    # Stop at the first failure (an expired credential, a hung CLI): no queued call starts after it, calls already
+    # running finish, and finished outputs stay on disk for a resume.
+    failed = threading.Event()
+
+    def guarded(row):
+        if failed.is_set():
+            return
         try:
-            for future in futures:
+            one(row)
+        except BaseException:
+            failed.set()
+            raise
+
+    with ThreadPoolExecutor(max_workers=concurrency) as executor:
+        futures = [executor.submit(guarded, row) for row in rows]
+        try:
+            for future in as_completed(futures):
                 future.result()
         except BaseException:
-            # Stop at the first failure (an expired credential, a hung CLI): queued calls never start, and finished
-            # outputs stay on disk for a resume.
             executor.shutdown(wait=True, cancel_futures=True)
             raise
     return rows
