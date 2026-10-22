@@ -94,7 +94,9 @@ class Rendered:
     plan: DeliveryPlan
     dialect: str
     dialect_version: str
-    group: str | None = None  # the group the call's params came from; streaming pieces pass it as params_from
+    # The group the call's params came from (None when no cue set them). Streamed pieces of a rendered reply pass the
+    # full call's `params` dict as params_from, which also keeps neutral params; a group name cannot say "neutral".
+    group: str | None = None
 
 
 @dataclass(frozen=True)
