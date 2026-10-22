@@ -295,10 +295,10 @@ def test_judge_refuses_a_changed_judge_and_replies_without_a_cross_model_judge(t
         judge.judge("g1", tmp_path, fake_judge)
     with pytest.raises(ValueError, match="judge configuration changed"):
         judge.load_judgments(tmp_path, "g1", judge.load_replies(tmp_path, "g1"))
-    # A3 judges each model's replies with the other model: gpt-6.1-sol replies have no judge here yet.
+    # Unknown models still fail closed; both preregistered models now have cross-model judges.
     real = judge.load_replies
-    monkeypatch.setattr(judge, "load_replies", lambda d, s: [dict(r, model="gpt-6.1-sol") for r in real(d, s)])
-    with pytest.raises(ValueError, match="no cross-model judge for gpt-6.1-sol replies"):
+    monkeypatch.setattr(judge, "load_replies", lambda d, s: [dict(r, model="unsupported") for r in real(d, s)])
+    with pytest.raises(ValueError, match="no cross-model judge for unsupported replies"):
         judge.judge("g1", tmp_path, fake_judge)
 
 
@@ -367,10 +367,14 @@ def test_missing_prereg_tag_is_unverified(monkeypatch):
 
 def write_manifests(directory, **extra):
     # The prompts are what generation would record for the claude -p bench's models and conditions.
-    prompts = {m: {c: gen.system_prompt(m, c) for c in items.CONDITIONS} for m in items.MODELS}
+    models = extra.pop("models", items.MODELS if extra.get("harness") == "hermes" else gen.CLAUDE_P_MODELS)
+    prompts = {m: {c: gen.system_prompt(m, c) for c in items.CONDITIONS} for m in models}
     for name in items.SETS:
         items.atomic_json(directory / "manifests" / f"{name}.json", {
-            "items": items.load_items(name), "heldout_sha256": items.heldout_hashes(), "models": list(items.MODELS),
+            "items": items.load_items(name), "heldout_sha256": items.heldout_hashes(), "models": list(models),
+            "validity_table": [{"row": {**row(name, c, r, m), "item": item}, "admitted": True,
+                                "checks": {str(k): True for k in range(1, 6)}}
+                               for item in items.load_items(name) for c in items.CONDITIONS for r in items.RUNS for m in models],
             "conditions": list(items.CONDITIONS), "prompts": prompts, **gen.provenance(), **extra})
 
 
@@ -434,7 +438,7 @@ def test_full_fake_gate_g1_report_only_and_g3_verdicts(tmp_path, monkeypatch):
     assert report.build_report(tmp_path, tagged=current)["verdict"] == "pass"
     # The mechanical gate covers OFF and NATIVE replies too (A3: every generated reply).
     real_checks = report.g3_checks
-    monkeypatch.setattr(report, "g3_checks", lambda reply: ["register_leak"] if reply == "leaks" else real_checks(reply))
+    monkeypatch.setattr(report, "g3_checks", lambda reply, **k: ["register_leak"] if reply == "leaks" else real_checks(reply, **k))
     for condition in ("OFF", "NATIVE"):
         leaked = next(r for r in all_rows["e3"] if r["condition"] == condition)
         saved = leaked["reply"], leaked["raw"]
@@ -464,7 +468,7 @@ def test_full_fake_gate_g1_report_only_and_g3_verdicts(tmp_path, monkeypatch):
     write_manifests(tmp_path)
     monkeypatch.setattr(report, "MODELS", items.MODELS)
     for name in items.SETS:
-        all_rows[name] = [r for r in all_rows[name] if r["model"] in items.MODELS]
+        all_rows[name] = [r for r in all_rows[name] if r["model"] in gen.CLAUDE_P_MODELS]
     result = report.build_report(tmp_path, tagged=current)
     assert result["verdict"] == "unverified" and result["gate_complete"]
     assert result["scope_gaps"] == ["model missing: gpt-6.1-sol"] + [

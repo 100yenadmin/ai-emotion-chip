@@ -125,8 +125,6 @@ def build_report(directory, tagged=None):
     expected, manifests, generation_failures = set(), {}, {}
     for set_name in SETS:
         items = {item["id"]: item for item in load_items(set_name)}
-        expected.update((set_name, item_id, model, condition, run) for item_id in items
-                        for model in MODELS for condition in CONDITIONS for run in RUNS)
         loaded = load_replies(directory, set_name)
         log = failures_path(directory, set_name)
         if log.exists():
@@ -136,6 +134,8 @@ def build_report(directory, tagged=None):
         if manifest_path.exists():
             manifest = read_json(manifest_path)
             manifests[set_name] = manifest
+            if any(m not in MODELS for m in manifest.get("models", [])):
+                raise ValueError("unsupported manifest model")
             if manifest["heldout_sha256"] != hashes or manifest["guide_version"] != provenance()["guide_version"]:
                 issues.append(f"{set_name}: generation input provenance changed")
             if manifest.get("prereg_sha256") != sha256(prereg):
@@ -150,11 +150,20 @@ def build_report(directory, tagged=None):
                 issues.append(f"{set_name}: generation prompts differ from the current prompt builder")
         elif loaded:
             issues.append(f"{set_name}: generation manifest missing")
+        expected.update((set_name, item_id, model, condition, run) for item_id in items
+                        for model in (MODELS if manifests.get(set_name, {}).get("harness") == "hermes"
+                                      else manifests.get(set_name, {}).get("models", MODELS))
+                        for condition in CONDITIONS for run in RUNS)
         for row in loaded:
             if row["split"] != "heldout" or row["set"] != set_name or row["item"] != items.get(row["item"]["id"]):
                 raise ValueError("report accepts canonical heldout replies only")
             if identity(row) not in expected or row["reply"] != extract_reply(row["raw"]):
                 raise ValueError("invalid generation identity or raw output")
+            if manifests.get(set_name, {}).get("harness") == "hermes" and not any(
+                    v.get("admitted") and all(v.get("checks", {}).get(str(k)) is True for k in range(1, 6))
+                    and identity(v["row"]) == identity(row)
+                    for v in manifests[set_name].get("validity_table", [])):
+                issues.append(f"{set_name}: generation lacks A4 admission")
         rows.extend(loaded)
         if set_name in {"g1", "e3"}:
             judgments.update(load_judgments(directory, set_name, loaded))
@@ -180,7 +189,9 @@ def build_report(directory, tagged=None):
                 g1[model][condition][field]["minus_OFF"] = delta
         # A3's mechanical gate covers every generated reply, so all three conditions are checked.
         checked = [{"set": r["set"], "item_id": r["item"]["id"], "condition": r["condition"], "run": r["run"],
-                    "reasons": g3_checks(r["reply"])} for r in rows if r["model"] == model]
+                    "reasons": g3_checks(r["reply"], dialect=manifests.get(r["set"], {}).get("dialect",
+                        "eleven_v4" if manifests.get(r["set"], {}).get("harness") == "hermes" else "fish_s2"))}
+                   for r in rows if r["model"] == model]
         groups = Counter((r["set"], r["item_id"], r["condition"]) for r in checked if not r["reasons"])
         g3[model] = {"failure_rate": rate(bool(r["reasons"]) for r in checked),
                      "failures": [r for r in checked if r["reasons"]],
@@ -191,19 +202,22 @@ def build_report(directory, tagged=None):
             gate_failures.append(f"G3 {model}")
     gate_missing_judgments = [key for key in missing_judgments if key[0] != "e3"]
     complete = not (missing or gate_missing_judgments or issues)
-    scope_gaps = [f"model missing: {m}" for m in A3_MODELS if m not in MODELS]
+    scope_gaps = [f"model missing: {m}" for m in A3_MODELS
+                  if any(m not in manifests.get(s, {}).get("models", ()) for s in SETS)]
     scope_gaps += [f"{s}: generated with {m.get('harness', 'claude-p')}, not through Hermes"
                    for s, m in manifests.items() if m.get("harness", "claude-p") != A3_HARNESS]
     verified = verification["matches"] and complete and not scope_gaps
     verdict = ("fail" if gate_failures else "pass") if verified else "unverified"
     return {"scope": SCOPE, "scope_gaps": scope_gaps, "not_measured": NOT_MEASURED, "verdict": verdict, "prereg": verification, "bars": bars, "gate_complete": complete,
             "missing_generation": missing, "missing_judgments": missing_judgments, "integrity_issues": issues,
+            "missing_judgments_by_cell": {s: {m: {c: sum(k[0] == s and k[2] == m and k[3] == c
+                for k in missing_judgments) for c in CONDITIONS} for m in MODELS} for s in SETS},
             "gate_failures": gate_failures, "g1": g1,
             # Stop rules: a rerun is allowed only after an infrastructure failure, with the failed run kept. A person
             # classifies each recorded failure; code cannot tell an outage from another error.
             "generation_failures": generation_failures,
             "g3": g3, "e3": e3_metrics([r for r in rows if r["set"] == "e3"], judgments),
-            "provenance": {**{s: {k: m[k] for k in ("guide_version", "prereg_sha256", "heldout_sha256")}
+            "provenance": {**{s: {k: v for k, v in m.items() if k not in {"items", "prompts"}}
                               for s, m in manifests.items()}, "a1_inputs": inputs},
             "judge_validity": "Owner-labelled 20-item spot check must be supplied before release; not performed by this harness.",
             "ci_methods": {"rates": "Wilson 95%", "differences": "Newcombe independent Wilson 95%",
@@ -220,7 +234,7 @@ def format_metric(metric):
 
 
 def markdown(report):
-    lines = ["# M1b text behaviour bench", "", f'Scope: {report["scope"]}', "", f'Verdict: {report["verdict"]}', "",
+    lines = ["# M1b text behaviour bench — text-only speech proxy", "", f'Scope: {report["scope"]}', "", f'Verdict: {report["verdict"]}', "",
              *[f"- Scope gap: {gap}" for gap in report["scope_gaps"]],
              *[f"- Not measured: {name}" for name in report["not_measured"]], "",
              f'Prereg slice matches prereg-v1: {report["prereg"]["matches"]}',

@@ -3,6 +3,7 @@
 Records hashes, lengths, booleans and token counts only: never prompt text, messages or headers.
 """
 import hashlib
+import copy
 import json
 import os
 import re
@@ -15,7 +16,7 @@ FIXED_CANARIES = ("round-trip rule", "Lane Contract", "AGENTS.md")
 NEGATIVE_CANARIES = FIXED_CANARIES + tuple(
     c for c in json.loads(os.environ.get("BENCH_PROBE_CANARIES") or "[]") if c not in FIXED_CANARIES)
 # Hermes' per-session lines (timestamp line and its trailer); everything else must be byte-stable within an arm.
-_VOLATILE = re.compile(r"^(Conversation started|Today's date \(as of|Timezone|Session ID):")
+_VOLATILE = re.compile(r"^(Conversation started|Today's date \(as of|Timezone|Session ID:)")
 
 
 def text_of(value):
@@ -63,6 +64,123 @@ def _dump(value):
         return json.dumps(value, default=str, ensure_ascii=False)
     except (TypeError, ValueError):
         return str(value)
+
+
+def canonical(value):
+    return json.dumps(value, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+
+
+def component(value):
+    text = value if isinstance(value, str) else canonical(value)
+    return {"sha256": digest(text), "chars": len(text)}
+
+
+def content_only(value, tool=False):
+    if isinstance(value, list):
+        return [content_only(v, tool) for v in value]
+    if isinstance(value, dict):
+        return {k: content_only(v, k == "tools") for k, v in value.items()
+                if k != "cache_control" and not (tool and k == "eager_input_streaming")}
+    return value
+
+
+def expected_codex(S, M, options, *, build_kwargs=None, preflight=None):
+    """Rebuild independently; Hermes imports occur only inside the isolated cell."""
+    if build_kwargs is None:
+        from agent.transports.codex import ResponsesApiTransport
+        build_kwargs = ResponsesApiTransport().build_kwargs
+    if preflight is None:
+        from agent.codex_responses_adapter import _preflight_codex_api_kwargs
+        preflight = _preflight_codex_api_kwargs
+    options = dict(options)
+    sanitize = options.pop("sanitize_harmony_tokens", True)
+    kwargs = build_kwargs(messages=[{"role": "system", "content": S}] + copy.deepcopy(M), **options)
+    return preflight(kwargs, sanitize_harmony_tokens=sanitize)
+
+
+def expected_relay(S, M, names, *, prepare_history=None, admission=None, reminder=None, provider_path=None):
+    """Only a pinned provider copy is importable here; callers may inject pure fakes."""
+    if prepare_history is None or admission is None:
+        import importlib.util
+        import sys
+        from pathlib import Path
+        root = Path(provider_path).resolve()
+        if "profiles" in root.parts or Path.home() / ".hermes" in root.parents:
+            raise ValueError("expectation requires the run's pinned provider copy")
+        spec = importlib.util.spec_from_file_location("a4_pinned_relay", root / "__init__.py",
+                                                    submodule_search_locations=[str(root)])
+        package = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = package
+        # Do not execute the plugin registration entry point.
+        from importlib import import_module
+        source = import_module("a4_pinned_relay.directsdk")
+        admission = import_module("a4_pinned_relay.admission")
+        prepare_history, reminder = source.prepare_history, source.SKILLS_REMINDER
+    system, frames = prepare_history([{"role": "system", "content": S}] + copy.deepcopy(M), names)
+    messages = [copy.deepcopy(frame["message"]) for frame in frames]
+    queried = copy.deepcopy(messages[-1]["content"])
+    if "skill_view" in names and not any(b.get("type") == "tool_result" for b in queried):
+        messages[-1]["content"].append({"type": "text", "text": reminder})
+    return {"system": [{"type": "text", "text": system}], "messages": messages,
+            "_admission": admission, "_queried": queried}
+
+
+def compare_request(expected, final, a4b):
+    """Strict content equality; only route-recorded blocks may be inserted, in recorded positions."""
+    item_dir = a4b.get("item_dir")
+    def norm(value, system=False):
+        if isinstance(value, str):
+            return normalise(value, item_dir) if system else value.replace(str(item_dir), "<ITEM>") if item_dir else value
+        if isinstance(value, list):
+            return [norm(v, system) for v in value]
+        if isinstance(value, dict):
+            return {k: norm(v, system) for k, v in content_only(value).items()}
+        return value
+    final = content_only(final)
+    if "instructions" in expected:
+        return [k for k in ("instructions", "input") if norm(expected.get(k), k == "instructions")
+                != norm(final.get(k), k == "instructions")]
+    body = {k: copy.deepcopy(expected[k]) for k in ("system", "messages")}
+    # The owner-approved PRIVATE record contains exact values; published placeholders are never used for checking.
+    for block in a4b.get("blocks", []):
+        kind, text, place = block["kind"], block["text"], block["placement"]
+        part = {"type": "text", "text": text}
+        if kind in {"S1", "S2"} and place == "system-prefix":
+            index = 0 if kind == "S1" else sum(b["kind"] == "S1" for b in a4b["blocks"])
+            body["system"].insert(index, part)
+        elif kind == "M1" and place == "newest-user":
+            content = body["messages"][-1]["content"]
+            content.insert(len(expected["_queried"]), part)
+        elif kind == "M1" and place == "trailing-system":
+            body["messages"].append({"role": "system", "content": text})
+        else:
+            return ["invalid_a4b"]
+    admission, queried = expected["_admission"], expected["_queried"]
+    payload = canonical(body).encode()
+    payload = admission.restore_queried_turn(payload, queried)
+    payload = admission.stable_request_context(payload, queried, session=False)
+    payload = admission.pin_message_breakpoint(payload, queried)
+    payload = admission.stream_tool_input(payload)
+    body = json.loads(payload)
+    def equal(want, got):
+        pattern = re.escape(canonical(want)).replace(re.escape("<date>"), r"\d{4}-\d{2}-\d{2}")
+        pattern = pattern.replace(re.escape("<billing-value>"), r"[A-Za-z0-9._/+-]+")
+        return re.fullmatch(pattern, canonical(got)) is not None
+    return [k for k in ("system", "messages") if not equal(norm(body[k], k == "system"), norm(final.get(k), k == "system"))]
+
+
+def capture_row(S, M, final, expected, a4b, item_dir=None):
+    """Full captures stay in memory; only component receipts leave the process."""
+    tools = final.get("tools") or []
+    messages = final.get("input", final.get("messages", []))
+    system = final.get("instructions", final.get("system", ""))
+    return {"event": "capture", "system": component(normalise(S, item_dir)),
+            "model": final.get("model"), "system_components": [component(v) for v in system] if isinstance(system, list) else [component(system)],
+            "messages": [component(m) for m in M], "final_system": component(normalise(system, item_dir)),
+            "final_messages": [component(m) for m in messages],
+            "tool_schemas": {t.get("name", t.get("function", {}).get("name")): component(t)["sha256"] for t in tools},
+            "checks": compare_request(expected, final, {**a4b, "item_dir": item_dir}),
+            "canaries": {f"marker-{i}": hit for i, hit in enumerate(canaries(S, canonical(M), canonical(final)).values(), 1)}}
 
 
 def request_row(kwargs, item_dir=None):

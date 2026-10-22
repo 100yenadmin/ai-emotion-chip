@@ -173,6 +173,7 @@ def child_env(item, fish_key, token=None, probe=True, canaries=(), eleven_key=No
            "HERMES_HOME": str(item / "home"), "HERMES_DISABLE_LAZY_INSTALLS": "1", "PYTHONDONTWRITEBYTECODE": "1",
            "XDG_CACHE_HOME": str(item / "xdg/cache"), "XDG_CONFIG_HOME": str(item / "xdg/config"),
            "XDG_STATE_HOME": str(item / "xdg/state"), "TMPDIR": str(item / "tmp"), "FISH_API_KEY": fish_key}
+    env["CLAUDE_CODE_DISABLE_CLAUDE_MDS"] = "1"
     if token is not None:
         env["CLAUDE_CODE_OAUTH_TOKEN"] = token
     if eleven_key:
@@ -182,7 +183,8 @@ def child_env(item, fish_key, token=None, probe=True, canaries=(), eleven_key=No
     if probe:
         env["BENCH_PROBE_OUT"] = str(item / "probe.jsonl")
         env["BENCH_PROBE_ITEM"] = str(item)
-    bad = [k for k in env if k.startswith(_FORBIDDEN_PREFIXES) and k != "CLAUDE_CODE_OAUTH_TOKEN"]
+    bad = [k for k in env if k.startswith(_FORBIDDEN_PREFIXES)
+           and k not in {"CLAUDE_CODE_OAUTH_TOKEN", "CLAUDE_CODE_DISABLE_CLAUDE_MDS"}]
     if bad or "CLAUDECODE" in env:
         raise AssertionError(f"forbidden child env: {bad}")
     return env
@@ -493,6 +495,10 @@ class Host:
                str(self.paths["host"] / ".venv/bin/python"), str(self.run / "tools/turn.py"), str(args_path)]
         env = child_env(item, self.fish_key, token, probe=args_obj["mode"] == "turn", canaries=self.paths["canaries"],
                         eleven_key=self.eleven_key)
+        if args_obj.get("text"):
+            env["CLAUDE_SUBSCRIPTION_DIRECTSDK_SESSION_MODE"] = "0"
+            if args_obj.get("claude_command"):
+                env["CLAUDE_SUBSCRIPTION_DIRECTSDK_COMMAND"] = args_obj["claude_command"]
         try:
             p = subprocess.run(cmd, cwd=self.run / "cwd", env=env, capture_output=True, text=True, timeout=timeout)
             rc, out = p.returncode, p.stdout + p.stderr

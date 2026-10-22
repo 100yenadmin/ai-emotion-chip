@@ -7,7 +7,10 @@ this file and probe.py into the run dir and runs it from there with cwd at the r
 The last stdout line starting with PROOF= is the JSON result. Writes only inside the item dir.
 """
 import json
+import copy
+from functools import wraps
 import os
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -15,8 +18,10 @@ from pathlib import Path
 # In the run dir probe.py sits beside this file; in the repo it is bench_probe/probe.py.
 sys.path[:0] = [str(Path(__file__).resolve().parent), str(Path(__file__).resolve().parent / "bench_probe")]
 from probe import CHIP_SECTION, SKILL_ROW, canaries, digest, normalise, tool_names, upstream_row  # noqa: E402
+from probe import canonical, capture_row, component, expected_codex, expected_relay  # noqa: E402
 
-TOOLSETS = ["tts", "skills"]
+TOOLSETS = ["skills"]
+LISTENING_TOOLSETS = ["tts", "skills"]
 MAX_ITERATIONS = 6
 
 
@@ -63,27 +68,32 @@ def wrap_eleven(item_dir, sent):
         "model": k.get("model"), "voice": k.get("voice"), "params": k.get("params"), "format": k.get("format")})
 
 
-def wrap_upstream(item_dir):
+def wrap_upstream(item_dir, capture=None):
     """Observe the exact body the DirectSDK relay forwards upstream (hashes and canaries only)."""
     found = []
     for name, module in list(sys.modules.items()):
-        if name.endswith("admission") and hasattr(module, "pin_message_breakpoint") and hasattr(module, "Handler"):
-            original = module.pin_message_breakpoint
+        if name.endswith("admission") and hasattr(module, "stream_tool_input") and hasattr(module, "Handler"):
+            original = module.stream_tool_input
 
+            @wraps(original)
             def pinned(payload, *a, _original=original, **k):
                 result = _original(payload, *a, **k)
                 try:
+                    if capture:
+                        capture(json.loads(result))
                     _append(Path(item_dir) / "upstream.jsonl", upstream_row(result, item_dir))
                 except Exception as exc:  # never break the turn on a probe failure; the assert fails closed
                     _append(Path(item_dir) / "upstream.jsonl", {"event": "upstream_error", "error": type(exc).__name__})
                 return result
 
-            module.pin_message_breakpoint = pinned
+            module.stream_tool_input = pinned
             found.append(name)
+    if not found:
+        raise RuntimeError("no relay final-request capture installed")
     return found
 
 
-def build_agent(cwd):
+def build_agent(cwd, text=False):
     from hermes_cli.config import load_config
     from hermes_cli.oneshot import _create_session_db_for_oneshot, _resolve_model_and_provider
     from hermes_cli.runtime_provider import resolve_runtime_with_fallback
@@ -99,7 +109,8 @@ def build_agent(cwd):
     session_db = _create_session_db_for_oneshot()
     agent = AIAgent(api_key=runtime.get("api_key"), base_url=runtime.get("base_url"), provider=runtime.get("provider"),
                     requested_provider=runtime.get("requested_provider"), api_mode=runtime.get("api_mode"),
-                    model=choice.model, max_iterations=MAX_ITERATIONS, enabled_toolsets=TOOLSETS, quiet_mode=True,
+                    model=choice.model, max_iterations=MAX_ITERATIONS,
+                    enabled_toolsets=TOOLSETS if text else LISTENING_TOOLSETS, quiet_mode=True,
                     platform="telegram", session_db=session_db, credential_pool=runtime.get("credential_pool"),
                     request_overrides=runtime.get("request_overrides"),
                     reasoning_config=resolve_reasoning_config(cfg, choice.model), cwd=cwd)
@@ -146,26 +157,115 @@ def tts_calls(messages):
 
 def warm(args):
     from agent.system_prompt import build_system_prompt
-    agent, session_db, route = build_agent(args["cwd"])
+    agent, session_db, route = build_agent(args["cwd"], text=args.get("text", False))
     try:
         prompt = build_system_prompt(agent)
+        if agent.ephemeral_system_prompt:
+            prompt = (prompt + "\n\n" + agent.ephemeral_system_prompt).strip()
         names = tool_names(getattr(agent, "tools", None))
         return {"route": route, "system_sha256": digest(normalise(prompt, args["item_dir"])),
                 "system_chars": len(normalise(prompt, args["item_dir"])), "chip_section": CHIP_SECTION in prompt,
-                "skill_row": SKILL_ROW in prompt, "tools": names, "canaries": canaries(prompt)}
+                "skill_row": SKILL_ROW in prompt, "tools": names, "canaries": canaries(prompt),
+                **(golden_delta(agent, prompt, args) if args.get("text") else {})}
     finally:
         agent.close()
         if session_db is not None:
             session_db.close()
 
 
+def golden_delta(agent, prompt, args):
+    from agent.system_prompt import _frozen_plugin_prompt_sections, _skills_prompt
+    from hermes_cli.plugins import format_system_prompt_sections
+    from emotion_chip.data import load_data
+    from emotion_chip.guide import build_skill
+    sections = _frozen_plugin_prompt_sections(agent)
+    bodies = {s.id: s.content for s in sections}
+    if bodies != args["sections"]:
+        raise RuntimeError("golden section bodies differ from published inputs")
+    baseline = [s for s in sections if s.id == "bench-harness"]
+    residue = prompt.replace(format_system_prompt_sections(sections), format_system_prompt_sections(baseline), 1)
+    skills = _skills_prompt(agent)
+    if args["arm"] == "ON":
+        if skills.count("- emotion-chip-voice:") != 1 or len(re.findall(r"^- [^\s]+:", skills, re.M)) != 1:
+            raise RuntimeError("golden skill index differs")
+        residue = residue.replace(skills + "\n\n", "", 1)
+    elif skills:
+        raise RuntimeError("unexpected golden skill index")
+    return {"residue": component(normalise(residue, args["item_dir"])),
+            "sections": {s.id: component(s.content) for s in sections}, "skill_index": component(skills),
+            "skill": component(build_skill("eleven_v4", "default", load_data()) if args["arm"] == "ON" else "")}
+
+
+def install_text_capture(args, agent):
+    """Keep raw captures in process memory; preflight may run twice, so retain its last result per API call."""
+    from agent import conversation_loop
+    state, finals, accepted = {}, {}, {}
+    original = conversation_loop.build_api_request
+    @wraps(original)
+    def build(subject, **kwargs):
+        api = copy.deepcopy(kwargs["api_messages"])
+        if not api or api[0].get("role") != "system":
+            raise RuntimeError("missing pre-conversion system")
+        S, M = api[0]["content"], api[1:]
+        state.update(S=S, M=M, call=kwargs["api_call_count"],
+                     history=copy.deepcopy(kwargs["messages"]), tools=copy.deepcopy(kwargs["tools_for_api"]))
+        state["expected"] = expected_codex(S, M, {
+            "model": agent.model, "provider": "openai-codex", "is_codex_backend": True,
+            "replay_encrypted_reasoning": agent._codex_reasoning_replay_enabled}) if agent.provider == "openai-codex" else expected_relay(
+                S, M, {n: n for n in tool_names(state["tools"])}, provider_path=args["provider_path"])
+        return original(subject, **kwargs)
+    conversation_loop.build_api_request = build
+    def capture(final):
+        row = capture_row(state["S"], state["M"], final, state["expected"], args.get("a4b", {}), args["item_dir"])
+        row["api_call_count"] = state["call"]
+        wanted = [{"role": "user", "content": args["prompt"]}] if state["call"] == 1 else state["history"]
+        fields = {"role", "content", "tool_calls", "tool_call_id"}
+        project = lambda rows: [{k: v for k, v in m.items() if k in fields} for m in rows]
+        row["history_matches"] = project(state["M"]) == project(wanted)
+        prior = [n for n in accepted if n < state["call"]]
+        current = project(state["M"])
+        if prior:
+            prefix = accepted[max(prior)]
+            suffix = current[len(prefix):]
+            row["history_matches"] &= current[:len(prefix)] == prefix and bool(suffix) and suffix[0]["role"] == "assistant"
+            calls = suffix[0].get("tool_calls", []) if suffix else []
+            row["history_matches"] &= bool(calls) and [c["id"] for c in calls] == [m.get("tool_call_id") for m in suffix[1:]]
+        accepted[state["call"]] = current
+        calls = {c["id"]: c["function"] for m in state["M"] for c in m.get("tool_calls", [])}
+        row["skill_reads"] = [{**component(m), "tool": calls.get(m.get("tool_call_id"), {}).get("name")}
+                              for m in state["M"] if m.get("role") == "tool"]
+        finals[state["call"]] = row
+        if args.get("route_record_path"):
+            fd = os.open(args["route_record_path"], os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+            os.fchmod(fd, 0o600)
+            with os.fdopen(fd, "w") as handle:
+                handle.write(canonical(final))
+    if agent.provider == "openai-codex":
+        from agent.transports.codex import ResponsesApiTransport
+        preflight = ResponsesApiTransport.preflight_kwargs
+        @wraps(preflight)
+        def final_kwargs(transport, *a, **k):
+            result = preflight(transport, *a, **k)
+            capture(result)
+            return result
+        ResponsesApiTransport.preflight_kwargs = final_kwargs
+        installed = ["ResponsesApiTransport.preflight_kwargs"]
+    else:
+        installed = wrap_upstream(args["item_dir"], capture)
+    return finals, installed
+
+
 def turn(args):
     from hermes_cli.oneshot import _close_agent
     item_dir = args["item_dir"]
     sent = []
-    (wrap_eleven if args.get("voice") == "ava" else wrap_fish)(item_dir, sent)
-    relays = wrap_upstream(item_dir)
-    agent, session_db, route = build_agent(args["cwd"])
+    text = args.get("text", False)
+    if not text:
+        (wrap_eleven if args.get("voice") == "ava" else wrap_fish)(item_dir, sent)
+    agent, session_db, route = build_agent(args["cwd"], text=text)
+    if args.get("route_record_path"):
+        agent.max_iterations = 1
+    captures, relays = install_text_capture(args, agent) if text else ({}, wrap_upstream(item_dir))
     relay_session_id = getattr(agent, "session_id", None)
     try:
         result = agent.run_conversation(args["prompt"])
@@ -180,7 +280,8 @@ def turn(args):
     return {"route": route, "relays": relays, "final_response": result.get("final_response") or "",
             "tts_calls": calls, "tts_results": results, "sent_to_voice": sent, "last_render": renders,
             "api_calls": result.get("api_calls"), "completed": result.get("completed"),
-            "failed": result.get("failed"), "error": result.get("error")}
+            "failed": result.get("failed"), "error": result.get("error"),
+            "captures": list(captures.values())}
 
 
 def asr(args):
