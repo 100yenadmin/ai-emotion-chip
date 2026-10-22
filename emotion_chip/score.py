@@ -13,6 +13,9 @@ SPAN = re.compile(rf"^({'|'.join(SPAN_OPS)}):\s*(.+)$", re.I | re.S)
 SPAN_OPEN = re.compile(rf"\[\s*({'|'.join(SPAN_OPS)}):\s*", re.I)
 SPEAKER_ID = re.compile(r"\d{1,3}")
 INNER = re.compile(r"(\[[^\[\]]*\])")
+# A bracket group with no letter names no cue ("items[0]", "[1]", "[::1]"); a Markdown link's target is a URL or path.
+LETTER = re.compile(r"[^\W\d_]")
+LINK_TARGET = re.compile(r"\(([^\s()]*[/.:#][^\s()]*)\)")
 RUNG = re.compile(r"^(slightly|a little|somewhat|very|extremely|deeply|really)\s+", re.I)
 
 
@@ -212,6 +215,16 @@ def parse(text: str, data=None) -> Score:
             continue
         content = body[i + 1:end]
         raw = content.strip()
+        link = LINK_TARGET.match(body, end + 1)
+        if raw and link:
+            # Ordinary text, not score syntax: "[docs](https://x.io)" keeps its words and its target.
+            plain(f"{raw} ({link[1]})")
+            i = link.end()
+            continue
+        if raw and not LETTER.search(raw):
+            append_text(body[i:end + 1])
+            i = end + 1
+            continue
         low = re.sub(r"\s+", " ", raw).lower()
         span = SPAN.match(raw)
         speaker = re.match(r"^speaker:\s*(.*)$", raw, re.I | re.S)
