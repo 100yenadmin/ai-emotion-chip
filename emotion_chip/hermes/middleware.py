@@ -18,7 +18,7 @@ def make_middleware(settings, situation=None, env=None):
                 return None
             provider = settings.tts_provider()
             # A command provider is the user's own script (eva's sag-eva speaks ElevenLabs tags): leave its text alone.
-            if provider == "emotion-chip" or settings.host(f"tts.providers.{provider}.type") == "command":
+            if provider == "emotion-chip" or settings.command_provider(provider):
                 return None
             text = args.get("text", "")
             dialect, adapt = "tagless", None

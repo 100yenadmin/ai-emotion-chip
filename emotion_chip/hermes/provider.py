@@ -77,7 +77,7 @@ class EmotionChipTTSProvider(TTSProvider):
 
     def is_available(self):
         if self.settings.get("backend") == "eleven":
-            return bool(os.environ.get("ELEVENLABS_API_KEY") and self.settings.eleven_voice())
+            return bool(os.environ.get("ELEVENLABS_API_KEY") and self.settings.eleven_voice(self.settings.call_voice()))
         fish = _fish()
         return fish is not None and fish.is_available()
 
@@ -196,7 +196,7 @@ class EmotionChipTTSProvider(TTSProvider):
 
     def default_voice(self):
         if self.settings.get("backend") == "eleven":
-            return self.settings.eleven_voice()
+            return self.settings.eleven_voice(self.settings.call_voice())
         fish = _fish()
         return fish.default_voice() if fish is not None else None
 

@@ -11,6 +11,9 @@ DEFAULTS = {
 }
 FISH_MODELS = {"s2.1-pro", "s2.1-pro-free", "s2-pro", "drama-3", "s1", "drama-3-preview"}
 ELEVEN_MODELS = ("eleven_v4", "eleven_v4_turbo", "eleven_v3")
+# Hermes' built-in TTS names never run a user command; "nous" is Hermes' alias for openai.
+BUILTIN_TTS = frozenset({"edge", "elevenlabs", "openai", "minimax", "xai", "mistral", "gemini", "neutts", "kittentts",
+                         "piper", "deepinfra", "nous"})
 
 
 @dataclass(frozen=True)
@@ -78,6 +81,28 @@ class Settings:
 
     def tts_provider(self):
         return str(self.host("tts.provider", "edge")).strip().lower()
+
+    def command_provider(self, provider):
+        """Whether Hermes runs this provider as a user command, by Hermes' own rule (tools/tts_command_provider.py):
+        never a built-in name; config at tts.providers.<name>, else tts.<name>; a non-empty command and a type that
+        is empty or "command"."""
+        if not provider or provider in BUILTIN_TTS:
+            return False
+        # Look the name up in each section rather than in a dotted key: a provider name may itself contain a dot.
+        providers, tts = self.host("tts.providers"), self.host("tts")
+        section = providers.get(provider) if isinstance(providers, dict) else None
+        if not isinstance(section, dict):
+            section = tts.get(provider) if isinstance(tts, dict) else None
+        if not isinstance(section, dict):
+            return False
+        command = section.get("command")
+        return (str(section.get("type") or "").strip().lower() in ("", "command")
+                and isinstance(command, str) and bool(command.strip()))
+
+    def call_voice(self):
+        """The voice Hermes passes to a plugin provider: the top-level tts.voice."""
+        voice = self.host("tts.voice")
+        return voice if isinstance(voice, str) and voice else None
 
     def host_fish_model(self):
         return self.resolve_fish_model().pinned

@@ -266,6 +266,18 @@ def test_voice_and_model_resolution(rig):
     assert payload(calls)["model_id"] == "eleven_v4_turbo"
 
 
+def test_status_and_availability_use_the_voice_hermes_passes(rig):
+    ctx, host, _, _, calls, directory = rig
+    p = ctx.provider
+    # Hermes passes the top-level tts.voice as the call's voice, so status shows the voice that is actually used.
+    host["tts.voice"] = "global-voice"
+    assert p.default_voice() == "global-voice" and "eleven_voice_id: global-voice" in ctx.command("status")
+    ctx.set_config("eleven_voice_id", "")
+    assert p.is_available() and p.default_voice() == "global-voice"
+    host["tts.voice"] = ""
+    assert not p.is_available() and p.default_voice() == ""
+
+
 def test_missing_voice_or_key(rig, monkeypatch):
     ctx, _, _, _, calls, directory = rig
     p = ctx.provider

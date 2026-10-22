@@ -20,7 +20,7 @@ def make_handler(settings, situation, env):
             model = settings.model(settings.host("tts.model"))
             if backend == "eleven":
                 values.pop("fish_model")
-                values.update(eleven_model=model, eleven_voice_id=settings.eleven_voice())
+                values.update(eleven_model=model, eleven_voice_id=settings.eleven_voice(settings.call_voice()))
             else:
                 values["fish_model"] = model
             values.update(session_id=session_id, dialect=str(dialect_for(backend, model)),

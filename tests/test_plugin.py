@@ -226,12 +226,27 @@ def test_middleware_dialects(rig, provider, model, expected):
     assert ("<soft>" in expected) == (provider == "fish-audio" and model == "drama-3")
 
 
-def test_middleware_leaves_command_providers_alone(rig):
+# Hermes runs a command provider for a non-built-in name whose config (tts.providers.<name>, else tts.<name>) has a
+# non-empty command and an empty or "command" type; the chip leaves that text alone and renders everything else.
+@pytest.mark.parametrize("provider, config, untouched", [
+    ("sag-eva", {"tts.providers": {"sag-eva": {"type": "command", "command": "say"}}}, True),
+    ("SaG-EvA", {"tts.providers": {"sag-eva": {"type": "command", "command": "say"}}}, True),
+    ("sag-eva", {"tts.providers": {"sag-eva": {"command": "say"}}}, True),
+    ("sag-eva", {"tts.providers": {"sag-eva": {"type": "", "command": "say"}}}, True),
+    ("sag-eva", {"tts.providers": {"sag-eva": {"type": " Command ", "command": "say"}}}, True),
+    ("sag-eva", {"tts": {"sag-eva": {"command": "say"}}}, True),
+    ("my.tool", {"tts.providers": {"my.tool": {"command": "say"}}}, True),
+    ("my.tool", {"tts": {"my.tool": {"command": "say"}}}, True),
+    ("edge", {"tts.providers": {"edge": {"type": "command", "command": "say"}}}, False),
+    ("sag-eva", {"tts.providers": {"sag-eva": {"type": "command"}}}, False),
+    ("sag-eva", {"tts.providers": {"sag-eva": {"type": "command", "command": "  "}}}, False),
+    ("sag-eva", {"tts.providers": {"sag-eva": {"type": "plugin", "command": "say"}}}, False),
+])
+def test_middleware_leaves_command_providers_alone(rig, provider, config, untouched):
     ctx, _, host, *_ = rig
-    host.update({"tts.provider": "sag-eva", "tts.providers.sag-eva.type": "command"})
-    assert ctx.middleware(tool_name="text_to_speech", args={"text": "[whispers] [crying] Hi. [laughs]"}) is None
-    host["tts.providers.sag-eva.type"] = "plugin"
-    assert ctx.middleware(tool_name="text_to_speech", args={"text": "[sad] Hi."}) == {"args": {"text": "Hi."}}
+    host.update({"tts.provider": provider, **config})
+    result = ctx.middleware(tool_name="text_to_speech", args={"text": "[whispers] [crying] Hi. [laughs]"})
+    assert result is None if untouched else result == {"args": {"text": "Hi."}}
 
 
 def test_middleware_noops_and_reader_error(rig):
