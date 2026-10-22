@@ -107,6 +107,10 @@ def test_key_value_and_tree_sha(tmp_path):
     assert run.tree_sha256(tree) == first
     (tree / "a.py").write_text("y")
     assert run.tree_sha256(tree) != first
+    second = run.tree_sha256(tree, skip=run.HOST_SKIP)
+    (tree / ".venv").mkdir()
+    (tree / ".venv" / "lib.py").write_text("installed")
+    assert run.tree_sha256(tree, skip=run.HOST_SKIP) == second and run.tree_sha256(tree) != second
 
 
 # --- probe ------------------------------------------------------------------------------------------------------
@@ -564,3 +568,19 @@ def test_published_evidence_names_machine_canaries_by_label():
     assert not any(c in public for c in canaries)
     assert '"machine-canary-2": false' in public and "under machine-canary-2/a" in public
     assert run.label_canaries("no canary here", canaries) == "no canary here"
+
+
+def test_prepare_records_a_digest_of_the_hermes_source(tmp_path, monkeypatch):
+    monkeypatch.setattr(run, "rev", lambda repo, ref: "0" * 40)
+    monkeypatch.setattr(run, "archive", lambda repo, ref, dest: dest.mkdir(parents=True))
+    host, provider = tmp_path / "host", tmp_path / "provider"
+    (host / ".venv").mkdir(parents=True)
+    (host / "run_agent.py").write_text("source")
+    (host / ".venv" / "site.py").write_text("installed")
+    provider.mkdir()
+    (provider / "p.py").write_text("provider")
+    paths = {"host": host, "host_label": "a label", "fish_repo": tmp_path, "chip_repo": tmp_path, "provider_src": provider}
+    shas = run.prepare(tmp_path / "run1", "fake-key", paths)
+    assert shas["hermes"] == "a label" and shas["hermes_tree"] == run.tree_sha256(host, skip=run.HOST_SKIP)
+    (host / "run_agent.py").write_text("edited source")
+    assert run.prepare(tmp_path / "run2", "fake-key", paths)["hermes_tree"] != shas["hermes_tree"]

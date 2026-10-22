@@ -33,7 +33,8 @@ def isolated_environment(token, config, environ=None):
     env = {k: v for k, v in source.items() if k != "CLAUDECODE"
            and not k.startswith("CLAUDE_CODE_")
            and k not in {"ANTHROPIC_BASE_URL", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_API_KEY"}}
-    env.update(CLAUDE_CONFIG_DIR=str(config), CLAUDE_CODE_OAUTH_TOKEN=token)
+    # CLAUDE.md files from the user, the working directory or its parents never reach the subject model.
+    env.update(CLAUDE_CONFIG_DIR=str(config), CLAUDE_CODE_OAUTH_TOKEN=token, CLAUDE_CODE_DISABLE_CLAUDE_MDS="1")
     return env
 
 

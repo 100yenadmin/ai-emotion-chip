@@ -210,11 +210,16 @@ def key_value(path, name):
     raise SystemExit(f"{name} missing from its key file")
 
 
-def tree_sha256(root):
-    """sha256 over sorted (relative path, file sha256) pairs, caches and bytecode excluded."""
+# Installed environments and front-end packages are not Hermes source.
+HOST_SKIP = (".venv", "node_modules", ".git")
+
+
+def tree_sha256(root, skip=()):
+    """sha256 over sorted (relative path, file sha256) pairs, caches, bytecode and `skip` folders excluded."""
     root = Path(root)
     outer = hashlib.sha256()
-    for path in sorted(p for p in root.rglob("*") if p.is_file() and "__pycache__" not in p.parts
+    skipped = {"__pycache__", *skip}
+    for path in sorted(p for p in root.rglob("*") if p.is_file() and not skipped & set(p.relative_to(root).parts)
                        and p.suffix != ".pyc"):
         outer.update(str(path.relative_to(root)).encode() + b"\0" + hashlib.sha256(path.read_bytes()).hexdigest().encode() + b"\n")
     return outer.hexdigest()
@@ -517,7 +522,9 @@ def prepare(run, fish_key, paths, eleven_key=None):
     archive(paths["chip_repo"], chip_sha, run / "src/emotion-chip")
     shutil.copytree(paths["provider_src"], run / "src" / PROVIDER, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
     shutil.copytree(HERE / "bench_probe", run / "src/bench-probe", ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
-    shas = {"hermes": paths["host_label"], "fish_audio": f"v1.8.0 {fish_sha}", "emotion_chip": f"{CHIP_REF} {chip_sha}",
+    # The label is the operator's description; the tree digest pins the Hermes source files the cells ran.
+    shas = {"hermes": paths["host_label"], "hermes_tree": tree_sha256(paths["host"], skip=HOST_SKIP),
+            "fish_audio": f"v1.8.0 {fish_sha}", "emotion_chip": f"{CHIP_REF} {chip_sha}",
             "provider_tree": tree_sha256(run / "src" / PROVIDER), "provider_source_tree": tree_sha256(paths["provider_src"]),
             "bench_probe_tree": tree_sha256(run / "src/bench-probe")}
     if shas["provider_tree"] != shas["provider_source_tree"]:

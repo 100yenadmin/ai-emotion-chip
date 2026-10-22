@@ -115,7 +115,8 @@ def test_isolated_generation_with_fake_runner():
     env = gen.isolated_environment("fake", "config", {
         "CLAUDECODE": "1", "CLAUDE_CODE_NEW_MARKER": "1", "ANTHROPIC_BASE_URL": "fake",
         "ANTHROPIC_AUTH_TOKEN": "fake", "ANTHROPIC_API_KEY": "fake", "PATH": "retained"})
-    assert set(env) == {"PATH", "CLAUDE_CONFIG_DIR", "CLAUDE_CODE_OAUTH_TOKEN"}
+    assert set(env) == {"PATH", "CLAUDE_CONFIG_DIR", "CLAUDE_CODE_OAUTH_TOKEN", "CLAUDE_CODE_DISABLE_CLAUDE_MDS"}
+    assert env["CLAUDE_CODE_DISABLE_CLAUDE_MDS"] == "1"
 
 
 @pytest.mark.parametrize("returncode,stdout", [(1, "sensitive diagnostic"), (0, "not json"),
@@ -373,6 +374,8 @@ def test_full_fake_gate_g1_report_only_and_g3_verdicts(tmp_path, monkeypatch):
     monkeypatch.setattr(report, "a1_inputs", lambda: dict(report.A1_PINS))
     assert not result["missing_judgments"]
     assert all(g["pass"] for m in report.A3_MODELS for g in result["g3"][m]["three_of_three"])
+    assert {g["condition"] for g in result["g3"][items.MODELS[0]]["three_of_three"]} == set(items.CONDITIONS)
+    assert result["bars"]["g1_claim_class"] == "report_only (scope A3)"
     bad_g1.update(i["id"] for i in items.load_items("g1")[:3])
     assert report.build_report(tmp_path, tagged=current)["verdict"] == "pass"  # exactly +5 pp
     bad_g1.add(items.load_items("g1")[3]["id"])
@@ -394,7 +397,19 @@ def test_full_fake_gate_g1_report_only_and_g3_verdicts(tmp_path, monkeypatch):
         on["reply"] = reply
         on["raw"] = {"result": reply}
     assert report.build_report(tmp_path, tagged=current)["verdict"] == "pass"
-    # Corrupt the renderer to prove G3 still gates ON replies from every set.
+    # The mechanical gate covers OFF and NATIVE replies too (A3: every generated reply).
+    real_checks = report.g3_checks
+    monkeypatch.setattr(report, "g3_checks", lambda reply: ["register_leak"] if reply == "leaks" else real_checks(reply))
+    for condition in ("OFF", "NATIVE"):
+        leaked = next(r for r in all_rows["e3"] if r["condition"] == condition)
+        saved = leaked["reply"], leaked["raw"]
+        leaked["reply"], leaked["raw"] = "leaks", {"result": "leaks"}
+        failed = report.build_report(tmp_path, tagged=current)
+        assert failed["verdict"] == "fail"
+        assert [(r["condition"], r["set"]) for r in failed["g3"][leaked["model"]]["failures"]] == [(condition, "e3")]
+        leaked["reply"], leaked["raw"] = saved
+    monkeypatch.setattr(report, "g3_checks", real_checks)
+    # Corrupt the renderer to prove G3 still gates replies from every set and condition.
     from dataclasses import replace
     real_render = score.render
     monkeypatch.setattr(score, "render", lambda *a, **k: replace(real_render(*a, **k),
@@ -402,6 +417,7 @@ def test_full_fake_gate_g1_report_only_and_g3_verdicts(tmp_path, monkeypatch):
     result = report.build_report(tmp_path, tagged=current)
     assert result["verdict"] == "fail" and result["gate_failures"] == [f"G3 {m}" for m in report.A3_MODELS]
     assert {r["set"] for r in result["g3"][items.MODELS[0]]["failures"]} == set(items.SETS)
+    assert {r["condition"] for r in result["g3"][items.MODELS[0]]["failures"]} == set(items.CONDITIONS)
     changed = current.replace(b"+5 percentage points", b"+6 percentage points", 1)
     assert report.build_report(tmp_path, tagged=changed)["verdict"] == "unverified"
     monkeypatch.setattr(score, "render", real_render)
