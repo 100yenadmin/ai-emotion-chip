@@ -474,7 +474,7 @@ def test_eleven_similarity_is_clamped(value, expected, data):
     assert render("Hi.", "eleven_v4", {"eleven_similarity": value}, data).params["similarity_boost"] == expected
 
 
-@pytest.mark.parametrize("template", ["{missing}", "{text} {0}", "{text", "plain"])
+@pytest.mark.parametrize("template", ["{missing}", "{text} {0}", "{text", "plain", "{text:Q}", "{text}{text}", "{text!r}"])
 def test_span_templates_must_use_only_text(tmp_path, template):
     root = fixture_copy(tmp_path)
     path = root / "dialects" / "fish_s2.yaml"

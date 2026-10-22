@@ -117,10 +117,13 @@ def validate(data):
                 _require(template is None or isinstance(template, str), f"dialect {name}: invalid template")
                 if kind == "spans" and template not in (None, "uppercase"):
                     try:
-                        fields = {f for _, f, _, _ in string.Formatter().parse(template) if f is not None}
+                        fields = [(f, spec, conv) for _, f, spec, conv in string.Formatter().parse(template)
+                                  if f is not None]
                     except ValueError:
-                        fields = {None}
-                    _require(fields == {"text"}, f"dialect {name}: span {op} must use exactly the {{text}} placeholder")
+                        fields = []
+                    # One plain {text}: no repeat, no conversion and no format spec, so render() can never raise.
+                    _require(fields == [("text", "", None)],
+                             f"dialect {name}: span {op} must use exactly one plain {{text}} placeholder")
                 for literal in LITERALS.findall(template or ""):
                     _require(literal in phrases, f"dialect {name}: emitted phrase {literal} not in whitelist")
                     _require(literal in inverse, f"dialect {name}: missing inverse for {literal}")
