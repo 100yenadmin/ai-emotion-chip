@@ -17,6 +17,7 @@ def main(argv=None):
     render_cmd.add_argument("--model")
     render_cmd.add_argument("--json", action="store_true")
     render_cmd.add_argument("--sounds-per-turn", type=int, default=1)
+    render_cmd.add_argument("--allow-speakers", action="store_true", help="render [speaker: N] where the dialect has a marker")
     guide_cmd = commands.add_parser("guide")
     guide_cmd.add_argument("--dialect", required=True, choices=DIALECTS)
     guide_cmd.add_argument("--model", required=True)

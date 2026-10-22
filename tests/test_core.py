@@ -483,3 +483,48 @@ def test_span_templates_must_use_only_text(tmp_path, template):
     path.write_text(yaml.safe_dump(table, sort_keys=False))
     with pytest.raises(ValueError, match="placeholder"):
         load_data(root)
+
+
+def _damaged(tmp_path, name, edit):
+    root = fixture_copy(tmp_path)
+    path = root / name
+    value = yaml.safe_load(path.read_text())
+    edit(value)
+    path.write_text(yaml.safe_dump(value, sort_keys=False))
+    return root
+
+
+@pytest.mark.parametrize("name,edit,match", [
+    ("sounds.yaml", lambda v: v.update(forbidden_cue_words=[]), "forbidden_cue_words"),
+    ("sounds.yaml", lambda v: v["forbidden_cue_words"].append(" "), "forbidden_cue_words"),
+    ("sounds.yaml", lambda v: v.setdefault("aliases", {}).update(purrs="purr"), "not an event"),
+    ("dialects/eleven_v4.yaml", lambda v: v.update(variants={"eleven_v4": "big"}), "variants"),
+    ("dialects/eleven_v4.yaml", lambda v: v.pop("variants"), "variants"),
+])
+def test_sound_and_variant_tables_are_validated(tmp_path, name, edit, match):
+    with pytest.raises(ValueError, match=match):
+        load_data(_damaged(tmp_path, name, edit))
+
+
+def test_duplicate_yaml_keys_are_rejected(tmp_path):
+    root = fixture_copy(tmp_path)
+    path = root / "groups.yaml"
+    path.write_text(path.read_text() + "\n" + path.read_text().split("\n", 1)[0] + "\n")
+    with pytest.raises(ValueError, match="duplicate"):
+        load_data(root)
+
+
+def test_empty_forbidden_list_never_drops_cues(data):
+    empty = replace(data, sounds={**data.sounds, "forbidden_cue_words": []})
+    score, dropped = apply_policy(parse("[happy, curious] Hi."), empty)
+    assert dropped == [] and score.sentences[0].tokens[0].words == ["happy", "curious"]
+
+
+def test_cli_can_render_speakers(monkeypatch, capsys):
+    from emotion_chip.cli import main
+    monkeypatch.setattr(sys, "stdin", io.StringIO("[speaker: 1] Hi."))
+    main(["render", "--dialect", "fish_drama3", "--allow-speakers"])
+    assert "<|speaker:1|>" in capsys.readouterr().out
+    monkeypatch.setattr(sys, "stdin", io.StringIO("[speaker: 1] Hi."))
+    main(["render", "--dialect", "fish_drama3"])
+    assert capsys.readouterr().out.strip() == "Hi."

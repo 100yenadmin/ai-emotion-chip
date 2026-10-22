@@ -16,7 +16,9 @@ def apply_policy(score, data, options=None):
     # Matched on the rung-stripped word, as a whole word: [very hysterical], [crying softly] and [loud-screaming]
     # drop. So do negated mentions ([firm without screaming]): TTS models do not reliably follow negation inside a
     # tag, and naming the sound primes it. The guide asks for the positive delivery instead ([firm]).
-    forbidden = re.compile(r"\b(?:" + "|".join(map(re.escape, words)) + r")\b", re.I)
+    words = [w for w in words if w.strip()]
+    # An empty list must never compile to an empty alternative, which would match every word.
+    forbidden = re.compile(r"\b(?:" + "|".join(map(re.escape, words)) + r")\b", re.I) if words else re.compile(r"(?!)")
     dropped = []
     sentences = []
     affect_count = 0

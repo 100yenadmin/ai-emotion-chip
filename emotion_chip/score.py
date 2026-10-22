@@ -16,7 +16,8 @@ RUNG = re.compile(r"^(slightly|a little|somewhat|very|extremely|deeply|really)\s
 
 @lru_cache(maxsize=1)
 def _default_sounds():
-    return yaml.safe_load((Path(__file__).with_name("data") / "sounds.yaml").read_text())
+    from .data import safe_load_unique
+    return safe_load_unique((Path(__file__).with_name("data") / "sounds.yaml").read_text())
 
 
 def _events(sounds=None):
