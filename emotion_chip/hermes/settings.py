@@ -81,9 +81,13 @@ class Settings:
     def host_fish_model(self):
         return self.resolve_fish_model().pinned
 
-    def resolve_fish_model(self, model=None):
+    def resolve_fish_model(self, model=None, use_setting=True):
+        """Fish's order: its pinned tts.fish-audio.model, then the call's model, then its wallet default.
+
+        use_setting=False is for the compat path, where the chip's own fish_model setting never reaches Fish.
+        """
         missing = object()
-        explicit = self.ctx.get_config("fish_model", missing) if self.ctx is not None else missing
+        explicit = self.ctx.get_config("fish_model", missing) if self.ctx is not None and use_setting else missing
         pinned = canonical_fish_model(self.host("tts.fish-audio.model"))
         requested = canonical_fish_model(model) or canonical_fish_model(explicit)
         return FishModel(pinned, requested, pinned or requested or "s2.1-pro")

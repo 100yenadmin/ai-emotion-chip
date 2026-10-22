@@ -13,7 +13,12 @@ class Hooks:
         self.situation = situation
         self.env = env or session_env
 
-    def _remember(self, session_id):
+    def _remember(self, kwargs):
+        # A delegated subagent runs with its parent's session key still bound; mapping the key to the child
+        # would point the parent chat's renders and /chip replies at the subagent.
+        if kwargs.get("parent_session_id") or kwargs.get("platform") == "subagent":
+            return
+        session_id = kwargs.get("session_id")
         key = self.env("HERMES_SESSION_KEY")
         if key and session_id:
             with self.situation.lock:
@@ -45,7 +50,7 @@ class Hooks:
     def on_session_start(self, **kwargs):
         self.situation.update(kwargs.get("session_id") or "",
                               lambda row: row.update(started_at=self.situation.clock()))
-        self._remember(kwargs.get("session_id"))
+        self._remember(kwargs)
 
     def on_session_end(self, **kwargs):
         if kwargs.get("interrupted"):
@@ -65,7 +70,7 @@ class Hooks:
                 row["last_situation"] = line
         self.situation.update(kwargs.get("session_id") or "", change,
                               sender_id=kwargs.get("sender_id"), platform=kwargs.get("platform"))
-        self._remember(kwargs.get("session_id"))
+        self._remember(kwargs)
         return {"context": line} if line else None
 
     def transform_tool_result(self, **kwargs):

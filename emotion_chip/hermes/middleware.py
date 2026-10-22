@@ -1,5 +1,8 @@
 """Compatibility rendering before Hermes cleans tool text; fail open."""
-from ..render import dialect_for, render
+from ..data import load_data
+from ..render import dialect_for
+from . import provider as provider_module
+from .fishtags import fish_adapter, settled_render
 from .settings import sound_limit, session_env
 from .situation import Situation
 
@@ -7,23 +10,33 @@ from .situation import Situation
 def make_middleware(settings, situation=None, env=None):
     situation = situation or Situation({})
     env = env or session_env
+
     def tool_request(**kwargs):
         try:
             args = kwargs.get("args") or {}
-            if (kwargs.get("tool_name") != "text_to_speech" or settings.get("guide_mode") != "generate"
-                    or "[" not in args.get("text", "")):
+            if kwargs.get("tool_name") != "text_to_speech" or settings.get("guide_mode") != "generate":
                 return None
             provider = settings.tts_provider()
             if provider == "emotion-chip":
                 return None
-            dialect = "tagless"
+            text = args.get("text", "")
+            dialect, adapt = "tagless", None
             if provider == "fish-audio":
-                dialect = dialect_for("fish", settings.fish_model(args.get("model")))
+                # Fish gets tts.model from Hermes, never the chip's own fish_model setting.
+                dialect = dialect_for("fish", settings.resolve_fish_model(settings.host("tts.model"), use_setting=False).effective)
+                if dialect == "fish_s2":
+                    try:
+                        adapt = fish_adapter(provider_module._fish())
+                        text = adapt(text, "S2")
+                    except Exception:
+                        adapt = None
             elif provider == "elevenlabs" and settings.host("tts.elevenlabs.model_id", "").startswith(("eleven_v3", "eleven_v4")):
                 dialect = "eleven_v4"
-            text = render(args["text"], dialect, {"sounds_per_turn": sound_limit(settings, situation, env),
-                                                "allow_speakers": False}).text
-            return {"args": {**args, "text": text}}
+            if "[" not in text:
+                return None
+            options = {"sounds_per_turn": sound_limit(settings, situation, env), "allow_speakers": False}
+            rendered, _ = settled_render(text, dialect, options, load_data(), adapt)
+            return {"args": {**args, "text": rendered.text}}
         except Exception:
             return None
     return tool_request

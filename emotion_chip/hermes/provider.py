@@ -1,21 +1,30 @@
 """Render agent-authored scores and delegate audio to the enabled Fish plugin."""
 from dataclasses import asdict
 from threading import RLock
+import math
 import time
-import importlib
 
 from ..data import load_data
 from ..model import Cue
 from ..policy import apply_policy
-from ..render import dialect_for, render
+from ..render import dialect_for
 from ..score import header_cue, parse
 from ._compat import TTSProvider
+from .fishtags import fish_adapter, settled_render
 from .log import DeliveryLog
 from .settings import Settings, session_env, session_identity, sound_limit
 from .situation import Situation
 
-last_render = {}
+last_render = {}  # session id -> the newest render's explanation for /chip why (the 50 newest sessions)
 last_render_lock = RLock()
+
+
+def _finite(value):
+    """A real, finite number, as Fish requires of a speed; anything else falls back to 1.0."""
+    try:
+        return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(float(value))
+    except OverflowError:
+        return False
 
 
 def _fish():
@@ -66,14 +75,13 @@ class EmotionChipTTSProvider(TTSProvider):
         options = {"sounds_per_turn": sound_limit(self.settings, self.situation, self.env), "allow_speakers": False}
         notes = []
         original_chars = len(text)
+        adapt = None
         if dialect == "fish_s2":
             try:
-                adapter = self.tag_adapter
-                if adapter is None:
-                    package = type(_fish()).__module__.rsplit(".", 1)[0]
-                    adapter = importlib.import_module(package + ".tags").adapt_tags
-                text = adapter(text, "S2")
+                adapt = self.tag_adapter or fish_adapter(_fish())
+                text = adapt(text, "S2")
             except Exception:
+                adapt = None
                 notes.append("Fish adapt_tags unavailable; skipped pre-parse adaptation")
         data = load_data()
         score = parse(text, data)
@@ -95,11 +103,13 @@ class EmotionChipTTSProvider(TTSProvider):
                     state = entry[1] if entry is not None and entry[0] == turn else {}
                     self._policy[session_id] = (turn, state, now)
                     options["policy_state"] = state
-            rendered = render(score, dialect, options)
-            if session_id and rendered.group is not None and "params_from" not in options:
+            rendered, added = settled_render(score, dialect, options, data, adapt)
+            # A carried piece refreshes the carry too, so a long reply keeps its opening cue's params.
+            if session_id and rendered.group is not None:
                 self._carried[session_id] = (rendered.group, now)
+        words += added
         base = self.settings.host("tts.fish-audio.speed", 1.0) if speed is None else speed
-        if not isinstance(base, (int, float)) or isinstance(base, bool):
+        if not _finite(base):
             base = 1.0
         final = max(0.5, min(2.0, base * rendered.params.get("speed", 1.0)))
         if models.pinned and models.requested and models.pinned != models.requested:
@@ -108,10 +118,12 @@ class EmotionChipTTSProvider(TTSProvider):
         self.situation.update(session_id, lambda row: row.update(
             {"register": "[[" + score.header.raw + "]]"} if score.header else {}), platform=platform or None)
         with last_render_lock:
-            last_render.clear()
-            last_render.update(session_id=session_id, fish_model=models.effective, dialect=rendered.dialect, cue_words=words,
-                               group=rendered.group, params=dict(rendered.params),
-                               dropped=[asdict(d) for d in rendered.dropped], notes=list(rendered.notes))
+            last_render.pop(session_id, None)
+            last_render[session_id] = dict(session_id=session_id, fish_model=models.effective, dialect=rendered.dialect,
+                                           cue_words=words, group=rendered.group, params=dict(rendered.params),
+                                           dropped=[asdict(d) for d in rendered.dropped], notes=list(rendered.notes))
+            while len(last_render) > 50:
+                last_render.pop(next(iter(last_render)))
         metadata = self.situation.session(session_id)
         metadata["platform"] = platform or metadata.get("platform", "")
         self.log.append(session_id, metadata, rendered, words, original_chars, now, models.effective)

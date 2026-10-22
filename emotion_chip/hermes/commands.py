@@ -16,15 +16,14 @@ def make_handler(settings, situation, env):
         session_id = session_identity(env, situation)
         if args == ["status"]:
             values = {key: settings.get(key) for key in ("backend", "fish_model", "guide_mode", "signals", "sounds_per_turn")}
-            values.update(fish_model=settings.fish_model(), session_id=session_id, dialect=str(dialect_for("fish", settings.fish_model())),
+            model = settings.fish_model(settings.host("tts.model"))
+            values.update(fish_model=model, session_id=session_id, dialect=str(dialect_for("fish", model)),
                           quiet="on" if situation.get("quiet", False) else "off",
                           delivery_log="on" if settings.get("delivery_log") else "off")
             return "; ".join(f"{key}: {value}" for key, value in values.items())
         if args == ["why"]:
             with last_render_lock:
-                row = deepcopy(last_render)
-            if row.get("session_id") != session_id:
-                row = {}
+                row = deepcopy(last_render.get(session_id, {}))
             if row:
                 dropped = "; ".join(f"{d['kind']} {d['value']}: {d['reason']}" for d in row["dropped"]) or "none"
                 caps = [d["reason"] for d in row["dropped"] if d["reason"] in {"sounds_per_turn", "breath density"}]

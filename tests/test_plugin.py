@@ -9,18 +9,27 @@ from pathlib import Path
 import subprocess
 import sys
 
+from types import SimpleNamespace
+
 import pytest
 import yaml
 
 from emotion_chip.data import DIALECTS, load_data
 from emotion_chip.guide import build_prompt_section
+from emotion_chip.hermes import fishtags as fishtags_module
 from emotion_chip.hermes import provider as provider_module
 from emotion_chip.hermes import log as log_module
 from emotion_chip.hermes.hooks import HOOKS
 from emotion_chip.hermes.registration import model_key, register_all
 from emotion_chip.hermes.settings import DEFAULTS, Settings
 from emotion_chip.hermes.situation import situation_line
-from fakes import FakeContext, FakeFish
+from fakes import fish_like_adapt_tags, FakeContext, FakeFish
+
+
+def latest():
+    """The newest render explanation (last_render is keyed by session)."""
+    with provider_module.last_render_lock:
+        return list(provider_module.last_render.values())[-1]
 
 
 @pytest.fixture
@@ -160,12 +169,12 @@ def test_stream_carry_session_and_expiry(rig):
 
 def test_stream_concurrent_carry(rig, monkeypatch):
     ctx, fish, *_ = rig
-    original = provider_module.render
+    original = fishtags_module.render
 
     def checked_render(*args, **kwargs):
         assert ctx.provider._lock._is_owned(), "carry read/render/write must hold its lock"
         return original(*args, **kwargs)
-    monkeypatch.setattr(provider_module, "render", checked_render)
+    monkeypatch.setattr(fishtags_module, "render", checked_render)
     list(ctx.provider.stream("[sad] First."))
     with ThreadPoolExecutor(max_workers=3) as pool:
         list(pool.map(lambda i: list(ctx.provider.stream(f"Piece {i}.")), range(9)))
@@ -450,7 +459,7 @@ def test_pinned_model_all_consumers(rig, pinned, requested, dialect, text):
     list(ctx.provider.stream("[soft: here]"))
     assert all(call[1] == text and call[2]["model"] == requested for call in fish.calls)
     assert fish.effective_models == [fish.pinned_model] * 2
-    row = provider_module.last_render
+    row = latest()
     assert row["fish_model"] == fish.pinned_model and row["dialect"] == dialect
     assert any("pinned model wins" in note for note in row["notes"])
     assert f"fish_model: {fish.pinned_model}" in ctx.command("status")
@@ -482,7 +491,7 @@ def test_requested_model_and_wallet_default(rig, configured, call, expected):
         ctx.set_config("fish_model", configured)
     ctx.provider.synthesize("Hello.", "out.mp3", model=call)
     assert fish.calls[-1][2]["model"] == expected
-    assert provider_module.last_render["fish_model"] == (expected or "s2.1-pro")
+    assert latest()["fish_model"] == (expected or "s2.1-pro")
 
 
 @pytest.mark.parametrize("host_speed,call,expected", [(1.3, None, 1.196), (1.3, 1.1, 1.012),
@@ -513,7 +522,7 @@ def test_gateway_session_identity_and_carry(rig, hook):
     list(ctx.provider.stream("[[register: sad]] One."))
     list(ctx.provider.stream("Two."))
     assert fish.calls[-1][2]["speed"] == .92
-    assert provider_module.last_render["session_id"] == identity
+    assert latest()["session_id"] == identity
     assert "Dialect:" in ctx.command("why")
     assert identity in ctx.command("status")
     assert ctx.command("register") == "[[register: sad]]"
@@ -539,7 +548,7 @@ def test_session_key_map_pruned_and_id_priority(rig):
     assert "telegram:0" not in ctx.state["session_keys"]
     env["HERMES_SESSION_ID"] = "explicit-id"
     ctx.provider.synthesize("Hi.", "out.mp3")
-    assert provider_module.last_render["session_id"] == "explicit-id"
+    assert latest()["session_id"] == "explicit-id"
 
 
 @pytest.mark.parametrize("raises", [False, True])
@@ -570,7 +579,7 @@ def test_header_words_in_why_and_log(rig):
     ctx, _, _, _, _, directory = rig
     ctx.provider.synthesize("[[register: slightly sad; curious]] [calm] Hi.", "out.mp3")
     words = ["sad", "curious", "calm"]
-    assert provider_module.last_render["cue_words"] == words
+    assert latest()["cue_words"] == words
     assert "authored cue words: sad, curious, calm" in ctx.command("why")
     assert json.loads((directory / "delivery.jsonl").read_text())["cue_words"] == words
 
@@ -642,9 +651,9 @@ def test_fish_paren_adapter_before_policy(rig, monkeypatch):
     monkeypatch.setattr(importlib, "import_module", lambda name: SimpleNamespace(adapt_tags=adapter))
     text = "(sobbing) Hi. (sighing) Next. (sighing) Last."
     ctx.provider.synthesize(text, "out.mp3")
-    assert calls == [(text, "S2")]
+    assert calls[0] == (text, "S2") and {family for _, family in calls} == {"S2"}
     assert fish.calls[-1][1] == "Hi. [sighing] Next. Last."
-    assert {d["reason"] for d in provider_module.last_render["dropped"]} >= {"assistant_ok:false", "sounds_per_turn"}
+    assert {d["reason"] for d in latest()["dropped"]} >= {"assistant_ok:false", "sounds_per_turn"}
 
 
 def test_fish_adapter_injectable_and_missing(rig, monkeypatch):
@@ -652,13 +661,13 @@ def test_fish_adapter_injectable_and_missing(rig, monkeypatch):
     calls = []
     ctx.provider.tag_adapter = lambda text, family: calls.append(family) or text
     ctx.provider.synthesize("Hi.", "out.mp3")
-    assert calls == ["S2"]
+    assert calls and set(calls) == {"S2"}
     ctx.provider.tag_adapter = None
     def missing(name):
         raise ImportError("fixture missing tags")
     monkeypatch.setattr(importlib, "import_module", missing)
     ctx.provider.synthesize("Hi.", "out.mp3")
-    assert any("adapt_tags unavailable" in n for n in provider_module.last_render["notes"])
+    assert any("adapt_tags unavailable" in n for n in latest()["notes"])
 
 
 @pytest.mark.parametrize("mode,result", [("facts", '{"error":"fixture"}'), ("facts", "fixture error"),
@@ -696,7 +705,7 @@ def test_stream_pieces_share_one_turn_of_sound_and_breath_limits(rig):
     for piece in ("[laugh] One.", "[laugh] Two.", "[breath] Three.", "[breath] Four."):
         list(ctx.provider.stream(piece))
     assert [row[1] for row in fish.calls] == ["[laughing] One.", "Two.", "Three.", "Four."]
-    assert provider_module.last_render["dropped"][0]["reason"] == "breath density"
+    assert latest()["dropped"][0]["reason"] == "breath density"
     # Another session keeps its own limits; the tool path stays one call, one cap.
     session["HERMES_SESSION_ID"] = "other-fixture-session"
     list(ctx.provider.stream("[laugh] Other."))
@@ -710,3 +719,126 @@ def test_stream_pieces_share_one_turn_of_sound_and_breath_limits(rig):
     now[0] += 121
     list(ctx.provider.stream("[laugh] Seven."))
     assert [row[1] for row in fish.calls[-3:]] == ["[laughing] Five.", "Six.", "[laughing] Seven."]
+
+
+
+@pytest.fixture
+def fish_tags(rig, monkeypatch):
+    """Fish's adapter resolved from the loaded Fish provider's package; FakeFish adapts again before voicing."""
+    ctx, fish, *_ = rig
+    expected = type(fish).__module__.rsplit(".", 1)[0] + ".tags"
+    real = importlib.import_module
+    monkeypatch.setattr(importlib, "import_module", lambda name, *rest: SimpleNamespace(
+        adapt_tags=fish_like_adapt_tags) if name == expected else real(name, *rest))
+    fish.adapt = fish_like_adapt_tags
+    return rig
+
+
+@pytest.mark.parametrize("platform,text,voiced,reasons", [
+    ("telegram", "Done. [hysterical] (sobbing) Sorry.", "Done. Sorry.", {"assistant_ok:false"}),
+    ("telegram", "[[register: hysterical]] (sobbing) I'm sorry.", "I'm sorry.", {"assistant_ok:false"}),
+    ("telegram", "Done. [hysterical] (sobbing) (crying loudly) Sorry.", "Done. Sorry.", {"assistant_ok:false"}),
+    ("telegram", "[sigh] One. [hysterical] (sighing) Two.", "[sighing] One. Two.", {"sounds_per_turn"}),
+    ("slack", "Ok. [hysterical] (sighing) fine.", "Ok. fine.", {"sounds_per_turn"}),
+])
+def test_parens_fish_adapts_after_render_still_pass_policy(fish_tags, platform, text, voiced, reasons):
+    ctx, fish, _, session, *_ = fish_tags
+    session["HERMES_SESSION_PLATFORM"] = platform
+    ctx.provider.synthesize(text, "out.mp3")
+    assert {d["reason"] for d in latest()["dropped"]} >= reasons
+    list(ctx.provider.stream(text))
+    assert fish.spoken == [voiced, voiced] and [row[1] for row in fish.calls] == [voiced, voiced]
+
+
+def test_parens_adapted_after_render_name_their_cue_words(fish_tags):
+    ctx, *_ = fish_tags
+    ctx.provider.synthesize("Done. [hysterical] (sobbing) Sorry.", "out.mp3")
+    assert latest()["cue_words"] == ["hysterical", "sobbing"]
+
+
+def test_each_settling_pass_counts_from_the_turn_state_it_started_with(fish_tags):
+    ctx, fish, *_ = fish_tags
+    ctx.hooks["pre_llm_call"](session_id="fixture-session")
+    list(ctx.provider.stream("[laugh] Two. [hysterical] (sighing) x."))
+    assert fish.spoken == ["[laughing] Two. x."]
+    assert ctx.provider._policy["fixture-session"][1]["affect_count"] == 1
+
+
+def test_compat_path_adapts_parens_and_follows_tts_model(fish_tags):
+    ctx, fish, host, session, *_ = fish_tags
+    host["tts.provider"] = "fish-audio"
+    host.pop("tts.fish-audio.model")
+    def call(text):
+        result = ctx.middleware(tool_name="text_to_speech", args={"text": text})
+        return result and result["args"]["text"]
+    assert call("(sobbing) Sorry.") == "Sorry."
+    assert call("[calm] Hi. (sobbing) Sorry.") == "[calm] Hi. Sorry."
+    assert call("Done. [hysterical] (sobbing) Sorry.") == "Done. Sorry."
+    assert call("Plain words.") is None
+    session["HERMES_SESSION_PLATFORM"] = "slack"
+    assert call("Ok. (sighing) fine.") == "Ok. fine."
+    # The chip's own fish_model never reaches Fish on this path; Hermes passes tts.model.
+    ctx.set_config("fish_model", "drama-3")
+    assert call("[soft: here]") == "[soft tone] here"
+    host["tts.model"] = "drama-3"
+    assert call("[soft: here]") == "<soft>here</soft>"
+
+
+def test_adapter_resolved_from_the_fish_package_and_only_on_s2(fish_tags, monkeypatch):
+    ctx, fish, host, *_ = fish_tags
+    names, resolve = [], importlib.import_module
+    monkeypatch.setattr(importlib, "import_module", lambda name, *rest: names.append(name) or resolve(name, *rest))
+    ctx.provider.synthesize("(sobbing) Hi.", "out.mp3")
+    assert names == [type(fish).__module__.rsplit(".", 1)[0] + ".tags"] and fish.spoken[-1] == "Hi."
+    host["tts.fish-audio.model"], fish.pinned_model, fish.adapt = "drama-3", "drama-3", None
+    names.clear()
+    ctx.provider.synthesize("(sobbing) Hi.", "out.mp3")
+    assert names == [] and fish.calls[-1][1] == "(sobbing) Hi."
+
+
+def test_subagent_turn_never_repoints_the_parent_key(rig):
+    ctx, _, _, env, *_ = rig
+    env.update(HERMES_SESSION_ID="", HERMES_SESSION_KEY="telegram:1")
+    ctx.hooks["pre_llm_call"](session_id="parent-1", sender_id="fixture-sender")
+    ctx.hooks["on_session_start"](session_id="child-9", platform="subagent")
+    ctx.hooks["pre_llm_call"](session_id="child-9", parent_session_id="parent-1", platform="subagent")
+    ctx.provider.synthesize("[[register: sad]] Done.", "out.mp3")
+    assert latest()["session_id"] == "parent-1"
+    assert ctx.command("register") == "[[register: sad]]" and "authored cue words: sad" in ctx.command("why")
+
+
+def test_why_survives_another_sessions_render(rig):
+    ctx, _, _, session, *_ = rig
+    ctx.provider.synthesize("[sad] Ha.", "out.mp3")
+    session["HERMES_SESSION_ID"] = "other-fixture-session"
+    ctx.provider.synthesize("Plain.", "out.mp3")
+    assert "authored cue words: none" in ctx.command("why")
+    session["HERMES_SESSION_ID"] = "fixture-session"
+    assert "authored cue words: sad" in ctx.command("why")
+
+
+def test_long_reply_keeps_its_opening_cue(rig):
+    ctx, fish, _, _, now, _ = rig
+    list(ctx.provider.stream("[sad] One."))
+    for index in range(6):
+        now[0] += 30
+        list(ctx.provider.stream(f"Piece {index}."))
+    assert {row[2]["speed"] for row in fish.calls} == {0.92}
+
+
+@pytest.mark.parametrize("bad", [float("nan"), float("inf"), float("-inf"), 10**400])
+def test_non_finite_speed_falls_back_as_fish_does(rig, bad):
+    ctx, fish, host, *_ = rig
+    ctx.provider.synthesize("Hi.", "out.mp3", speed=bad)
+    assert fish.calls[-1][2]["speed"] == 1.0
+    host["tts.fish-audio.speed"] = bad
+    ctx.provider.synthesize("Hi.", "out.mp3")
+    assert fish.calls[-1][2]["speed"] == 1.0
+
+
+def test_status_prompt_and_skill_follow_tts_model(rig, tmp_path):
+    ctx, _, host, *_ = rig
+    host.pop("tts.fish-audio.model")
+    host["tts.model"] = "drama-3"
+    assert "dialect: fish_drama3" in ctx.command("status")
+    assert ctx.section({"model": "default"}) == build_prompt_section("fish_drama3", "default", load_data())
