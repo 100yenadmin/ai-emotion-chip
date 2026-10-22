@@ -653,6 +653,10 @@ def run_cells(item_ids, run_one):
                 stopped = f"credential failure before {item_id} {arm}: {exc}"
                 print(f"STOP: {stopped}; no later cell was run", flush=True)
                 return cells, stopped
+            except Exception as exc:  # a clone or probe file broke: stop, but keep the cells already run
+                stopped = f"cell error at {item_id} {arm}: {type(exc).__name__}"
+                print(f"STOP: {stopped}; no later cell was run", flush=True)
+                return cells, stopped
             cells[arm][item_id] = cell
             print(f"{item_id} {arm}: voiced={cell['voiced']} turn={'ok' if cell['turn']['pass'] else 'FAILED'} "
                   f"credential={cell.get('credential_failure') or 'ok'} "

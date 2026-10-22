@@ -154,11 +154,12 @@ def test_interrupted_generation_keeps_completed_results(tmp_path):
         if count > 1:
             raise RuntimeError("fake interruption")
         return {"result": "first completed"}
-    kwargs = {"models": [items.MODELS[0]], "conditions": ["OFF"], "limit": 1, "concurrency": 1}
+    kwargs = {"models": [items.MODELS[0]], "conditions": ["OFF"], "limit": 4, "concurrency": 1}
     with pytest.raises(RuntimeError):
         gen.generate("g1", tmp_path, generate_fn=interrupted, **kwargs)
     completed = list((tmp_path / "generation").rglob("*.json"))
     assert len(completed) == 1
+    assert count <= 3  # the queue stops at the first failure; it does not call for every remaining row
     before = completed[0].read_bytes()
     gen.generate("g1", tmp_path, generate_fn=lambda *args: {"result": "remaining"}, **kwargs)
     assert completed[0].read_bytes() == before
@@ -346,6 +347,12 @@ def test_full_fake_gate_g1_report_only_and_g3_verdicts(tmp_path, monkeypatch):
     result = report.build_report(tmp_path, tagged=current)
     assert result["verdict"] == "pass" and result["gate_complete"] and not result["scope_gaps"]
     assert result["not_measured"] == report.NOT_MEASURED and "Not measured: E3 cue-text" in report.markdown(result)
+    # An edited A1-pinned input (base prompt, native guide, rubrics) makes the report unverified.
+    monkeypatch.setattr(report, "a1_inputs", lambda: {**report.A1_PINS, "bench/native_guide.md": "0" * 64})
+    edited = report.build_report(tmp_path, tagged=current)
+    assert edited["verdict"] == "unverified"
+    assert "bench/native_guide.md differs from its A1 pin" in edited["integrity_issues"]
+    monkeypatch.setattr(report, "a1_inputs", lambda: dict(report.A1_PINS))
     assert not result["missing_judgments"]
     assert all(g["pass"] for m in report.A3_MODELS for g in result["g3"][m]["three_of_three"])
     bad_g1.update(i["id"] for i in items.load_items("g1")[:3])
@@ -444,3 +451,9 @@ def test_self_blame_counts_failure_items_only():
     cell = report.e3_metrics(rows, labels)[items.MODELS[0]]["ON"]["views"]["stripped"]
     assert cell["self_blame"]["n"] == 1 and cell["self_blame"]["count"] == 1
     assert [s["item"]["id"] for s in cell["self_blame_items"]] == [failure["id"]]
+
+
+def test_a1_pins_are_the_amendment_values_and_the_files_match_them():
+    text = (items.ROOT / "EVAL-PREREG.md").read_text()
+    assert all(pin in text for pin in report.A1_PINS.values())
+    assert report.a1_inputs() == report.A1_PINS

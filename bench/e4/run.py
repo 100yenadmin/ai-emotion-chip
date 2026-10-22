@@ -242,7 +242,7 @@ def run_pilot(directory, runner=subprocess.run, auth_loader=load_auth, workspace
     try:
         for variant, seed, arm in schedule():
             current = by_name[(variant, seed, arm)]
-            # Re-read the token per episode, as bench/claude_p.sh does; a passed token cannot refresh.
+            # Re-read the token per episode; a token passed once cannot refresh.
             row = episode_run(directory / current, root / current, variant, arm, auth_loader(runner), runner,
                               hidden=[directory.parents[1]])
             row.update(variant=variant, seed=seed, arm=arm, model=MODEL)

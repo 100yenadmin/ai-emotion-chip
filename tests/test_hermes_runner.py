@@ -530,6 +530,17 @@ def test_run_cells_stops_when_the_keychain_fails():
     assert run.run_cells(["p01"], lambda arm, i: cell(i, arm)) [1] is None
 
 
+def test_run_cells_keeps_earlier_cells_when_a_cell_breaks():
+    import subprocess
+    def run_one(arm, item_id):
+        if item_id == "p05":
+            raise subprocess.CalledProcessError(1, ["cp", "-c"])
+        return cell(item_id, arm)
+    cells, stopped = run.run_cells(["p01", "p05"], run_one)
+    assert stopped == "cell error at p05 on: CalledProcessError"
+    assert list(cells["on"]) == ["p01"] and list(cells["off"]) == ["p01"]
+
+
 def test_leak_words_numbers_and_curly_apostrophes():
     assert run.leak_words("At 30, then 45 and 100.", "At thirty, then forty-five and one hundred.") == []
     assert run.leak_words("It\u2019s fine.", "It's fine.") == []

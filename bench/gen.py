@@ -125,7 +125,15 @@ def generate(set_name, out, models=MODELS, conditions=CONDITIONS, limit=None, co
     rows = [{"set": set_name, "split": "heldout", "model": m, "condition": c, "item": item, "run": run}
             for item in items for m in models for c in conditions for run in RUNS]
     with ThreadPoolExecutor(max_workers=concurrency) as executor:
-        list(executor.map(one, rows))
+        futures = [executor.submit(one, row) for row in rows]
+        try:
+            for future in futures:
+                future.result()
+        except BaseException:
+            # Stop at the first failure (an expired credential, a hung CLI): queued calls never start, and finished
+            # outputs stay on disk for a resume.
+            executor.shutdown(wait=True, cancel_futures=True)
+            raise
     return rows
 
 

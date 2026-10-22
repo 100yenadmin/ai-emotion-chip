@@ -16,6 +16,10 @@ SCOPE = "A3 (EVAL-PREREG amendment A3): the guardrail-free v1, not the gates fro
 # A3 names both models and generation through Hermes. A report missing either stays unverified for scope A3.
 A3_MODELS = ("claude-opus-5-5", "gpt-6.1-sol")
 A3_HARNESS = "hermes"
+# A1 pins these inputs by sha256 (EVAL-PREREG.md, Amendment A1); a report from edited copies is not verified.
+A1_PINS = {"bench/base_system.md": "2c2248b74ec1c3ad7fbbaee26431d6582af98d4b7c5f451bfa13c9128f48b552",
+           "bench/native_guide.md": "8e377c299e0a4076d27bea3cee02fdd95f03669538fa35fb71d855c775aba3c7",
+           "bench/rubrics/{g1,g2,e3}.md": "27f3f1f3979ca5d9a369440aaf03ddb2319ae2b07afdbbe82e1205e062a0ffcd"}
 # Preregistered metrics this harness does not compute; the report lists them instead of leaving them out silently.
 NOT_MEASURED = ["E3 cue-text consistency check: recall and false-flag rate on 10 seeded mismatched and 10 matched "
                 "items (the seeded set is not built yet; issue #9)"]
@@ -64,6 +68,14 @@ def identity(row, view=None):
     return result + (view,) if view else result
 
 
+def a1_inputs():
+    """The current sha256 of each A1-pinned input."""
+    rubrics = b"".join((ROOT / "bench" / "rubrics" / f"{name}.md").read_bytes() for name in ("g1", "g2", "e3"))
+    return {"bench/base_system.md": sha256((ROOT / "bench" / "base_system.md").read_bytes()),
+            "bench/native_guide.md": sha256((ROOT / "bench" / "native_guide.md").read_bytes()),
+            "bench/rubrics/{g1,g2,e3}.md": sha256(rubrics)}
+
+
 def failure_item(item):
     """E3's failure items: the work prompts with negative valence (a failed deploy, a broken migration)."""
     return item.get("category") == "work" and item.get("valence_hint") == "negative"
@@ -108,6 +120,8 @@ def build_report(directory, tagged=None):
     prereg = (ROOT / "EVAL-PREREG.md").read_bytes()
     verification, bars = prereg_check(prereg, tagged), prereg_bars(prereg)
     hashes, issues, rows, judgments = heldout_hashes(), [], [], {}
+    inputs = a1_inputs()
+    issues += [f"{name} differs from its A1 pin" for name, pin in A1_PINS.items() if inputs[name] != pin]
     expected, manifests = set(), {}
     for set_name in SETS:
         items = {item["id"]: item for item in load_items(set_name)}
@@ -174,7 +188,8 @@ def build_report(directory, tagged=None):
             "missing_generation": missing, "missing_judgments": missing_judgments, "integrity_issues": issues,
             "gate_failures": gate_failures, "g1": g1,
             "g3": g3, "e3": e3_metrics([r for r in rows if r["set"] == "e3"], judgments),
-            "provenance": {s: {k: m[k] for k in ("guide_version", "prereg_sha256", "heldout_sha256")} for s, m in manifests.items()},
+            "provenance": {**{s: {k: m[k] for k in ("guide_version", "prereg_sha256", "heldout_sha256")}
+                              for s, m in manifests.items()}, "a1_inputs": inputs},
             "judge_validity": "Owner-labelled 20-item spot check must be supplied before release; not performed by this harness.",
             "ci_methods": {"rates": "Wilson 95%", "differences": "Newcombe independent Wilson 95%",
                            "median": "distribution-free sign interval, at least 95%; null endpoints if n too small"},
