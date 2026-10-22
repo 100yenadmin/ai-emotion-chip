@@ -19,7 +19,8 @@ SPEAKER_ID = re.compile(r"\d{1,3}")
 INNER = re.compile(r"(\[[^\[\]]*\])")
 # A bracket group with no letter names no cue ("items[0]", "[1]", "[::1]"); a Markdown link's target is a URL or path.
 LETTER = re.compile(r"[^\W\d_]")
-LINK_TARGET = re.compile(r"\(([^\s()]*[/.:#][^\s()]*)\)")
+# A link target may hold one level of balanced parentheses ("wiki/Mercury_(planet)").
+LINK_TARGET = re.compile(r"\(((?:[^\s()]|\([^\s()]*\))+)\)")
 RUNG = re.compile(r"^(slightly|a little|somewhat|very|extremely|deeply|really)\s+", re.I)
 
 
@@ -170,13 +171,60 @@ def parse(text: str, data=None) -> Score:
         """A boundary before a rewrite that starts against a word, so its cue is not read as part of that word."""
         return GAP if i and (body[i - 1].isalnum() or body[i - 1] == "_") else ""
 
+    def ident(i):
+        """Whether the character before i ends an identifier. ASCII only: CJK text puts cues against words."""
+        return bool(i) and (body[i - 1] < "\x80" and (body[i - 1].isalnum() or body[i - 1] == "_"))
+
+    kept = -1  # where the last bracket group kept as text ends, so a chained subscript ("x[i][j]") stays text too
+
+    def in_code(i):
+        """Whether the group at i continues a word or a code expression: x[k], x[i][j], f()[k], items[0][k]."""
+        if ident(i) or (i and body[i - 1] == "]" and kept == i - 1):
+            return True
+        if not i or body[i - 1] != ")":
+            return False
+        # A call's closing parenthesis: its "(" sits against a word ("factory()"), unlike prose "(He laughed)".
+        depth = 0
+        for j in range(i - 1, max(-1, i - 202), -1):
+            depth += {")": 1, "(": -1}.get(body[j], 0)
+            if depth == 0:
+                return ident(j)
+        return False
+
+    def register(inner):
+        """Whether a bare double-bracket group names only delivery words or sounds ("[[warm]]", "[[pause]]")."""
+        lexicon = data if data is not None else load_data()
+        parts = [RUNG.sub("", p.strip()).lower() for p in inner.split(",")]
+        return all(p and (p in events or lexicon.lookup(p)) for p in parts)
+
+    def guard(i):
+        """The boundary a rewrite leads with, so its first cue is read as a cue, not as part of a word or code."""
+        return GAP if lead(i) or in_code(i) else ""
+
     i = 0
     while i < len(body):
         if body.startswith("[[", i):
             end = _find_after(_scan(body)[2], i + 2)
             if end != -1:
-                dropped.append(Dropped("header", "misplaced"))
-                append_text(GAP)
+                inner = body[i + 2:end]
+                close = _close(body, i)
+                if "[" in inner and in_code(i) and close != -1 and not SPAN_OPEN.search(body, i + 1, close):
+                    # Code with nested lists ("df.loc[[0, 1], ['a', 'b']]") is text.
+                    append_text(body[i:close + 1])
+                    kept, i = close, close + 1
+                    continue
+                if any(c in inner for c in ":;[") or not inner.strip() or register(inner):
+                    dropped.append(Dropped("header", "misplaced"))
+                    append_text(GAP)
+                elif in_code(i):
+                    # Code such as pandas columns ("df[['a', 'b']]") is text.
+                    append_text(body[i:end + 2])
+                    kept = end + 1
+                else:
+                    # A wiki link ("[[Project Plan]]") is not header syntax: its words are spoken, apart from neighbours.
+                    append_text(lead(i))
+                    plain(inner.strip())
+                    append_text(GAP)
                 i = end + 2
                 continue
         if body[i] == "]":
@@ -197,7 +245,7 @@ def parse(text: str, data=None) -> Score:
             if close == -1:
                 # Never closed: keep the delivery as a sentence cue so "soft:" is not spoken.
                 dropped.append(Dropped("span", op, "unterminated"))
-                body = body[:i] + lead(i) + f"[{op}] " + body[opener.end():]
+                body = body[:i] + guard(i) + f"[{op}] " + body[opener.end():]
                 continue
             inner = body[opener.end():close]
             if not inner.strip():
@@ -207,21 +255,23 @@ def parse(text: str, data=None) -> Score:
                 continue
             if "[" in inner or "]" in inner:
                 # A sound or cue inside a span splits the span around it: [soft: a [laugh] b] → [soft: a] [laugh] [soft: b].
-                body = body[:i] + " ".join(_flatten(op, inner, dropped)) + body[close + 1:]
+                body = body[:i] + guard(i) + " ".join(_flatten(op, inner, dropped)) + body[close + 1:]
                 continue
         end = _find_after(_scan(body)[1], i + 1)
         nested = body.find("[", i + 1, end if end != -1 else len(body))
-        if not opener and end != -1 and nested == -1 and lead(i):
-            # A plain group attached to a word is code or a citation ("handlers[pause]", "x[key]"), not score syntax.
-            # A span ("hap[stress: pi]ness") names its operator, so it stays score syntax.
-            plain(body[i:end + 1])
-            i = end + 1
-            continue
+        if not opener and end != -1 and in_code(i):
+            # A group that continues an identifier or a code expression is text: handlers[pause], x[i][j], f()[k],
+            # Dict[str, List[int]]. A span ("hap[stress: pi]ness") names its operator, so it stays score syntax.
+            close = end if nested == -1 else _close(body, i)
+            if close != -1 and not SPAN_OPEN.search(body, i + 1, close):
+                append_text(body[i:close + 1])
+                kept, i = close, close + 1
+                continue
         if nested != -1:
             close = _close(body, i)
             if close != -1:
                 # [happy [laugh]] → [happy] [laugh]: the cue's words stay a cue instead of being spoken.
-                body = body[:i] + lead(i) + " ".join(_unwrap(body[i + 1:close], None, dropped)) + body[close + 1:]
+                body = body[:i] + guard(i) + " ".join(_unwrap(body[i + 1:close], None, dropped)) + body[close + 1:]
                 continue
         if end == -1 or nested != -1:
             # Drop only this bracket and keep scanning, so a later opener is still parsed.
@@ -231,7 +281,7 @@ def parse(text: str, data=None) -> Score:
         content = body[i + 1:end]
         raw = content.strip()
         link = LINK_TARGET.match(body, end + 1)
-        if raw and link:
+        if raw and link and re.search(r"[/.:#]", link[1]):
             # Ordinary text, not score syntax: "[docs](https://x.io)" keeps its words and its target.
             plain(f"{raw} ({link[1]})")
             i = link.end()
