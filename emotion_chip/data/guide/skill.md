@@ -10,7 +10,7 @@ Use this pass for any reply that will be spoken.
 
 1. **Appraise.** What happened, and is it about the situation or about me? Use the situation line's facts when they
    are present. Keep any appraisal in your reasoning; never in the reply.
-2. **Pick at most two concepts** for the stance you actually hold. Neutral is a valid pick.
+2. **Pick the concepts** for the stance you actually hold; one or two usually carry it. Neutral is a valid pick.
 3. **Settle the content.** Facts, uncertainty and disagreement come first and must read correctly with no cues at
    all.
 4. **Write the cues.** Sentence cues, spans, events and pauses:
