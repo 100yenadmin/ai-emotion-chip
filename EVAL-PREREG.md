@@ -224,6 +224,8 @@ schema hashes stay as A1 records them.
   `auth.adopt_external_logins` is false and there is no provider fallback.
 - **Persona and settings.** Hermes' default persona: no `SOUL.md`, memory, user profile, curator, title generation or
   background review. The plugin's `signals` is `off`. Every setting other than the guidance is identical across arms.
+  Nothing adds per-turn text to the user's message: no gateway notes, plugin notices, skills-index notes, memory
+  prefetch or plugin user context. A cell where any appears fails check 3.
 - **Turn and output channel.** One user turn per cell, platform `telegram`, toolsets `skills` only; no audio is made.
   The item's user message is the turn, unchanged. Every arm carries the same harness instruction, as the prompt
   section `bench-harness` from a bench plugin: "Your final reply is spoken aloud as a voice message. There is no
@@ -259,14 +261,16 @@ schema hashes stay as A1 records them.
 - **Expected request, per route.** Each expectation is built separately from `S` and `M` with the source's own
   transformations, then compared with the final request. Roles, content, tool ids and order must match. Cache-control
   markers and tool-streaming flags are transport metadata, not content.
-  - `openai-codex`: `instructions` and `input` equal what Hermes' own functions make of `S` and `M`:
-    `_chat_messages_to_responses_input` for the messages, then `_preflight_codex_api_kwargs` (instruction
-    normalization and input preflight), both in `agent/codex_responses_adapter.py`. They are called with the options
-    this route sets (issuer kind, replay state, harmony-token sanitizing). No other instruction text or input item is
-    allowed.
-  - Subscription relay: the final system text is `S` (which the relay hands Claude Code as its system prompt file),
-    plus at most blocks of kinds S1 and S2 below. The final messages are the relay's own conversion of `M`
-    (`prepare_history`, from its pinned source), plus at most blocks of kinds M1 and R1. The allowed kinds are:
+  - `openai-codex`: `instructions` and `input` equal what Hermes' own codex transport makes of `S` and `M`. That is
+    `ResponsesApiTransport.build_kwargs` (which strips `S` and converts the messages with
+    `_chat_messages_to_responses_input`), then `_preflight_codex_api_kwargs`. They are called with the options this
+    route sets (issuer kind and model, replay state, harmony-token sanitizing). No other instruction text or input
+    item is allowed.
+  - Subscription relay: the final request is the body the relay forwards upstream. Its system text is `S` (which the
+    relay hands Claude Code as its system prompt file), plus at most blocks of kinds S1 and S2 below. Its messages are
+    the relay's own conversion of `M`, plus at most blocks of kinds M1 and R1. That conversion is `prepare_history`
+    and the rewrites its admission step makes before forwarding, both from its pinned source; those rewrites may
+    move an M1 block to another place in the messages. The allowed kinds are:
     - S1: Claude Code's one-sentence identity line, as the first system block;
     - S2: Claude Code's billing header block (key=value fields only, no prose);
     - M1: Claude Code's per-request context on the newest turn or as a trailing system-role message, limited to the
