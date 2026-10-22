@@ -285,6 +285,23 @@ def test_fake_end_to_end_and_judge_resume(tmp_path):
         report.build_report(tmp_path, tagged=current)
 
 
+def test_judge_refuses_a_changed_judge_and_replies_without_a_cross_model_judge(tmp_path, monkeypatch):
+    gen.generate("g1", tmp_path, models=[items.MODELS[0]], conditions=["ON"], limit=1,
+                 concurrency=1, generate_fn=lambda *args: {"result": "[firm] Lists are mutable."})
+    assert len(judge.judge("g1", tmp_path, fake_judge)) == 3
+    # Outputs from another judge configuration are never reused as current.
+    monkeypatch.setattr(judge, "JUDGE_COMMAND", tuple(c.replace("medium", "high") for c in judge.JUDGE_COMMAND))
+    with pytest.raises(ValueError, match="judge inputs changed"):
+        judge.judge("g1", tmp_path, fake_judge)
+    with pytest.raises(ValueError, match="judge configuration changed"):
+        judge.load_judgments(tmp_path, "g1", judge.load_replies(tmp_path, "g1"))
+    # A3 judges each model's replies with the other model: gpt-6.1-sol replies have no judge here yet.
+    real = judge.load_replies
+    monkeypatch.setattr(judge, "load_replies", lambda d, s: [dict(r, model="gpt-6.1-sol") for r in real(d, s)])
+    with pytest.raises(ValueError, match="no cross-model judge for gpt-6.1-sol replies"):
+        judge.judge("g1", tmp_path, fake_judge)
+
+
 def test_g3_allows_playfulness_and_sounds_after_a3():
     for r in (row("g3", reply="[playful] Stop."), row("g2", reply="[sigh] Hello.")):
         assert score.g3_checks(r["reply"]) == []

@@ -80,10 +80,15 @@ def validate_judgments(result, batch, set_name):
     return result
 
 
+# Judging is cross-model (A3): each generating model's replies go to the judge named here. Only Claude replies have
+# a judge so far; replies from another model are refused until its judge exists (#11).
+JUDGES = {"claude-opus-5-5": "gpt-6.1-sol"}
+JUDGE_COMMAND = ("codex", "exec", "-m", "gpt-6.1-sol", "-c", "model_reasoning_effort=medium",
+                 "--skip-git-repo-check", "--ephemeral", "-s", "read-only")
+
+
 def judge_batch(prompt_path, schema_path, output_path, runner=None):
-    command = ["codex", "exec", "-m", "gpt-6.1-sol", "-c", "model_reasoning_effort=medium",
-               "--skip-git-repo-check", "--ephemeral", "-s", "read-only",
-               "--output-schema", str(schema_path), "-o", str(output_path), "-"]
+    command = [*JUDGE_COMMAND, "--output-schema", str(schema_path), "-o", str(output_path), "-"]
     with tempfile.TemporaryDirectory(prefix="emotion-chip-judge-") as isolated:
         with Path(prompt_path).open(encoding="utf-8") as prompt:
             result = (runner or subprocess.run)(command, stdin=prompt, text=True, capture_output=True, cwd=isolated,
@@ -96,14 +101,20 @@ def judge_batch(prompt_path, schema_path, output_path, runner=None):
 def judge(set_name, directory, judge_fn=None):
     if set_name in {"g2", "g3"}:
         return []
-    batches, mapping = blinded_batches(load_replies(directory, set_name), set_name)
+    replies = load_replies(directory, set_name)
+    unjudged = sorted({row["model"] for row in replies} - set(JUDGES))
+    if unjudged:
+        raise ValueError(f"no cross-model judge for {', '.join(unjudged)} replies yet")
+    batches, mapping = blinded_batches(replies, set_name)
     if not batches:
         raise ValueError("no replies to judge")
     rubric = (BENCH / "rubrics" / f"{set_name}.md").read_text(encoding="utf-8")
     schema = BENCH / "schemas" / f"{set_name}.json"
     folder = Path(directory) / "judge" / set_name
-    plan = {"seed": SEED, "mapping": mapping, "batches": batches,
-            "rubric_sha256": sha256(rubric), "schema_sha256": sha256(schema.read_bytes())}
+    # The judge's identity is part of the plan, so outputs from a changed judge are never reused as current.
+    plan = {"seed": SEED, "mapping": mapping, "batches": batches, "judges": JUDGES,
+            "judge_command": list(JUDGE_COMMAND), "rubric_sha256": sha256(rubric),
+            "schema_sha256": sha256(schema.read_bytes())}
     index = folder / "index.json"
     if index.exists():
         if read_json(index) != plan:
@@ -141,6 +152,8 @@ def load_judgments(directory, set_name, rows):
         raise ValueError("stale judge mapping")
     if plan["rubric_sha256"] != sha256((BENCH / "rubrics" / f"{set_name}.md").read_bytes()) or plan["schema_sha256"] != sha256((BENCH / "schemas" / f"{set_name}.json").read_bytes()):
         raise ValueError("judge rubric or schema changed")
+    if plan.get("judges") != JUDGES or plan.get("judge_command") != list(JUDGE_COMMAND):
+        raise ValueError("judge configuration changed")
     result = {}
     for number, batch in enumerate(batches):
         path = folder / f"batch-{number:04d}.json"

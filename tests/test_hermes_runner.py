@@ -33,8 +33,9 @@ def post(tokens, call=1):
     return {"event": "post_api_request", "api_call_count": call, "usage": {"prompt_tokens": tokens}}
 
 
-def up(chip=True, hits=()):
-    return {"event": "upstream", "chip_section": chip, "canaries": {c: c in hits for c in probe.NEGATIVE_CANARIES}}
+def up(chip=True, hits=(), model=run.MODEL):
+    return {"event": "upstream", "chip_section": chip, "model": model,
+            "canaries": {c: c in hits for c in probe.NEGATIVE_CANARIES}}
 
 
 DB_OK = {"usage_rows": [{"task": ""}]}
@@ -180,6 +181,7 @@ def test_cell_asserts_pass_for_clean_cells():
     ("on", [pre()], [up(hits=("AGENTS.md",))], DB_OK, True, "1_no_negative_canary"),
     ("on", [pre()], [], DB_OK, True, "1_no_negative_canary"),
     ("on", [pre()], [up(), {"event": "upstream_error"}], DB_OK, True, "1_no_negative_canary"),
+    ("on", [pre()], [up(), up(model="claude-fable-5-1")], DB_OK, True, "1_no_negative_canary"),
     ("on", [], [up()], DB_OK, True, "1_no_negative_canary"),
     ("on", [pre(skill=False)], [up()], DB_OK, True, "2_positive_canary"),
     ("on", [pre()], [up(chip=False)], DB_OK, True, "2_positive_canary"),
@@ -621,3 +623,15 @@ def test_publish_labels_roots_and_its_leak_scan_covers_them(tmp_path, monkeypatc
     monkeypatch.setattr(run, "label_canaries", lambda text, canaries, roots=None: text)
     with pytest.raises(SystemExit, match="machine path"):
         run.publish(tmp_path / "run", tmp_path / "ev2", manifest, [], {}, {}, ["secret"], roots=roots)
+
+
+@pytest.mark.parametrize("run_id", ["../escape", "/abs/run", "a/b", "..", "", ".hidden"])
+def test_run_id_must_be_a_plain_name(run_id):
+    with pytest.raises(SystemExit, match="plain name"):
+        run.main(["--run-id", run_id])
+
+
+@pytest.mark.parametrize("spec", ["", ",", " , ", "p01,p01"])
+def test_custom_item_selection_needs_distinct_items(spec):
+    with pytest.raises(SystemExit, match="at least one item"):
+        run.select_items(spec)

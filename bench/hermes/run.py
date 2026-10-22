@@ -124,6 +124,8 @@ def select_items(spec):
     unknown = [s for s in chosen if s not in ITEMS]
     if unknown:
         raise SystemExit(f"unknown items: {unknown}")
+    if not chosen or len(set(chosen)) != len(chosen):
+        raise SystemExit("select at least one item, each once")
     return chosen
 
 
@@ -340,6 +342,8 @@ def cell_asserts(arm, probe_rows, upstream_rows, db, memories_clean, required=FI
     required canary (the fixed set plus this machine's configured ones) fails assert 1."""
     pre = [r for r in probe_rows if r.get("event") == "pre_api_request"]
     ups = [r for r in upstream_rows if r.get("event") == "upstream"]
+    # The relay must forward to the model the manifest names; a cell answered by another model is not admitted.
+    models = sorted({str(r.get("model")) for r in ups})
     errors = [r for r in upstream_rows if r.get("event") != "upstream"]
     invalid = [r for r in pre if r.get("invalid") or not r.get("system_sha256")]
     unchecked = sorted({c for r in pre + upstream_rows for c in required if c not in (r.get("canaries") or {})})
@@ -351,7 +355,8 @@ def cell_asserts(arm, probe_rows, upstream_rows, db, memories_clean, required=FI
     primary = [r for r in db.get("usage_rows", []) if r.get("task") == ""]
     return {
         "1_no_negative_canary": {"pass": bool(pre) and bool(ups) and not errors and not invalid and not unchecked
-                                 and not hits, "hits": hits, "unchecked_canaries": unchecked,
+                                 and not hits and models == [MODEL], "hits": hits, "unchecked_canaries": unchecked,
+                                 "upstream_models": models,
                                  "invalid_prompt_rows": len(invalid), "hermes_requests": len(pre),
                                  "upstream_requests": len(ups), "upstream_errors": len(errors)},
         "2_positive_canary": {"pass": positive, "want": want,
@@ -810,6 +815,9 @@ def main(argv=None):
     ap.add_argument("--seed", type=int, default=None)
     ap.add_argument("--voice", choices=VOICES, default="fish")
     args = ap.parse_args(argv)
+    # The run id names one folder under each configured root; a path here could put the key file anywhere.
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}", args.run_id):
+        raise SystemExit("--run-id must be a plain name: letters, digits, '.', '_' or '-'")
     from bench.gen import keychain_token
     paths = load_paths()
     run, evidence = paths["runs_root"] / args.run_id, paths["evidence_root"] / args.run_id
