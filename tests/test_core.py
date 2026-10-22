@@ -16,7 +16,7 @@ from emotion_chip import __version__
 from emotion_chip.consistency import check
 from emotion_chip.data import DIALECTS, LITERALS, load_data, validate
 from emotion_chip.guide import build_prompt_section, build_skill
-from emotion_chip.model import Cue, Event, Options, Span, Speaker, Text
+from emotion_chip.model import Cue, Dropped, Event, Options, Span, Speaker, Text
 from emotion_chip.policy import apply_policy
 from emotion_chip.render import dialect_for, render
 from emotion_chip.score import header_cue, parse
@@ -114,11 +114,9 @@ def test_mutation_detected(data, monkeypatch):
 def test_emitted_phrase_whitelist(case, data):
     table = data.dialects[case["dialect"]]
     out = render(case["input"], case["dialect"], case["options"], data)
-    authored = {"["+t.raw+"]" for s in parse(case["input"]).sentences for t in s.tokens if isinstance(t, Cue)}
-    # Policy may remove a forbidden part of a blend.
-    filtered, _ = apply_policy(parse(case["input"]), data, case["options"])
-    authored |= {"["+t.raw+"]" for s in filtered.sentences for t in s.tokens if isinstance(t, Cue)}
-    authored |= {"[" + header_cue(filtered.header).raw + "]"} if filtered.header else set()
+    score = parse(case["input"])
+    authored = {"["+t.raw+"]" for s in score.sentences for t in s.tokens if isinstance(t, Cue)}
+    authored |= {"[" + header_cue(score.header).raw + "]"} if score.header else set()
     for literal in LITERALS.findall(out.text):
         assert literal in authored or literal in table["phrases"]
 
@@ -229,20 +227,15 @@ def test_pass_through(data):
         assert render(text, dialect, data=data).text == text
 
 
-def test_policy_exactness(data):
+def test_policy_keeps_everything_unless_sounds_are_off(data):
     source = "[crying, happy] [laugh] [sigh] [breath] One. [breath] Two. [breath:shaky] Three."
     result, dropped = apply_policy(parse(source), data)
-    assert [(x.kind,x.value,x.reason) for x in dropped] == [
-        ("cue", "crying, happy", "assistant_ok:false"),
-        ("event", "sigh", "sounds_per_turn"),
-        ("event", "breath", "breath density")]
-    assert result.sentences[0].tokens[0].raw == "happy"
+    assert dropped == [] and result == parse(source)
+    result, dropped = apply_policy(parse(source), data, {"sounds": False})
+    assert [(x.kind, x.value, x.reason) for x in dropped] == [("event", "laugh", "sounds off"), ("event", "sigh", "sounds off")]
+    assert result.sentences[0].tokens[0].raw == "crying, happy"
     with pytest.raises(ValueError):
-        apply_policy(parse("Hi"), data, {"sounds_per_turn":-1})
-    for forbidden in data.sounds["forbidden_cue_words"]:
-        filtered, drops = apply_policy(parse(f"[{forbidden}] Hi."), data)
-        assert drops[0].reason == "assistant_ok:false"
-        assert not any(isinstance(t, Cue) for s in filtered.sentences for t in s.tokens)
+        apply_policy(parse("Hi"), data, {"sounds": 0})
 
 
 def test_parameter_boundaries(data):
@@ -259,10 +252,10 @@ def test_cli(monkeypatch, capsys, data):
     monkeypatch.setattr(cli, "load_data", lambda *args: data)
     monkeypatch.setattr(renderer, "load_data", lambda *args: data)
     monkeypatch.setattr(sys, "stdin", io.StringIO("[sad] [laugh] Hi."))
-    assert cli.main(["render","--dialect","fish_s2","--json","--sounds-per-turn","0"]) == 0
+    assert cli.main(["render","--dialect","fish_s2","--json","--no-sounds"]) == 0
     out = json.loads(capsys.readouterr().out)
     assert out["text"] == "[sad] Hi." and out["params"] == {"speed":.92}
-    assert out["dropped"][0]["reason"] == "sounds_per_turn"
+    assert out["dropped"][0]["reason"] == "sounds off"
     monkeypatch.setattr(sys, "stdin", io.StringIO("Hi."))
     assert cli.main(["render","--dialect","tagless"]) == 0
     assert capsys.readouterr().out == "Hi.\n"
@@ -270,9 +263,9 @@ def test_cli(monkeypatch, capsys, data):
     assert "Synthetic model note." in capsys.readouterr().out
     assert cli.main(["guide","--dialect","prose","--model","test-model","--skill"]) == 0
     assert capsys.readouterr().out.startswith("# Delivery score")
-    monkeypatch.setattr(sys, "stdin", io.StringIO("Hi."))
-    assert cli.main(["render","--dialect","tagless","--sounds-per-turn","-1"]) == 1
-    assert "nonnegative" in capsys.readouterr().err
+    monkeypatch.setattr(sys, "stdin", io.StringIO("[laugh] Hi."))
+    assert cli.main(["render","--dialect","eleven_v4"]) == 0
+    assert capsys.readouterr().out == "[laughs] Hi.\n"
 
 
 def test_cli_module_validation(tmp_path):
@@ -318,23 +311,26 @@ def test_sound_inside_span_splits_the_span(data):
         assert "soft:" not in out and "glad" in out and "told me" in out
 
 
-def test_forbidden_sound_with_rung_or_modifier(data):
-    for cue_text in ("very hysterical", "crying softly", "slightly sobbing", "Screams"):
-        filtered, drops = apply_policy(parse(f"[{cue_text}] Okay."), data)
-        assert [d.reason for d in drops] == ["assistant_ok:false"], cue_text
-        assert not any(isinstance(t, Cue) for s in filtered.sentences for t in s.tokens)
+@pytest.mark.parametrize("dialect", ["fish_s2", "fish_drama3", "eleven_v4"])
+def test_crying_sobbing_and_screaming_are_spoken_as_written(dialect, data):
+    for cue_text in ("very hysterical", "crying softly", "slightly sobbing", "Screams", "sob", "wailing"):
+        out = render(f"[{cue_text}] Okay.", dialect, data=data)
+        assert out.text == f"[{cue_text}] Okay." and out.dropped == [], (dialect, cue_text)
+    out = render("[[register: sobbing]] Hello.", dialect, data=data)
+    assert out.text == "[sobbing] Hello." and not [d for d in out.dropped if d.kind == "header"]
 
 
 def test_vendor_sound_spellings_are_events(data):
     score = parse("[laughs] [Sighing] [long pause] Yes.")
     assert [t.id for s in score.sentences for t in s.tokens if isinstance(t, Event)] == ["laugh", "sigh", "pause:long"]
-    out = render("[laughs] [sighs] Yes.", "eleven_v4", {"sounds_per_turn": 1}, data)
-    assert out.text == "[laughs] Yes." and [d.reason for d in out.dropped] == ["sounds_per_turn"]
-    assert render("[laughing] I see.", "fish_s2", {"sounds_per_turn": 0}, data).text == "I see."
+    out = render("[laughs] [sighs] Yes.", "eleven_v4", data=data)
+    assert out.text == "[laughs] [sighs] Yes." and out.dropped == []
+    assert render("[laughing] I see.", "fish_s2", {"sounds": False}, data).text == "I see."
 
 
-def test_params_ignore_a_dropped_forbidden_cue(data):
-    assert render("[hysterical] [sad] Hi.", "fish_s2", data=data).params == render("[sad] Hi.", "fish_s2", data=data).params
+def test_hysterical_sets_params_like_any_other_cue():
+    out = render("[hysterical] Hi.", "fish_s2", data=load_data())
+    assert out.text == "[hysterical] Hi." and out.group == "panic_fear"
 
 
 def test_plan_segments_carry_their_own_group(data):
@@ -369,22 +365,6 @@ def test_no_operator_word_is_spoken_at_any_depth(text, data):
             assert not ops.search(render(piece, dialect, data=data).text)
     assert render("[soft: a [slow: b [laugh] c] d]", "fish_drama3", data=data).text == \
         "<soft>a</soft> <slow>b</slow> [laughing] <slow>c</slow> <soft>d</soft>"
-
-
-@pytest.mark.parametrize("cue_text", [
-    "very hysterical", "crying softly", "calm, then crying", "loud-screaming", "Screams",
-    # Negated mentions drop too: TTS models do not reliably follow negation inside a tag.
-    "firm without screaming", "not hysterical", "non-hysterical", "no crying then crying", "firm; screaming not allowed",
-])
-def test_any_mention_of_a_forbidden_sound_drops_that_part(cue_text, data):
-    _, drops = apply_policy(parse(f"[{cue_text}] Okay."), data)
-    assert [d.reason for d in drops] == ["assistant_ok:false"]
-
-
-def test_forbidden_match_is_whole_word(data):
-    for cue_text in ("sober", "sobering", "soft-spoken", "quietly amused", "screamingly-not"):
-        _, drops = apply_policy(parse(f"[{cue_text}] Okay."), data)
-        assert not drops, cue_text
 
 
 @pytest.mark.parametrize("text, expected", [
@@ -436,23 +416,9 @@ def test_register_header_with_a_leading_sentence_cue(data):
     assert any("register header" in note for note in out.notes)
 
 
-def test_register_header_on_tagless_and_with_forbidden_words(data):
+def test_register_header_on_tagless(data):
     out = render("[[register: sad]] Hello.", "tagless", data=data)
     assert out.text == "Hello." and [d.kind for d in out.dropped] == ["header"]
-    out = render("[[register: sobbing]] Hello.", "fish_s2", data=data)
-    assert "sobbing" not in out.text and out.group is None
-    assert ("header", "register: sobbing", "assistant_ok:false") in [(d.kind, d.value, d.reason) for d in out.dropped]
-    assert render("[[register: sad; sobbing]] Hi.", "fish_s2", data=data).text == "[sad] Hi."
-
-
-def test_assistant_ok_false_rows_are_enforced(tmp_path):
-    root = fixture_copy(tmp_path)
-    path = root / "emotions.yaml"
-    rows = yaml.safe_load(path.read_text())
-    next(r for r in rows if r["id"] == "happy")["assistant_ok"] = False
-    path.write_text(yaml.safe_dump(rows, sort_keys=False))
-    out = render("[happy, curious] Hi.", "fish_s2", data=load_data(root))
-    assert out.text == "[curious] Hi." and "assistant_ok:false" in [d.reason for d in out.dropped]
 
 
 def test_parse_uses_the_active_data_events(tmp_path):
@@ -464,8 +430,8 @@ def test_parse_uses_the_active_data_events(tmp_path):
     local = load_data(root)
     assert isinstance(parse("[hum] a.", local).sentences[0].tokens[0], Event)
     assert not isinstance(parse("[hum] a.").sentences[0].tokens[0], Event)
-    out = render("[hum] a. [laugh] b.", "fish_s2", {"sounds_per_turn": 1}, local)
-    assert ("event", "laugh", "sounds_per_turn") in [(d.kind, d.value, d.reason) for d in out.dropped]
+    out = render("[hum] a. [laugh] b.", "fish_s2", {"sounds": False}, local)
+    assert [(d.value, d.reason) for d in out.dropped] == [("hum", "sounds off"), ("laugh", "sounds off")]
 
 
 @pytest.mark.parametrize("value,expected", [(2, 1.0), (-1, 0.0), (0.6, 0.6)])
@@ -494,8 +460,6 @@ def _damaged(tmp_path, name, edit):
 
 
 @pytest.mark.parametrize("name,edit,match", [
-    ("sounds.yaml", lambda v: v.update(forbidden_cue_words=[]), "forbidden_cue_words"),
-    ("sounds.yaml", lambda v: v["forbidden_cue_words"].append(" "), "forbidden_cue_words"),
     ("sounds.yaml", lambda v: v.setdefault("aliases", {}).update(purrs="purr"), "not an event"),
     ("dialects/eleven_v4.yaml", lambda v: v.update(variants={"eleven_v4": "big"}), "variants"),
     ("dialects/eleven_v4.yaml", lambda v: v.pop("variants"), "variants"),
@@ -589,22 +553,11 @@ def test_a_span_can_end_its_sentence(data, text, count):
     assert apply_policy(score, data)[1] == []
 
 
-def test_exhale_counts_toward_breath_density(data):
-    _, dropped = apply_policy(parse("[breath] One. [exhale] Two. [breath:shaky] Three."), data)
-    assert [(x.value, x.reason) for x in dropped] == [("exhale", "breath density")]
-    assert apply_policy(parse("[breath] One. [pause] Two. [pause:long] Three."), data)[1] == []
-
-
-def test_policy_state_carries_limits_across_streamed_pieces(data):
-    state = {}
-    first = apply_policy(parse("[laugh] One. Two. [breath] Three."), data, {"policy_state": state})[1]
-    second = apply_policy(parse("[breath] Four. [laugh] Five."), data, {"policy_state": state})[1]
-    third = apply_policy(parse("Six. [breath] Seven."), data, Options(policy_state=state))[1]
-    assert first == [] and third == []
-    assert [(x.value, x.reason) for x in second] == [("breath", "breath density"), ("laugh", "sounds_per_turn")]
-    # A fresh state is a new turn; no state keeps every call independent, as before.
-    assert apply_policy(parse("[laugh] Hi."), data, {"policy_state": {}})[1] == []
-    assert apply_policy(parse("[laugh] Hi."), data)[1] == []
+def test_breaths_and_sounds_are_never_capped(data):
+    text = "[breath] One. [exhale] Two. [breath:shaky] Three. [laugh] [laugh] [sigh] [gasp] Four."
+    assert apply_policy(parse(text), data)[1] == []
+    assert apply_policy(parse(text), data, Options(sounds=False))[1] == [
+        Dropped("event", e, "sounds off") for e in ("laugh", "laugh", "sigh", "gasp")]
 
 
 @pytest.mark.parametrize("text", ["[speaker: hello there] Hi.", "[speaker: 1|><soft>] Hi.", "[speaker: ] Hi."])
@@ -625,7 +578,6 @@ def test_a_closing_mark_after_a_title_does_not_end_the_sentence(data, text):
 def test_titles_do_not_end_sentences(data):
     score = parse("[breath] Dr. Smith arrived. [exhale] Then e.g. this. Mr. Lee left.", data)
     assert len(score.sentences) == 3
-    assert [(d.value, d.reason) for d in apply_policy(score, data)[1]] == [("exhale", "breath density")]
 
 
 @pytest.mark.parametrize("text", ["[" * 20000, "[[" * 10000, "[soft: " + "[" * 10000 + "]", "a [" * 10000,
@@ -686,20 +638,18 @@ def test_sound_names_match_across_whitespace(data):
         assert isinstance(token, Event), text
 
 
-def test_guide_sound_cap_counts_affect_sounds_only():
-    assert "Pauses and\nbreaths do not count toward it." in build_prompt_section("fish_s2", "absent", load_data())
+def test_guide_offers_the_whole_range_with_no_caps():
+    for text in (build_prompt_section("fish_s2", "absent", load_data()), build_skill("fish_s2", "absent", load_data())):
+        for limit in ("at most one of the sounds", "extra ones are dropped", "No whisper", "never playful",
+                      "human resource", "use discretion", "At most one breath"):
+            assert limit not in text, limit
+    assert "crying, sobbing, screaming and whispering" in build_prompt_section("fish_s2", "absent", load_data())
 
 
 def test_misplaced_header_and_removed_cues_keep_boundaries(data):
     assert render("hap[[register: sad]]py.", "fish_s2", data=data).text == "hap py."
-    out = render("[[register: sad]] [hysterical] [happy] Hi.", "fish_s2", data=data)
-    assert out.text == "[happy] Hi." and out.params == {"speed": 0.92}
-
-
-def test_empty_forbidden_list_never_drops_cues(data):
-    empty = replace(data, sounds={**data.sounds, "forbidden_cue_words": []})
-    score, dropped = apply_policy(parse("[happy, curious] Hi."), empty)
-    assert dropped == [] and score.sentences[0].tokens[0].words == ["happy", "curious"]
+    out = render("[[register: sad]] [pause] [happy] Hi.", "tagless", data=data)
+    assert out.text == "Hi." and out.params == {}
 
 
 def test_cli_can_render_speakers(monkeypatch, capsys):
