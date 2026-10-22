@@ -1,5 +1,6 @@
 """M1 fake operating paths and text-only Hermes API contracts."""
 import ast
+import os
 from concurrent.futures import ThreadPoolExecutor
 import importlib.util
 import json
@@ -363,7 +364,8 @@ def _literal_assignment(tree, name):
 
 
 def test_hermes_source_contract():
-    root = Path.home() / ".hermes" / "hermes-agent"
+    # A Hermes Agent source checkout: HERMES_AGENT_SRC, else the default install location.
+    root = Path(os.environ.get("HERMES_AGENT_SRC") or Path.home() / ".hermes" / "hermes-agent")
     if not root.is_dir():
         pytest.skip("Hermes source absent; text-only local 0.22.2 contract check unavailable in CI")
     plugins = ast.parse((root / "hermes_cli" / "plugins.py").read_text())
