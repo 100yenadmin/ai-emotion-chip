@@ -48,6 +48,8 @@ def settled_render(score, dialect, options, data, adapt=None):
     rendered = render(score, dialect, options, data)
     if adapt is None:
         return rendered, []
+    # A breath the dialect cannot voice leaves the text in the first pass, so later passes cannot see it.
+    first = dict(state) if start is not None else None
     dropped, notes, added = list(rendered.dropped), list(rendered.notes), []
     later = dict(options)
     for _ in range(rendered.text.count("(") + 1):
@@ -72,4 +74,6 @@ def settled_render(score, dialect, options, data, adapt=None):
         rendered = render(parse(adapted, data), dialect, later, data)
         dropped += rendered.dropped
         notes += [n for n in rendered.notes if n not in notes]
+        if first is not None:
+            state["since_breath"] = first.get("since_breath", state.get("since_breath"))
     return replace(rendered, dropped=dropped, notes=notes), added

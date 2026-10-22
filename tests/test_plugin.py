@@ -472,11 +472,13 @@ def test_pinned_model_all_consumers(rig, pinned, requested, dialect, text):
     assert ctx.middleware(tool_name="text_to_speech", args={"text": "[soft: here]"})["args"]["text"] == text
 
 
-def test_load_time_skill_uses_pinned_model(tmp_path):
+@pytest.mark.parametrize("key", ["tts.fish-audio.model", "tts.model"])
+def test_load_time_skill_uses_the_fish_model_hermes_sends(tmp_path, key):
     from emotion_chip.guide import build_skill
     ctx = FakeContext({"fish_model": "s2.1-pro"})
-    register_all(ctx, reader=lambda key, default=None: "drama-3" if key == "tts.fish-audio.model" else default,
+    register_all(ctx, reader=lambda name, default=None: "drama-3" if name == key else default,
                  data_dir=lambda: tmp_path)
+    assert build_skill("fish_drama3", "default", load_data()) != build_skill("fish_s2", "default", load_data())
     assert ctx.skill[0].read_text() == build_skill("fish_drama3", "default", load_data()) + "\n"
 
 
@@ -832,14 +834,15 @@ def test_long_reply_keeps_its_opening_cue(rig):
     assert {row[2]["speed"] for row in fish.calls} == {0.92}
 
 
-@pytest.mark.parametrize("bad", [float("nan"), float("inf"), float("-inf"), 10**400])
-def test_non_finite_speed_falls_back_as_fish_does(rig, bad):
+@pytest.mark.parametrize("bad,expected", [(float("nan"), 1.0), (float("inf"), 1.0), (float("-inf"), 1.0),
+                                          ("fast", 1.0), (True, 1.0), (10**400, 2.0), (-10**400, 0.5)])
+def test_speed_follows_fish_number_rules(rig, bad, expected):
     ctx, fish, host, *_ = rig
     ctx.provider.synthesize("Hi.", "out.mp3", speed=bad)
-    assert fish.calls[-1][2]["speed"] == 1.0
+    assert fish.calls[-1][2]["speed"] == expected
     host["tts.fish-audio.speed"] = bad
     ctx.provider.synthesize("Hi.", "out.mp3")
-    assert fish.calls[-1][2]["speed"] == 1.0
+    assert fish.calls[-1][2]["speed"] == expected
 
 
 def test_status_prompt_and_skill_follow_tts_model(rig, tmp_path):
@@ -870,3 +873,10 @@ def test_settling_keeps_the_register_params(fish_tags):
     for text in ("[[register: sad]] [excited] Hi. ] (sobbing) Bye.", "[[register: sad]] [excited] Hi. ] " + "(sobbing) " * 9 + "Bye."):
         ctx.provider.synthesize(text, "out.mp3")
         assert fish.spoken[-1] == "[excited] Hi. Bye." and fish.calls[-1][2]["speed"] == 0.92
+
+
+def test_settling_keeps_breath_accounting(fish_tags):
+    ctx, fish, *_ = fish_tags
+    ctx.hooks["pre_llm_call"](session_id="fixture-session")
+    list(ctx.provider.stream("[breath] A. ] (sobbing) B."))
+    assert fish.spoken[-1] == "A. B." and ctx.provider._policy["fixture-session"][1]["since_breath"] == 1

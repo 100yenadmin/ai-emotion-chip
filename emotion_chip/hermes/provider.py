@@ -19,12 +19,13 @@ last_render = {}  # session id -> the newest render's explanation for /chip why 
 last_render_lock = RLock()
 
 
-def _finite(value):
-    """A real, finite number, as Fish requires of a speed; anything else falls back to 1.0."""
-    try:
-        return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(float(value))
-    except OverflowError:
-        return False
+def _base_speed(value):
+    """Fish's speed rule: any int or finite float counts (the final clamp handles size); anything else is 1.0."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return 1.0
+    if isinstance(value, int):
+        return float(max(0, min(value, 10)))  # beyond the 0.5-2.0 clamp either way, without float overflow
+    return value if math.isfinite(value) else 1.0
 
 
 def _fish():
@@ -108,9 +109,7 @@ class EmotionChipTTSProvider(TTSProvider):
             if session_id and rendered.group is not None:
                 self._carried[session_id] = (rendered.group, now)
         words += added
-        base = self.settings.host("tts.fish-audio.speed", 1.0) if speed is None else speed
-        if not _finite(base):
-            base = 1.0
+        base = _base_speed(self.settings.host("tts.fish-audio.speed", 1.0) if speed is None else speed)
         final = max(0.5, min(2.0, base * rendered.params.get("speed", 1.0)))
         if models.pinned and models.requested and models.pinned != models.requested:
             notes.append(f"Fish pinned model wins: {models.pinned} over requested {models.requested}")
