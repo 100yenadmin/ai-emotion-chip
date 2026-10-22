@@ -551,10 +551,21 @@ def test_segment_text_keeps_word_boundaries_at_kept_tokens(data):
 
 @pytest.mark.parametrize("dialect", DIALECTS)
 def test_a_group_attached_to_a_word_is_text_not_score(dialect, data):
-    text = "Call handlers[pause], dict[key] and x_1[laugh] now."
+    text = ('Call handlers[pause], dict[key] and x_1[laugh], then matrix[i][j], factory()[pause], f(g(x))[laugh], '
+            'items[0][pause] and data["k"][happy] now.')
     out = render(text, dialect, data=data)
     assert out.text == text and not out.dropped
     assert [type(t).__name__ for t in parse("Call it. [pause] Now.", data).sentences[1].tokens] == ["Event", "Text"]
+
+
+@pytest.mark.parametrize("text, kinds", [
+    ("(He laughed)[laugh] ok.", ["Text", "Event", "Text"]),
+    ("Fine. [sad][laugh] Yes.", ["Cue", "Event", "Text"]),
+    ("x[a] [laugh] y.", ["Text", "Event", "Text"]),
+    ("今日は疲れた[sigh]。", ["Text", "Event", "Text"]),
+])
+def test_prose_and_adjacent_cues_stay_score_syntax(text, kinds, data):
+    assert [type(t).__name__ for s in parse(text, data).sentences for t in s.tokens][-len(kinds):] == kinds
 
 
 @pytest.mark.parametrize("quoted", ['He said "go."', "He said 'go.'", "He said “go.”", "(It went.)", '(He said "go.")'])
@@ -617,7 +628,8 @@ def test_titles_do_not_end_sentences(data):
 
 
 @pytest.mark.parametrize("text", ["[" * 20000, "[[" * 10000, "[soft: " + "[" * 10000 + "]", "a [" * 10000,
-                                  "[soft: ]" * 4000], ids=["openers", "doubles", "span", "words", "empty-spans"])
+                                  "[soft: ]" * 4000, "x" + "[k]" * 10000, "f()" * 5000 + "[k]"],
+                         ids=["openers", "doubles", "span", "words", "empty-spans", "chained", "calls"])
 def test_unmatched_brackets_parse_in_linear_time(data, text):
     import time
     start = time.perf_counter()
