@@ -241,6 +241,8 @@ def test_middleware_dialects(rig, provider, model, expected):
     ("sag-eva", {"tts.providers": {"sag-eva": {"type": "command"}}}, False),
     ("sag-eva", {"tts.providers": {"sag-eva": {"type": "command", "command": "  "}}}, False),
     ("sag-eva", {"tts.providers": {"sag-eva": {"type": "plugin", "command": "say"}}}, False),
+    (None, {"tts.providers": {"none": {"command": "say"}}}, False),
+    ("", {"tts.providers": {"": {"command": "say"}}}, False),
 ])
 def test_middleware_leaves_command_providers_alone(rig, provider, config, untouched):
     ctx, _, host, *_ = rig

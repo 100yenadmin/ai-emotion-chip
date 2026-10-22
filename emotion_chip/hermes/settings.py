@@ -80,7 +80,8 @@ class Settings:
         return self.reader(key, default)
 
     def tts_provider(self):
-        return str(self.host("tts.provider", "edge")).strip().lower()
+        # Hermes' own default: an empty or null tts.provider means edge.
+        return str(self.host("tts.provider") or "edge").strip().lower()
 
     def command_provider(self, provider):
         """Whether Hermes runs this provider as a user command, by Hermes' own rule (tools/tts_command_provider.py):
