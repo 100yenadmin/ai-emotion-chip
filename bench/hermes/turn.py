@@ -8,7 +8,6 @@ The last stdout line starting with PROOF= is the JSON result. Writes only inside
 """
 import json
 import copy
-import inspect
 from functools import wraps
 import os
 import re
@@ -187,7 +186,12 @@ def golden_delta(agent, prompt, args):
     residue = prompt.replace(format_system_prompt_sections(sections), format_system_prompt_sections(baseline), 1)
     skills = _skills_prompt(agent)
     if args["arm"] == "ON":
-        if skills.count("- emotion-chip-voice:") != 1 or len(re.findall(r"^- [^\s]+:", skills, re.M)) != 1:
+        from hermes_cli.plugins import get_plugin_manager
+        metadata = [m for m in get_plugin_manager().list_plugin_skill_metadata()
+                    if m["name"] == "emotion-chip:emotion-chip-voice"]
+        expected = [f'    - {m["name"]}: {str(m.get("description") or "").strip()}' for m in metadata]
+        if len(expected) != 1 or skills.splitlines().count(expected[0]) != 1 \
+                or len(re.findall(r"^\s+- \S+", skills, re.M)) != 1:
             raise RuntimeError("golden skill index differs")
         residue = residue.replace(skills + "\n\n", "", 1)
     elif skills:
@@ -224,12 +228,15 @@ def tool_reference(function, call_id, agent):
         return None
     try:
         arguments = json.loads(function.get("arguments") or "{}")
-        handler = getattr(skills_tool, name)
-        inspect.signature(handler).bind(**arguments)
     except (ValueError, TypeError):
         return None
-    arguments.setdefault("task_id", agent._current_task_id)
-    result = handler(**arguments)
+    if not isinstance(arguments, dict):
+        arguments = {}  # handle_function_call coerces non-dicts to an empty mapping.
+    if name == "skills_list":
+        result = skills_tool.skills_list(category=arguments.get("category"), task_id=agent._current_task_id)
+    else:
+        result = skills_tool.skill_view(arguments.get("name", ""), file_path=arguments.get("file_path"),
+                                        task_id=agent._current_task_id)
     result = maybe_persist_tool_result(result, name, call_id,
         env=get_active_env(agent._current_task_id), config=_budget_for_agent(agent))
     return make_tool_result_message(name, agent._tool_result_content_for_active_model(name, result), call_id)
@@ -261,6 +268,27 @@ def tool_results_match(messages, agent):
     return matches()
 
 
+def history_for_send(messages, agent):
+    """The supported text/paired-tool send path, retaining whole tool-call dictionaries.
+
+    Never replay api_content here: extra per-turn context must fail A4 check 3.
+    Empty-turn/orphan repairs and thinking-only drops cannot form an accepted tool batch.
+    Reasoning and persistence sidecars do not change the compared fields on this path.
+    """
+    from agent import conversation_loop
+    from agent.message_sanitization import _sanitize_messages_surrogates
+    wanted = copy.deepcopy(messages)
+    for row in wanted:
+        if agent._should_sanitize_tool_calls():
+            agent._sanitize_tool_calls_for_strict_api(row, model=agent.model,
+                                                     base_url=agent.base_url, provider=agent.provider)
+        if isinstance(row.get("content"), str):
+            row["content"] = row["content"].strip()
+    conversation_loop._canonicalize_api_tool_calls(wanted)
+    _sanitize_messages_surrogates(wanted)
+    return wanted
+
+
 def install_text_capture(args, agent):
     """Keep raw captures in process memory; preflight may run twice, so retain its last result per API call."""
     from agent import conversation_loop
@@ -283,7 +311,7 @@ def install_text_capture(args, agent):
     def capture(final):
         row = capture_row(state["S"], state["M"], final, state["expected"], args.get("a4b", {}), args["item_dir"])
         row["api_call_count"] = state["call"]
-        wanted = [{"role": "user", "content": args["prompt"]}] if state["call"] == 1 else state["history"]
+        wanted = [{"role": "user", "content": args["prompt"]}] if state["call"] == 1 else history_for_send(state["history"], agent)
         fields = {"role", "content", "tool_calls", "tool_call_id"}
         project = lambda rows: [{k: v for k, v in m.items() if k in fields} for m in rows]
         row["history_matches"] = project(state["M"]) == project(wanted)
@@ -348,7 +376,7 @@ def turn(args):
     return {"route": route, "relays": relays, "final_response": result.get("final_response") or "",
             "tts_calls": calls, "tts_results": results, "sent_to_voice": sent, "last_render": renders,
             "api_calls": result.get("api_calls"), "completed": result.get("completed"),
-            "failed": result.get("failed"), "error": result.get("error"),
+            "failed": result.get("failed"), "error": result.get("error"), "guardrail": result.get("guardrail"),
             **({"skill_tree": skill_tree()} if text else {}),
             "captures": list(captures.values())}
 

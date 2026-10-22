@@ -1,0 +1,204 @@
+{
+  "source": "Hermes v0.22.2 pinned pure functions; synthetic inputs only",
+  "source_sha256": {
+    "agent/conversation_loop.py": "926435d563ef1b7de1049f5c36897f1cda7376508b98164a68a0cb5192656270",
+    "agent/reasoning_params.py": "35a7a3b422600e0fca9169eaf50e27e7171ccddf516ff3c4133b165e14dec4dd",
+    "agent/transports/chat_completions.py": "1a8f7fa6a60815013e2b3e6f2ea4f65b665e8686933381896bed898abe201072",
+    "agent/agent_runtime_helpers.py": "295bd0adcb698ddeb87966f77a79ef1c8016702641db401bfe692ffb63e0dd49",
+    "agent/turn_context.py": "1fdc08f930d6f76825c5b06f14377768c31f2178e9d893dc0bed10911be33991",
+    "agent/message_sanitization.py": "4dd904f9a69376fc8801f47b49f829869d5ef49d6bccd0a73d82af84e8f580c5",
+    "run_agent.py": "2bd45c545c2cf0dec95702e71232f026b1265b54bf234a1c03c8cf83f5236f10",
+    "agent/prompt_builder.py": "660e7a2c311adf1b794c7b81c83090ea1b6f07619bd79be152c2f3c099ec0f05",
+    "agent/skill_preprocessing.py": "679cac4702ae6e8f40284411216db0c0626a8e2bd951a269e46e5c2b38df763a",
+    "tools/skills_tool_plugin.py": "fd4b8a07379bc14b196c1f41c473495423a9306d5542c1c6dfcad9abf6786e6c",
+    "tools/skills_tool.py": "a5fac64ae3c2f2496cd7da46aacd396d6a50a0dd5d9f4ef4d1ba2d8d7ba9df2f",
+    "tools/tool_result_storage.py": "91c06ef00735ee0480700976c8b08b263f98040a8c4424b47f3cd94e5638b73b",
+    "agent/tool_dispatch_helpers.py": "fded1508e518f2f248dd1ced597b6222b54b2f8c901a6a736402a9572c9c2faa",
+    "agent/tool_result_classification.py": "a33dce35c7cd89098dbafd50d23097bf6d1e7dc7a34ecb00b5cbc6ea6dfe68fd",
+    "agent/tool_guardrails.py": "b2224a2dc0b6f28a1763959399d89221c6240b87a3b872fdea6d80ad7938c224"
+  },
+  "histories": {
+    "codex_responses": {
+      "provider": "openai-codex",
+      "model": "gpt-6.1-sol",
+      "history": [
+        {
+          "role": "user",
+          "content": "hello"
+        },
+        {
+          "role": "assistant",
+          "content": "  Loading guide.  ",
+          "tool_calls": [
+            {
+              "id": "read",
+              "call_id": "read",
+              "response_item_id": "fc_read",
+              "type": "function",
+              "function": {
+                "name": "skill_view",
+                "arguments": "{ \"name\": \"emotion-chip-voice\", \"file_path\": null }"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "tool_call_id": "read",
+          "content": "synthetic tool result"
+        }
+      ],
+      "sent": [
+        {
+          "role": "user",
+          "content": "hello"
+        },
+        {
+          "role": "assistant",
+          "content": "Loading guide.",
+          "tool_calls": [
+            {
+              "id": "read",
+              "call_id": "read",
+              "response_item_id": "fc_read",
+              "type": "function",
+              "function": {
+                "name": "skill_view",
+                "arguments": "{\"file_path\":null,\"name\":\"emotion-chip-voice\"}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "tool_call_id": "read",
+          "content": "synthetic tool result"
+        }
+      ]
+    },
+    "chat_completions": {
+      "provider": "claude-subscription-directsdk-experimental",
+      "model": "claude-opus-5-5",
+      "history": [
+        {
+          "role": "user",
+          "content": "hello"
+        },
+        {
+          "role": "assistant",
+          "content": "  Loading guide.  ",
+          "tool_calls": [
+            {
+              "id": "read",
+              "call_id": "read",
+              "response_item_id": "fc_read",
+              "type": "function",
+              "function": {
+                "name": "skill_view",
+                "arguments": "{ \"name\": \"emotion-chip-voice\", \"file_path\": null }"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "tool_call_id": "read",
+          "content": "synthetic tool result"
+        }
+      ],
+      "sent": [
+        {
+          "role": "user",
+          "content": "hello"
+        },
+        {
+          "role": "assistant",
+          "content": "Loading guide.",
+          "tool_calls": [
+            {
+              "id": "read",
+              "type": "function",
+              "function": {
+                "name": "skill_view",
+                "arguments": "{\"file_path\":null,\"name\":\"emotion-chip-voice\"}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "tool_call_id": "read",
+          "content": "synthetic tool result"
+        }
+      ]
+    }
+  },
+  "metadata": {
+    "name": "emotion-chip:emotion-chip-voice",
+    "description": "Synthetic delivery guide"
+  },
+  "indexes": {
+    "False": "## Skills\nBefore replying, scan the skills below. If a skill matches or is even partially relevant to your task, you MUST load it with skill_view(name) and follow its instructions. Err on the side of loading \u2014 it is always better to have context you don't need than to miss critical steps, pitfalls, or established workflows. Skills contain specialized knowledge \u2014 API endpoints, tool-specific commands, and proven workflows that outperform general-purpose approaches. Load the skill even if you think you could handle the task with basic tools like terminal. Skills also encode the user's preferred approach, conventions, and quality standards for tasks like code review, planning, and testing \u2014 load them even for tasks you already know how to do, because the skill defines how it should be done here.\nIf a skill has issues, fix it with skill_manage(action='patch').\nAfter difficult/iterative tasks, offer to save as a skill. If a skill you loaded was missing steps, had wrong commands, or needed pitfalls you discovered, update it before finishing.\n\n<available_skills>\n  plugin:\n    - emotion-chip:emotion-chip-voice: Synthetic delivery guide\n</available_skills>\n\nOnly proceed without loading a skill if genuinely none are relevant to the task.",
+    "True": "single query guidance\n<available_skills>\n  plugin:\n    - emotion-chip:emotion-chip-voice: Synthetic delivery guide\n</available_skills>"
+  },
+  "handler_cases": [
+    {
+      "tool": "skill_view",
+      "arguments": {
+        "name": "emotion-chip:emotion-chip-voice"
+      },
+      "raw_result": "{\"success\": true, \"name\": \"emotion-chip:emotion-chip-voice\", \"content\": \"[Bundle context: This skill is part of the 'emotion-chip' plugin.]\\n\\n---\\nname: emotion-chip-voice\\ndescription: Synthetic delivery guide\\n---\\nSession synthetic: Speak [calm] clearly.\\n\", \"description\": \"Synthetic delivery guide\", \"linked_files\": null, \"readiness_status\": \"available\", \"skill_dir\": \"<ITEM>/home/plugin-data/emotion-chip/skills/emotion-chip-voice\", \"_source_path\": \"<ITEM>/home/plugin-data/emotion-chip/skills/emotion-chip-voice/SKILL.md\"}",
+      "handler_message": "{\"success\": true, \"name\": \"emotion-chip:emotion-chip-voice\", \"content\": \"[Bundle context: This skill is part of the 'emotion-chip' plugin.]\\n\\n---\\nname: emotion-chip-voice\\ndescription: Synthetic delivery guide\\n---\\nSession synthetic: Speak [calm] clearly.\\n\", \"description\": \"Synthetic delivery guide\", \"linked_files\": null, \"readiness_status\": \"available\", \"skill_dir\": \"<ITEM>/home/plugin-data/emotion-chip/skills/emotion-chip-voice\", \"_source_path\": \"<ITEM>/home/plugin-data/emotion-chip/skills/emotion-chip-voice/SKILL.md\"}"
+    },
+    {
+      "tool": "skill_view",
+      "arguments": {
+        "name": "emotion-chip:emotion-chip-voice",
+        "unsupported": true
+      },
+      "raw_result": "{\"success\": true, \"name\": \"emotion-chip:emotion-chip-voice\", \"content\": \"[Bundle context: This skill is part of the 'emotion-chip' plugin.]\\n\\n---\\nname: emotion-chip-voice\\ndescription: Synthetic delivery guide\\n---\\nSession synthetic: Speak [calm] clearly.\\n\", \"description\": \"Synthetic delivery guide\", \"linked_files\": null, \"readiness_status\": \"available\", \"skill_dir\": \"<ITEM>/home/plugin-data/emotion-chip/skills/emotion-chip-voice\", \"_source_path\": \"<ITEM>/home/plugin-data/emotion-chip/skills/emotion-chip-voice/SKILL.md\"}",
+      "handler_message": "{\"success\": true, \"name\": \"emotion-chip:emotion-chip-voice\", \"content\": \"[Bundle context: This skill is part of the 'emotion-chip' plugin.]\\n\\n---\\nname: emotion-chip-voice\\ndescription: Synthetic delivery guide\\n---\\nSession synthetic: Speak [calm] clearly.\\n\", \"description\": \"Synthetic delivery guide\", \"linked_files\": null, \"readiness_status\": \"available\", \"skill_dir\": \"<ITEM>/home/plugin-data/emotion-chip/skills/emotion-chip-voice\", \"_source_path\": \"<ITEM>/home/plugin-data/emotion-chip/skills/emotion-chip-voice/SKILL.md\"}"
+    },
+    {
+      "tool": "skill_view",
+      "arguments": {
+        "name": "emotion-chip:emotion-chip-voice",
+        "preprocess": false,
+        "task_id": "ignored"
+      },
+      "raw_result": "{\"success\": true, \"name\": \"emotion-chip:emotion-chip-voice\", \"content\": \"[Bundle context: This skill is part of the 'emotion-chip' plugin.]\\n\\n---\\nname: emotion-chip-voice\\ndescription: Synthetic delivery guide\\n---\\nSession synthetic: Speak [calm] clearly.\\n\", \"description\": \"Synthetic delivery guide\", \"linked_files\": null, \"readiness_status\": \"available\", \"skill_dir\": \"<ITEM>/home/plugin-data/emotion-chip/skills/emotion-chip-voice\", \"_source_path\": \"<ITEM>/home/plugin-data/emotion-chip/skills/emotion-chip-voice/SKILL.md\"}",
+      "handler_message": "{\"success\": true, \"name\": \"emotion-chip:emotion-chip-voice\", \"content\": \"[Bundle context: This skill is part of the 'emotion-chip' plugin.]\\n\\n---\\nname: emotion-chip-voice\\ndescription: Synthetic delivery guide\\n---\\nSession synthetic: Speak [calm] clearly.\\n\", \"description\": \"Synthetic delivery guide\", \"linked_files\": null, \"readiness_status\": \"available\", \"skill_dir\": \"<ITEM>/home/plugin-data/emotion-chip/skills/emotion-chip-voice\", \"_source_path\": \"<ITEM>/home/plugin-data/emotion-chip/skills/emotion-chip-voice/SKILL.md\"}"
+    },
+    {
+      "tool": "skills_list",
+      "arguments": {},
+      "raw_result": "{\"success\": true, \"skills\": [{\"name\": \"emotion-chip:emotion-chip-voice\", \"description\": \"Synthetic delivery guide\"}], \"categories\": [], \"count\": 1, \"hint\": \"Use skill_view(name) to see full content, tags, and linked files\"}",
+      "handler_message": "{\"success\": true, \"skills\": [{\"name\": \"emotion-chip:emotion-chip-voice\", \"description\": \"Synthetic delivery guide\"}], \"categories\": [], \"count\": 1, \"hint\": \"Use skill_view(name) to see full content, tags, and linked files\"}"
+    },
+    {
+      "tool": "skills_list",
+      "arguments": {
+        "unsupported": true,
+        "task_id": "ignored"
+      },
+      "raw_result": "{\"success\": true, \"skills\": [{\"name\": \"emotion-chip:emotion-chip-voice\", \"description\": \"Synthetic delivery guide\"}], \"categories\": [], \"count\": 1, \"hint\": \"Use skill_view(name) to see full content, tags, and linked files\"}",
+      "handler_message": "{\"success\": true, \"skills\": [{\"name\": \"emotion-chip:emotion-chip-voice\", \"description\": \"Synthetic delivery guide\"}], \"categories\": [], \"count\": 1, \"hint\": \"Use skill_view(name) to see full content, tags, and linked files\"}"
+    }
+  ],
+  "skill_text": "---\nname: emotion-chip-voice\ndescription: Synthetic delivery guide\n---\nSession ${HERMES_SESSION_ID}: Speak [calm] clearly.\n",
+  "index_root_gate": {
+    "missing": "",
+    "empty_exists": "## Skills\nBefore replying, scan the skills below. If a skill matches or is even partially relevant to your task, you MUST load it with skill_view(name) and follow its instructions. Err on the side of loading \u2014 it is always better to have context you don't need than to miss critical steps, pitfalls, or established workflows. Skills contain specialized knowledge \u2014 API endpoints, tool-specific commands, and proven workflows that outperform general-purpose approaches. Load the skill even if you think you could handle the task with basic tools like terminal. Skills also encode the user's preferred approach, conventions, and quality standards for tasks like code review, planning, and testing \u2014 load them even for tasks you already know how to do, because the skill defines how it should be done here.\nIf a skill has issues, fix it with skill_manage(action='patch').\nAfter difficult/iterative tasks, offer to save as a skill. If a skill you loaded was missing steps, had wrong commands, or needed pitfalls you discovered, update it before finishing.\n\n<available_skills>\n  plugin:\n    - emotion-chip:emotion-chip-voice: Synthetic delivery guide\n</available_skills>\n\nOnly proceed without loading a skill if genuinely none are relevant to the task."
+  },
+  "guardrail": {
+    "action": "halt",
+    "code": "same_tool_failure_halt",
+    "message": "Stopped skill_view: it failed 8 times this turn. Stop retrying the same failing tool path and choose a different approach.",
+    "tool_name": "skill_view",
+    "count": 8,
+    "signature": {
+      "tool_name": "skill_view",
+      "args_hash": "bef739807425f0d25e8232ea630ae00c988a1a134238843cd1b39893b358c129"
+    }
+  }
+}

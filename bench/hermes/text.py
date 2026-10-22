@@ -110,6 +110,7 @@ def validity(result, golden, rows, memory_empty):
             2: complete and all(r["system"]["sha256"] == golden["system_sha256"] and not r["checks"]
                                     and r["model"] == golden["route"]["model"] for r in captures),
             3: complete and all(r["history_matches"] for r in captures)
+                and result.get("guardrail") is None
                 and result.get("skill_tree") is not None and result["skill_tree"] == golden.get("skill_tree"),
             5: memory_empty and host.turn_gate(result)["pass"] and bool(result.get("final_response", "").strip())}
 
@@ -237,6 +238,8 @@ class Harness:
         if clone:
             shutil.copytree(clone / "home", item / "home", ignore=shutil.ignore_patterns("auth.json"))
         host.make_dirs(item)
+        # Hermes' index builder returns early if this root is absent, even for plugin skills.
+        (item / "home/skills").mkdir(exist_ok=True)
         for name in hermes_config(model, arm, item / "claude")["plugins"]["enabled"]:
             target = item / "home/plugins" / name
             if not target.exists():

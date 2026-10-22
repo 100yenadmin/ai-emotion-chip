@@ -121,6 +121,7 @@ def test_capture_signature_and_last_codex_preflight(tmp_path, monkeypatch):
         monkeypatch.setitem(sys.modules, name, module)
     monkeypatch.setattr(turn, "expected_codex", lambda S, M, options: {"instructions": S, "input": M})
     agent = SimpleNamespace(provider="openai-codex", model="gpt-6.1-sol", _codex_reasoning_replay_enabled=True)
+    send_runtime(monkeypatch, loop, agent)
     read_runtime(monkeypatch)
     agent._current_task_id = "synthetic"
     agent._tool_result_content_for_active_model = lambda name, result: result
@@ -134,15 +135,18 @@ def test_capture_signature_and_last_codex_preflight(tmp_path, monkeypatch):
     Transport().preflight_kwargs({**value, "input": []})
     assert len(finals) == 1 and finals[1]["checks"] == ["input"]
     history = [{"role": "user", "content": "hello"}, {"role": "assistant", "tool_calls": [
-        {"id": "call", "function": {"name": "skill_view", "arguments": '{"name":"emotion-chip-voice"}'}}]},
+        {"id": "call", "call_id": "call", "response_item_id": "fc_call", "function": {
+            "name": "skill_view", "arguments": '{ "name": "emotion-chip-voice" }'}}]},
         {"role": "tool", "tool_call_id": "call", "content": read_runtime(monkeypatch)["skill_view"]}]
     for corrupted in (False, True):
         messages = deepcopy(history)
         if corrupted:
             messages[0]["content"] += " injected later"
-        loop.build_api_request(agent, api_messages=[{"role": "system", "content": "S"}] + messages,
+        api = deepcopy(messages)
+        loop._canonicalize_api_tool_calls(api)
+        loop.build_api_request(agent, api_messages=[{"role": "system", "content": "S"}] + api,
             api_call_count=2, messages=messages, tools_for_api=[])
-        Transport().preflight_kwargs({**value, "input": messages})
+        Transport().preflight_kwargs({**value, "input": api})
         assert finals[2]["history_matches"] is (not corrupted)
     history[-1]["content"] = "[hermes note: stub]"
     loop.build_api_request(agent, api_messages=[{"role": "system", "content": "S"}] + history,
@@ -489,18 +493,43 @@ def capture_runtime(monkeypatch):
     monkeypatch.setattr(turn, "expected_codex", lambda S, M, options: {"instructions": S, "input": M})
     agent = SimpleNamespace(provider="openai-codex", model=items.MODELS[1], _codex_reasoning_replay_enabled=True,
         _current_task_id="synthetic", _tool_result_content_for_active_model=lambda name, result: result)
+    send_runtime(monkeypatch, loop, agent)
     return turn, loop, Transport, agent
+
+
+def send_runtime(monkeypatch, loop, agent):
+    agent.api_mode, agent.base_url = "codex_responses", "http://localhost.invalid"
+    agent._should_sanitize_tool_calls = lambda: agent.api_mode != "codex_responses"
+    def sanitize(row, **kwargs):
+        assert kwargs == dict(model=agent.model, base_url=agent.base_url, provider=agent.provider)
+        if isinstance(row.get("tool_calls"), list):
+            row["tool_calls"] = [{k: v for k, v in call.items() if k not in
+                                 {"call_id", "response_item_id", "extra_content"}} for call in row["tool_calls"]]
+    agent._sanitize_tool_calls_for_strict_api = sanitize
+    def canonicalize(rows):
+        for row in rows:
+            for call in row.get("tool_calls") or []:
+                try:
+                    call["function"]["arguments"] = json.dumps(json.loads(call["function"]["arguments"]),
+                                                              sort_keys=True, separators=(",", ":"))
+                except (ValueError, KeyError):
+                    call["function"]["arguments"] = "{}"
+    loop._canonicalize_api_tool_calls = canonicalize
+    module = ModuleType("agent.message_sanitization")
+    module._sanitize_messages_surrogates = lambda rows: None  # fixture text has no lone surrogates
+    monkeypatch.setitem(sys.modules, module.__name__, module)
 
 
 def read_runtime(monkeypatch):
     fixture = json.loads((Path(__file__).parent / "fixtures/a4-skill-results.json").read_text())
     skills, executor, storage, dispatch, tools = [ModuleType(n) for n in
         ("tools.skills_tool", "agent.tool_executor", "tools.tool_result_storage", "agent.tool_dispatch_helpers", "tools")]
-    def skill_view(name, file_path=None, task_id=None):
+    def skill_view(name, file_path=None, task_id=None, preprocess=True):
         assert name == "emotion-chip-voice" and file_path is None
+        assert task_id == "synthetic" and preprocess is True
         return fixture["skill_view"]
     def skills_list(category=None, task_id=None):
-        assert category is None
+        assert category is None and task_id == "synthetic"
         return fixture["skills_list"]
     skills.skill_view, skills.skills_list = skill_view, skills_list
     tools.skills_tool = skills
@@ -515,21 +544,26 @@ def read_runtime(monkeypatch):
 
 
 def test_tool_result_reference_capture(tmp_path, monkeypatch):
-    for case in ("normal", "list", "stub", "warning", "manage", "unknown", "bad-args", "invalid-json"):
+    for case in ("normal", "list", "stub", "warning", "manage", "unknown", "bad-args", "preprocess", "invalid-json"):
         with monkeypatch.context() as patch:
             turn, loop, Transport, agent = capture_runtime(patch)
             fixture = read_runtime(patch)
             finals, _ = turn.install_text_capture({"item_dir": str(tmp_path), "prompt": "hello"}, agent)
             def capture(messages, number):
-                loop.build_api_request(agent, api_messages=[{"role": "system", "content": "S"}] + messages,
+                api = deepcopy(messages)
+                if case != "invalid-json":
+                    loop._canonicalize_api_tool_calls(api)
+                loop.build_api_request(agent, api_messages=[{"role": "system", "content": "S"}] + api,
                     api_call_count=number, messages=messages, tools_for_api=[])
-                Transport().preflight_kwargs({"model": agent.model, "instructions": "S", "input": messages})
+                Transport().preflight_kwargs({"model": agent.model, "instructions": "S", "input": api})
             first = [{"role": "user", "content": "hello"}]
             capture(first, 1)
             name = "skills_list" if case == "list" else "unknown" if case == "unknown" else "skill_view"
             arguments = {} if case == "list" else {"name": "emotion-chip-voice"}
             if case == "bad-args":
                 arguments["unsupported"] = True
+            if case == "preprocess":
+                arguments.update(preprocess=False, task_id="ignored")
             function = {"name": name, "arguments": "not-json" if case == "invalid-json" else json.dumps(arguments)}
             calls = [{"id": "read", "function": function}]
             if case == "manage":
@@ -544,7 +578,7 @@ def test_tool_result_reference_capture(tmp_path, monkeypatch):
                 messages.append({"role": "tool", "tool_call_id": "write", "content": "created"})
             messages.append({"role": "tool", "tool_call_id": "read", "content": content})
             capture(messages, 2)
-            assert finals[2]["history_matches"] is (case in {"normal", "list"})
+            assert finals[2]["history_matches"] is (case in {"normal", "list", "bad-args", "preprocess"})
 
 
 def test_call_one_item_alone(tmp_path, monkeypatch):
@@ -717,3 +751,181 @@ def test_golden_records_skill_tree(tmp_path, monkeypatch):
     monkeypatch.setattr(turn, "skill_tree", lambda: "synthetic-tree")
     result = turn.golden_delta(None, "S", {"sections": {}, "arm": "OFF", "item_dir": str(tmp_path)})
     assert result["skill_tree"] == "synthetic-tree"
+
+
+def send_fixture():
+    return json.loads((Path(__file__).parent / "fixtures/a4-send-path.json").read_text())
+
+
+@pytest.mark.parametrize("api_mode", ["chat_completions", "codex_responses"])
+def test_pinned_sent_history(tmp_path, monkeypatch, api_mode):
+    turn, loop, Transport, agent = capture_runtime(monkeypatch)
+    record = send_fixture()["histories"][api_mode]
+    agent.api_mode, agent.provider, agent.model = api_mode, record["provider"], record["model"]
+    fixture = read_runtime(monkeypatch)
+    # Hermes-path output is independent of the expected-history builder under test.
+    history, sent = deepcopy(record["history"]), deepcopy(record["sent"])
+    history[-1]["content"] = sent[-1]["content"] = fixture["skill_view"]
+    original = deepcopy(history)
+    assert turn.history_for_send(history, agent) == sent
+    assert history == original
+    capture = []
+    def upstream(item_dir, callback):
+        capture.append(callback)
+        return ["synthetic relay final"]
+    monkeypatch.setattr(turn, "wrap_upstream", upstream)
+    monkeypatch.setattr(turn, "expected_relay", lambda S, M, *a, **kw: {"instructions": S, "input": M})
+    finals, _ = turn.install_text_capture({"item_dir": str(tmp_path), "prompt": "hello", "provider_path": "synthetic"}, agent)
+    def record_call(messages, internal, number):
+        loop.build_api_request(agent, api_messages=[{"role": "system", "content": "S"}] + messages,
+                               messages=internal, api_call_count=number, tools_for_api=[])
+        final = {"model": agent.model, "instructions": "S", "input": messages}
+        if api_mode == "codex_responses":
+            Transport().preflight_kwargs(final)
+        else:
+            capture[0](final)
+    record_call(sent[:1], history[:1], 1)
+    for mutation in ("none", "user", "arguments", "stub"):
+        actual = deepcopy(sent)
+        if mutation == "user":
+            actual[0]["content"] += " injected"
+        if mutation == "arguments":
+            args = json.loads(actual[1]["tool_calls"][0]["function"]["arguments"])
+            args["reason"] = "changed"
+            actual[1]["tool_calls"][0]["function"]["arguments"] = json.dumps(args, sort_keys=True, separators=(",", ":"))
+        if mutation == "stub":
+            actual[-1]["content"] = "[hermes note: result already provided]"
+        record_call(actual, history, 2)
+        assert finals[2]["history_matches"] is (mutation == "none")
+
+
+@pytest.mark.parametrize("single_query", ["False", "True"])
+def test_on_golden_pinned_index(tmp_path, monkeypatch, single_query):
+    turn = driver()
+    fixture = send_fixture()
+    system, plugins = ModuleType("agent.system_prompt"), ModuleType("hermes_cli.plugins")
+    system._frozen_plugin_prompt_sections = lambda agent: []
+    index = fixture["indexes"][single_query]
+    system._skills_prompt = lambda agent: index
+    plugins.format_system_prompt_sections = lambda sections: ""
+    plugins.get_plugin_manager = lambda: SimpleNamespace(list_plugin_skill_metadata=lambda: [fixture["metadata"]])
+    monkeypatch.setitem(sys.modules, system.__name__, system)
+    monkeypatch.setitem(sys.modules, plugins.__name__, plugins)
+    monkeypatch.setattr(turn, "skill_tree", lambda: "tree")
+    args = {"sections": {}, "arm": "ON", "item_dir": str(tmp_path)}
+    assert turn.golden_delta(None, index + "\n\nS", args)["residue"] == probe.component("S")
+    for extra in ("    - second-skill", "    - emotion-chip:emotion-chip-voice: Synthetic delivery guide"):
+        index = fixture["indexes"][single_query].replace("</available_skills>", extra + "\n</available_skills>")
+        with pytest.raises(RuntimeError, match="golden skill index differs"):
+            turn.golden_delta(None, index + "\n\nS", args)
+
+
+def test_golden_home_has_empty_skills_root(tmp_path):
+    harness = text.Harness(tmp_path, tmp_path / "out", {}, {}, None, None)
+    model = items.MODELS[0]
+    for plugin in text.hermes_config(model, "ON", tmp_path)["plugins"]["enabled"]:
+        (tmp_path / "src" / plugin).mkdir(parents=True)
+    home = tmp_path / "golden" / "ON"
+    harness.home(home, model, "ON")
+    assert (home / "home/skills").is_dir()
+    assert list((home / "home/skills").iterdir()) == []
+    fixture = send_fixture()["index_root_gate"]
+    assert fixture["missing"] == "" and fixture["empty_exists"]
+
+
+def test_guardrail_halt_invalidates_turn(tmp_path, monkeypatch):
+    turn = driver()
+    guardrail = send_fixture()["guardrail"]
+    capture = {"api_call_count": 1, "system": {"sha256": "S"}, "checks": [],
+               "canaries": {}, "history_matches": True, "model": items.MODELS[0]}
+    module = ModuleType("hermes_cli.oneshot")
+    module._close_agent = lambda *a: None
+    monkeypatch.setitem(sys.modules, module.__name__, module)
+    agent = SimpleNamespace(run_conversation=lambda prompt: {"guardrail": guardrail, "api_calls": 1,
+        "completed": True, "final_response": "I stopped retrying."})
+    monkeypatch.setattr(turn, "build_agent", lambda *a, **kw: (agent, None, {}))
+    monkeypatch.setattr(turn, "install_text_capture", lambda *a: ({1: capture}, []))
+    monkeypatch.setattr(turn, "skill_tree", lambda: "tree")
+    value = turn.turn({"text": True, "item_dir": str(tmp_path), "cwd": str(tmp_path), "prompt": "hello"})
+    assert value["guardrail"] == guardrail
+    golden = {"skill_tree": "tree", "system_sha256": "S", "route": {"model": items.MODELS[0]}}
+    assert text.validity({**value, "guardrail": None}, golden, [], True)[3]
+    checks = text.validity(value, golden, [], True)
+    assert checks[1] and checks[2] and checks[5] and checks[3] is False
+
+
+@pytest.mark.parametrize("marked", [False, True])
+def test_reference_equals_recorded_handler_message(monkeypatch, marked):
+    turn, _, _, agent = capture_runtime(monkeypatch)
+    read_runtime(monkeypatch)
+    skills, storage, dispatch = (sys.modules[n] for n in
+        ("tools.skills_tool", "tools.tool_result_storage", "agent.tool_dispatch_helpers"))
+    for case in send_fixture()["handler_cases"]:
+        # The input and oracle are separate recorded fields, from separate pinned calls.
+        raw, oracle = case["raw_result"], case["handler_message"]
+        assert raw is not oracle
+        if case["tool"] == "skill_view":
+            def view(name, file_path=None, task_id=None, preprocess=True):
+                assert name == case["arguments"]["name"] and file_path is None
+                assert task_id == "synthetic" and preprocess is True
+                return raw
+            skills.skill_view = view
+        else:
+            def listing(category=None, task_id=None):
+                assert category is None and task_id == "synthetic"
+                return raw
+            skills.skills_list = listing
+        def persist(value, name, call, *, env, config):
+            assert (value, name, call, env, config) == (raw, case["tool"], "read", "cell-env", "budget")
+            return value + ("|P" if marked else "")
+        def wrap(name, value, call):
+            assert (name, value, call) == (case["tool"], raw + ("|P" if marked else ""), "read")
+            return {"content": value + ("|W" if marked else "")}
+        def budget(rows, *, env, config):
+            assert (env, config) == ("cell-env", "budget")
+            for row in rows:
+                row["content"] += "|B" if marked else ""
+        storage.maybe_persist_tool_result, storage.enforce_turn_budget = persist, budget
+        dispatch.make_tool_result_message = wrap
+        function = {"name": case["tool"], "arguments": json.dumps(case["arguments"])}
+        assert turn.tool_reference(function, "read", agent)["content"] == oracle + ("|P|W" if marked else "")
+        messages = [{"role": "assistant", "tool_calls": [{"id": "read", "function": function}]},
+                    {"role": "tool", "tool_call_id": "read", "content": oracle + ("|P|W|B" if marked else "")}]
+        assert turn.tool_results_match(messages, agent)
+
+
+@pytest.mark.parametrize("bad_field", ["system", "model"])
+def test_schema_reference_requires_other_check_two_conditions(tmp_path, monkeypatch, bad_field):
+    model = items.MODELS[0]
+    harness = text.Harness(tmp_path, tmp_path / "out", {}, {}, None, None)
+    harness.golden[model, "OFF"] = {"skill_tree": "tree", "system_sha256": "S", "route": {"model": model}}
+    for name, fake in (("read_jsonl", lambda *a: []), ("memories_empty", lambda *a: True),
+                       ("first_call_tokens", lambda *a: 100)):
+        monkeypatch.setattr(run, name, fake)
+    monkeypatch.setattr(harness, "home", lambda *a: None)
+    good = {"api_call_count": 1, "system": {"sha256": "S"}, "model": model, "checks": [],
+            "canaries": {}, "history_matches": True, "tool_schemas": {"skill_view": "good"}}
+    bad = {**good, bad_field: {"sha256": "BAD"} if bad_field == "system" else "BAD",
+           "tool_schemas": {"skill_view": "bad"}}
+    values = iter({"captures": [capture], "skill_tree": "tree", "api_calls": 1, "completed": True,
+                   "final_response": "reply"} for capture in (bad, good))
+    monkeypatch.setattr(harness, "call", lambda *a, **kw: next(values))
+    row = {**phase_rows(1)[0], "item": {"id": "0", "user_message": "hello"}}
+    result = text.run_phase([row], lambda r, n: harness.execute("reference", r, n), lambda value: None)
+    assert result["attempts"][0]["checks"][2] is False
+    assert len(result["attempts"]) == 2 and result["attempts"][1]["admitted"]
+    assert result["critical_failures"] == 1 and not result["stopped"]
+    assert harness.provenance["tool_schemas"][model] == {"skill_view": "good"}
+
+
+def test_skill_manage_poisoning_branch(monkeypatch):
+    turn, _, _, agent = capture_runtime(monkeypatch)
+    fixture = read_runtime(monkeypatch)
+    read = {"id": "r", "function": {"name": "skill_view", "arguments": '{"name":"emotion-chip-voice"}'}}
+    messages = [{"role": "user", "content": "hello"}, {"role": "assistant", "tool_calls": [read]},
+                {"role": "tool", "tool_call_id": "r", "content": fixture["skill_view"]}]
+    assert turn.tool_results_match(messages, agent)
+    # Direct helper invocation isolates poisoning from capture's independent ID pairing check.
+    # No result for w: the later read has a valid reference and fails only due to poisoning.
+    messages[1]["tool_calls"].insert(0, {"id": "w", "function": {"name": "skill_manage", "arguments": "{}"}})
+    assert turn.tool_results_match(messages, agent) is False
