@@ -6,7 +6,7 @@ from pathlib import Path
 import re
 import subprocess
 
-from .gen import extract_reply, provenance
+from .gen import extract_reply, failures_path, provenance, system_prompt
 from .items import (ROOT, SETS, MODELS, CONDITIONS, RUNS, atomic_json, heldout_hashes,
                     load_items, read_json, run_directory, sha256)
 from .judge import load_judgments, load_replies
@@ -122,12 +122,16 @@ def build_report(directory, tagged=None):
     hashes, issues, rows, judgments = heldout_hashes(), [], [], {}
     inputs = a1_inputs()
     issues += [f"{name} differs from its A1 pin" for name, pin in A1_PINS.items() if inputs[name] != pin]
-    expected, manifests = set(), {}
+    expected, manifests, generation_failures = set(), {}, {}
     for set_name in SETS:
         items = {item["id"]: item for item in load_items(set_name)}
         expected.update((set_name, item_id, model, condition, run) for item_id in items
                         for model in MODELS for condition in CONDITIONS for run in RUNS)
         loaded = load_replies(directory, set_name)
+        log = failures_path(directory, set_name)
+        if log.exists():
+            generation_failures[set_name] = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()
+                                             if line.strip()]
         manifest_path = directory / "manifests" / f"{set_name}.json"
         if manifest_path.exists():
             manifest = read_json(manifest_path)
@@ -138,6 +142,12 @@ def build_report(directory, tagged=None):
                 issues.append(f"{set_name}: generated under a different EVAL-PREREG.md")
             if any(item != items.get(item["id"]) for item in manifest["items"]):
                 issues.append(f"{set_name}: manifest does not use canonical heldout items")
+            # guide_version covers the data files only; the recorded prompts also catch a changed prompt builder.
+            # Hermes builds its own prompt, so only claude -p manifests are compared with system_prompt().
+            if manifest.get("harness", "claude-p") == "claude-p" and manifest.get("prompts") != {
+                    m: {c: system_prompt(m, c) for c in manifest.get("conditions", ())}
+                    for m in manifest.get("models", ())}:
+                issues.append(f"{set_name}: generation prompts differ from the current prompt builder")
         elif loaded:
             issues.append(f"{set_name}: generation manifest missing")
         for row in loaded:
@@ -189,6 +199,9 @@ def build_report(directory, tagged=None):
     return {"scope": SCOPE, "scope_gaps": scope_gaps, "not_measured": NOT_MEASURED, "verdict": verdict, "prereg": verification, "bars": bars, "gate_complete": complete,
             "missing_generation": missing, "missing_judgments": missing_judgments, "integrity_issues": issues,
             "gate_failures": gate_failures, "g1": g1,
+            # Stop rules: a rerun is allowed only after an infrastructure failure, with the failed run kept. A person
+            # classifies each recorded failure; code cannot tell an outage from another error.
+            "generation_failures": generation_failures,
             "g3": g3, "e3": e3_metrics([r for r in rows if r["set"] == "e3"], judgments),
             "provenance": {**{s: {k: m[k] for k in ("guide_version", "prereg_sha256", "heldout_sha256")}
                               for s, m in manifests.items()}, "a1_inputs": inputs},
@@ -212,6 +225,8 @@ def markdown(report):
              *[f"- Not measured: {name}" for name in report["not_measured"]], "",
              f'Prereg slice matches prereg-v1: {report["prereg"]["matches"]}',
              f'Gates complete: {report["gate_complete"]}; missing generations: {len(report["missing_generation"])}; missing judgments: {len(report["missing_judgments"])}.',
+             *[f"- Failed generation attempts in {name}: {len(rows)} (listed under Failure details)"
+               for name, rows in report["generation_failures"].items()],
              "", "Intervals: Wilson for rates; Newcombe for differences; sign intervals for medians.", "",
              report["bars"]["g1"], report["bars"]["g2"], report["bars"]["g3"], ""]
     for model in MODELS:
@@ -235,7 +250,7 @@ def markdown(report):
                         lines.append(f"- {view} {name} {bucket}: {format_metric(metric)}")
             lines.append("")
     lines += ["## Failure details", "", "```json", json.dumps({
-        "gate_failures": report["gate_failures"],
+        "gate_failures": report["gate_failures"], "generation_failures": report["generation_failures"],
         "G3": {m: report["g3"][m]["failures"] for m in MODELS}}, indent=2), "```", "",
         "## Provenance and limits", "", "```json", json.dumps(report["provenance"], indent=2), "```", "",
         *report["integrity_issues"], report["judge_validity"], "", "Not proven: " + report["not_proven"], ""]

@@ -182,6 +182,21 @@ def test_interrupted_generation_keeps_completed_results(tmp_path):
     before = completed[0].read_bytes()
     gen.generate("g1", tmp_path, generate_fn=lambda *args: {"result": "remaining"}, **kwargs)
     assert completed[0].read_bytes() == before
+    # The resumed run keeps the failure it recovered from (stop rules: the failed run is kept).
+    failures = [json.loads(line) for line in gen.failures_path(tmp_path, "g1").read_text().splitlines()]
+    assert len(failures) == 1 and failures[0]["error"] == "RuntimeError" and failures[0]["message"] is None
+    assert failures[0]["item_id"] == items.load_items("g1")[0]["id"] and failures[0]["condition"] == "OFF"
+
+
+def test_an_interrupt_while_waiting_is_recorded_once(tmp_path, monkeypatch):
+    def interrupt(futures):
+        raise KeyboardInterrupt
+    monkeypatch.setattr(gen, "as_completed", interrupt)
+    with pytest.raises(KeyboardInterrupt):
+        gen.generate("g1", tmp_path, models=[items.MODELS[0]], conditions=["OFF"], limit=1, concurrency=1,
+                     generate_fn=lambda *args: {"result": "fine"})
+    lines = gen.failures_path(tmp_path, "g1").read_text().splitlines()
+    assert len(lines) == 1 and json.loads(lines[0])["error"] == "KeyboardInterrupt" and "item_id" not in lines[0]
 
 
 def test_shuffle_blinds_labels_and_strips_brackets():
@@ -334,9 +349,12 @@ def test_missing_prereg_tag_is_unverified(monkeypatch):
 
 
 def write_manifests(directory, **extra):
+    # The prompts are what generation would record for the claude -p bench's models and conditions.
+    prompts = {m: {c: gen.system_prompt(m, c) for c in items.CONDITIONS} for m in items.MODELS}
     for name in items.SETS:
         items.atomic_json(directory / "manifests" / f"{name}.json", {
-            "items": items.load_items(name), "heldout_sha256": items.heldout_hashes(), **gen.provenance(), **extra})
+            "items": items.load_items(name), "heldout_sha256": items.heldout_hashes(), "models": list(items.MODELS),
+            "conditions": list(items.CONDITIONS), "prompts": prompts, **gen.provenance(), **extra})
 
 
 def test_full_fake_gate_g1_report_only_and_g3_verdicts(tmp_path, monkeypatch):
@@ -434,6 +452,21 @@ def test_full_fake_gate_g1_report_only_and_g3_verdicts(tmp_path, monkeypatch):
     assert result["verdict"] == "unverified" and result["gate_complete"]
     assert result["scope_gaps"] == ["model missing: gpt-6.1-sol"] + [
         f"{s}: generated with claude-p, not through Hermes" for s in items.SETS]
+    # A prompt builder that changed after generation is an integrity issue, even with the data files unchanged.
+    real_prompt = report.system_prompt
+    monkeypatch.setattr(report, "system_prompt", lambda m, c: real_prompt(m, c) + (" edited" if c == "ON" else ""))
+    drifted = report.build_report(tmp_path, tagged=current)
+    assert not drifted["gate_complete"]
+    assert drifted["integrity_issues"] == [f"{s}: generation prompts differ from the current prompt builder"
+                                           for s in items.SETS]
+    monkeypatch.setattr(report, "system_prompt", real_prompt)
+    # Recorded generation failures are published, never dropped by a resume.
+    log = gen.failures_path(tmp_path, "g1")
+    log.parent.mkdir(parents=True, exist_ok=True)
+    log.write_text('{"error": "RuntimeError", "message": null}\n')
+    listed = report.build_report(tmp_path, tagged=current)
+    assert listed["generation_failures"] == {"g1": [{"error": "RuntimeError", "message": None}]}
+    assert "Failed generation attempts in g1: 1" in report.markdown(listed)
 
 
 def test_cli_output_location_guard(tmp_path, request):

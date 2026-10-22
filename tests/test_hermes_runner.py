@@ -437,7 +437,12 @@ def test_ava_summary_names_the_voice_and_the_stop():
     manifest = run.summarise("r", {}, [], cells, refs, "ava", "credential failure at p01 on: HTTP 401")
     assert manifest["voice"] == "ava" and manifest["stopped"].endswith("HTTP 401")
     assert "ElevenLabs synthesis" in manifest["proof_boundary"] and "Fish," in manifest["does_not_prove"]
-    assert run.summarise("r", {}, [], cells, refs)["voice"] == "fish"
+    assert "This dir is unblinded" in manifest["proof_boundary"]
+    assert "It is not an E7 session: no catch trials" in manifest["does_not_prove"]
+    assert manifest["does_not_prove"].endswith("ElevenLabs seeds are not locked.")
+    fish = run.summarise("r", {}, [], cells, refs)
+    assert fish["voice"] == "fish" and "not an E7 session" in fish["does_not_prove"]
+    assert "seeds" not in fish["does_not_prove"]
 
 
 # --- review fixes: required canaries, fail-closed evidence, turn gate, early stop ---------------------------------
@@ -584,3 +589,35 @@ def test_prepare_records_a_digest_of_the_hermes_source(tmp_path, monkeypatch):
     assert shas["hermes"] == "a label" and shas["hermes_tree"] == run.tree_sha256(host, skip=run.HOST_SKIP)
     (host / "run_agent.py").write_text("edited source")
     assert run.prepare(tmp_path / "run2", "fake-key", paths)["hermes_tree"] != shas["hermes_tree"]
+
+
+def test_published_errors_name_configured_roots_and_home_by_label(tmp_path):
+    runs = run.HOME / "bench-scratch" / "hermes-runs"
+    paths = {"runs_root": runs, "host": run.HOME / ".cache" / "host", "evidence_root": tmp_path / "evidence",
+             "eleven_key_file": None, "host_label": "label"}
+    roots = run.machine_roots(paths)
+    error = f'Traceback: File "{paths["host"]}/.venv/lib/x.py" in {runs}/r1/tools/turn.py; cwd {run.HOME}/elsewhere'
+    public = run.label_canaries(error, [str(run.HOME / "src")], roots)
+    assert str(run.HOME) not in public and "<host>/.venv/lib/x.py" in public
+    assert "<runs_root>/r1/tools/turn.py" in public
+    assert "cwd ~/elsewhere" in public
+    # A canary longer than the home folder keeps its own label.
+    assert run.label_canaries(f"{run.HOME}/src/chip", [str(run.HOME / "src")], roots) == "machine-canary-1/chip"
+
+
+def test_publish_labels_roots_and_its_leak_scan_covers_them(tmp_path, monkeypatch):
+    manifest = {"run_id": "r1", "claim_class": "local_smoke", "proof_boundary": "pb", "does_not_prove": "dnp",
+                "shas": {"hermes": "h", "fish_audio": "f", "emotion_chip": "e", "provider_tree": "p",
+                         "bench_probe_tree": "b"}, "model": "m", "effort": "medium", "fish_model": "s2.1-pro",
+                "arms": {arm: {"cells": 0, "voiced": 0, "isolation_passes": 0, "call1_median": None}
+                         for arm in run.ARMS},
+                "token_delta": {"tokens": None, "system_chars": None, "system_chars_as_tokens": None}, "cells": [],
+                "stopped": f"host error under {run.HOME}/bench-scratch/r1"}
+    roots = run.machine_roots({"runs_root": run.HOME / "bench-scratch"})
+    (tmp_path / "run").mkdir()
+    run.publish(tmp_path / "run", tmp_path / "ev1", manifest, [], {}, {}, ["secret"], roots=roots)
+    published = (tmp_path / "ev1" / "manifest.json").read_text()
+    assert str(run.HOME) not in published and "host error under <runs_root>/r1" in published
+    monkeypatch.setattr(run, "label_canaries", lambda text, canaries, roots=None: text)
+    with pytest.raises(SystemExit, match="machine path"):
+        run.publish(tmp_path / "run", tmp_path / "ev2", manifest, [], {}, {}, ["secret"], roots=roots)

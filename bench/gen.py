@@ -1,6 +1,7 @@
 """Isolated three-run text generation. Importing this module accesses no credentials."""
 import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
@@ -91,6 +92,28 @@ def provenance():
             "prereg_sha256": sha256((ROOT / "EVAL-PREREG.md").read_bytes())}
 
 
+# Messages this module raises itself; any other exception is recorded by its type alone.
+OWN_MESSAGES = frozenset({"generation failed; subprocess diagnostics suppressed", "generation returned invalid output",
+                          "generation did not return a successful text result", "existing output identity mismatch",
+                          "existing output is inconsistent", "Claude subscription credential unavailable"})
+
+
+def failures_path(out, set_name):
+    return Path(out) / "generation" / set_name / "failures.jsonl"
+
+
+def record_failure(path, lock, row, exc):
+    """Append one failed attempt; the file is never rewritten, so a resumed run keeps every failure (stop rules)."""
+    entry = {"error": type(exc).__name__, "message": str(exc) if str(exc) in OWN_MESSAGES else None,
+             "at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+    if row is not None:
+        entry.update(model=row["model"], condition=row["condition"], item_id=row["item"]["id"], run=row["run"])
+    with lock:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "a", encoding="utf-8") as handle:
+            handle.write(json.dumps(entry, sort_keys=True) + "\n")
+
+
 def generate(set_name, out, models=MODELS, conditions=CONDITIONS, limit=None, concurrency=4, generate_fn=None):
     if not 1 <= concurrency <= 4 or (limit is not None and limit < 1):
         raise ValueError("concurrency must be 1..4 and limit must be positive")
@@ -127,16 +150,19 @@ def generate(set_name, out, models=MODELS, conditions=CONDITIONS, limit=None, co
     rows = [{"set": set_name, "split": "heldout", "model": m, "condition": c, "item": item, "run": run}
             for item in items for m in models for c in conditions for run in RUNS]
     # Stop at the first failure (an expired credential, a hung CLI): no queued call starts after it, calls already
-    # running finish, and finished outputs stay on disk for a resume.
-    failed = threading.Event()
+    # running finish, and finished outputs stay on disk for a resume. Every failure is appended to failures.jsonl.
+    failed, lock, recorded = threading.Event(), threading.Lock(), set()
+    log = failures_path(out, set_name)
 
     def guarded(row):
         if failed.is_set():
             return
         try:
             one(row)
-        except BaseException:
+        except BaseException as exc:
             failed.set()
+            recorded.add(id(exc))
+            record_failure(log, lock, row, exc)
             raise
 
     with ThreadPoolExecutor(max_workers=concurrency) as executor:
@@ -144,7 +170,9 @@ def generate(set_name, out, models=MODELS, conditions=CONDITIONS, limit=None, co
         try:
             for future in as_completed(futures):
                 future.result()
-        except BaseException:
+        except BaseException as exc:
+            if id(exc) not in recorded:  # an interrupt while waiting, outside any call
+                record_failure(log, lock, None, exc)
             executor.shutdown(wait=True, cancel_futures=True)
             raise
     return rows

@@ -193,11 +193,27 @@ def scrub(text, secrets):
     return re.sub(r"(?i)Bearer\s+\S+", "[redacted]", text)
 
 
-def label_canaries(text, canaries):
-    """Published evidence names this machine's canaries (its repo paths) by opaque labels, longest first."""
-    for i, value in sorted(enumerate(canaries, 1), key=lambda pair: -len(pair[1])):
-        if value:
-            text = text.replace(value, f"machine-canary-{i}")
+def machine_roots(paths):
+    """Every configured location, and this user's home, with the label published in its place.
+
+    A failed turn's diagnostics can name any of them (a traceback through the host's venv or the run dir), so
+    published text replaces each, in its written and resolved forms. These are not probe canaries: Hermes' own
+    prompt names the cell's home, which lives under runs_root."""
+    roots = {}
+    for key in (*PATH_KEYS, "eleven_key_file"):
+        value = paths.get(key)
+        if isinstance(value, Path):
+            roots.update({str(value): f"<{key}>", str(value.resolve()): f"<{key}>"})
+    roots.update({str(HOME): "~", str(HOME.resolve()): "~"})
+    return roots
+
+
+def label_canaries(text, canaries, roots=None):
+    """Published evidence names this machine's canaries (its repo paths) and roots by labels, longest first."""
+    labels = {value: f"machine-canary-{i}" for i, value in enumerate(canaries, 1) if value}
+    labels.update(roots or {})
+    for value in sorted(labels, key=len, reverse=True):
+        text = text.replace(value, labels[value])
     return text
 
 
@@ -726,11 +742,16 @@ def summarise(run_id, shas, item_ids, cells, arm_refs, voice="fish", stopped=Non
                 else "ElevenLabs, other Fish voices or models")
     return {"run_id": run_id, "claim_class": "local_smoke", "voice": voice, "voice_label": voice_label(voice),
             "stopped": stopped,
-            "proof_boundary": f"Real Hermes agent turns through an isolated v0.22.2 host with real {synth} synthesis; "
-                              "clips are for owner listening.",
+            "proof_boundary": f"Real Hermes agent turns through an isolated v0.22.2 host with real {synth} synthesis. "
+                              "This dir is unblinded (clips named by arm, the A/B key beside the pairs); listening "
+                              "happens on a blind page built from it.",
             "does_not_prove": f"Listener preference, {unproven}, eva's real profile (no eva files, persona or "
                               "LCM-X), GPT models, or any behaviour beyond these prompts on one run each. The leak "
-                              "check is one Fish ASR pass and reports only.",
+                              "check is one Fish ASR pass and reports only. It is not an E7 session: no catch "
+                              "trials; the arms are separate end-to-end turns (guidance on vs off, different text "
+                              "per arm), so neither E7 comparison a nor b; the chip comes from an unfrozen ref "
+                              f"({CHIP_REF}, resolved commit recorded)"
+                              + ("; ElevenLabs seeds are not locked." if voice == "ava" else "."),
             "shas": shas, "model": MODEL, "effort": EFFORT, "fish_model": FISH_MODEL, "suffix": SUFFIX,
             "items": item_ids, "arms": arms,
             "token_delta": {"tokens": delta_tokens, "system_chars": delta_chars,
@@ -746,7 +767,7 @@ def evidence_cell(cell):
     return {k: cell.get(k) for k in keep}
 
 
-def publish(run, evidence, manifest, pairs, key, pair_clips, secrets, canaries=()):
+def publish(run, evidence, manifest, pairs, key, pair_clips, secrets, canaries=(), roots=None):
     evidence.mkdir(parents=True, exist_ok=False)
     (evidence / "clips").mkdir()
     (evidence / "pairs").mkdir()
@@ -757,17 +778,18 @@ def publish(run, evidence, manifest, pairs, key, pair_clips, secrets, canaries=(
              "pairs-key.json": json.dumps({"run_id": manifest["run_id"], "key": key}, indent=2)}
     for name, text in texts.items():
         clean = scrub(text, secrets)
-        (evidence / name).write_text(label_canaries(clean, canaries), encoding="utf-8")
+        (evidence / name).write_text(label_canaries(clean, canaries, roots), encoding="utf-8")
         (run / name).write_text(clean, encoding="utf-8")
     for c in manifest["cells"]:
         stem = f"{c['item']}-{c['arm']}"
         for kind in ("probe", "upstream"):
             rows = c[kind]
             (evidence / "probe" / f"{stem}.{kind}.jsonl").write_text(label_canaries(
-                scrub("".join(json.dumps(r, sort_keys=True) + "\n" for r in rows), secrets), canaries), encoding="utf-8")
+                scrub("".join(json.dumps(r, sort_keys=True) + "\n" for r in rows), secrets), canaries, roots),
+                encoding="utf-8")
         if c.get("delivery"):
             (evidence / "probe" / f"{stem}.delivery.jsonl").write_text(label_canaries(
-                scrub("".join(json.dumps(r, sort_keys=True) + "\n" for r in c["delivery"]), secrets), canaries),
+                scrub("".join(json.dumps(r, sort_keys=True) + "\n" for r in c["delivery"]), secrets), canaries, roots),
                 encoding="utf-8")
         if c.get("clip"):
             shutil.copyfile(run / c["clip"], evidence / c["clip"])
@@ -775,7 +797,7 @@ def publish(run, evidence, manifest, pairs, key, pair_clips, secrets, canaries=(
         for label, clip in labels.items():
             shutil.copyfile(run / clip, evidence / "pairs" / f"{item_id}-{label}.mp3")
     leaked = [n for n in evidence.rglob("*") if n.is_file() and n.suffix in (".json", ".md", ".jsonl")
-              and any(s and s in n.read_text(errors="replace") for s in [*secrets, *canaries])]
+              and any(s and s in n.read_text(errors="replace") for s in [*secrets, *canaries, *(roots or {})])]
     if leaked:
         raise SystemExit(f"STOP: a secret or machine path reached the evidence dir: {leaked}")
 
@@ -832,7 +854,8 @@ def main(argv=None):
         secrets = [fish_key, eleven_key, keychain_token()]
     except RuntimeError:
         secrets = [fish_key, eleven_key]
-    publish(run, evidence, manifest, pairs, key, pair_clips, secrets, canaries=host.paths["canaries"])
+    publish(run, evidence, manifest, pairs, key, pair_clips, secrets, canaries=host.paths["canaries"],
+            roots=machine_roots(paths))
     failed = [(c["item"], c["arm"], [k for k, v in c["asserts"].items() if not v["pass"]])
               for c in manifest["cells"] if not isolation_pass(c)]
     turn_failed = [(c["item"], c["arm"]) for c in manifest["cells"] if not c["turn"]["pass"]]
