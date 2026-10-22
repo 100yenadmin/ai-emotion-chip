@@ -5,6 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 import importlib.util
 import json
 from pathlib import Path
+import subprocess
 import sys
 
 import pytest
@@ -67,15 +68,29 @@ def test_guarded_registrations():
     register_all(Minimal(), reader=lambda key, default=None: default)
 
 
-def test_root_entry(rig, monkeypatch):
-    import emotion_chip.hermes.registration as registration
-    seen = []
-    monkeypatch.setattr(registration, "register_all", seen.append)
-    spec = importlib.util.spec_from_file_location("plugin_entry", Path(__file__).parents[1] / "__init__.py")
-    entry = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(entry)
-    entry.register(rig[0])
-    assert seen == [rig[0]]
+def test_root_entry_loads_like_hermes(tmp_path):
+    """Load the plugin as Hermes does (hermes_plugins.<slug>, plugin dir not on sys.path) in a clean interpreter."""
+    root = Path(__file__).parents[1]
+    script = f"""
+import importlib.util, sys, types
+sys.modules["hermes_plugins"] = types.ModuleType("hermes_plugins"); sys.modules["hermes_plugins"].__path__ = []
+spec = importlib.util.spec_from_file_location("hermes_plugins.emotion_chip", {str(root / "__init__.py")!r},
+                                              submodule_search_locations=[{str(root)!r}])
+entry = importlib.util.module_from_spec(spec); entry.__path__ = [{str(root)!r}]
+sys.modules["hermes_plugins.emotion_chip"] = entry; spec.loader.exec_module(entry)
+calls = []
+class Ctx:
+    state = {{}}
+    def get_config(self, key, default=None): return default
+    def register_tts_provider(self, provider): calls.append(("provider", provider.name))
+    def register_hook(self, name, callback): calls.append(("hook", name))
+entry.register(Ctx())
+assert "emotion_chip" not in sys.modules, "top-level emotion_chip was imported"
+print(sorted(set(calls)))
+"""
+    p = subprocess.run([sys.executable, "-I", "-c", script], cwd=tmp_path, capture_output=True, text=True)
+    assert p.returncode == 0, p.stderr
+    assert "('provider', 'emotion-chip')" in p.stdout and "('hook', 'pre_llm_call')" in p.stdout
 
 
 def test_provider_fish_s2_and_drama(rig, runtime_data):
