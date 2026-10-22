@@ -217,7 +217,9 @@ def test_parser_and_plan(data):
     out = render(score, "fish_drama3", Options(allow_speakers=True), data)
     segment = out.plan.segments[0]
     assert segment.text == "Do not stop 12!"
-    assert segment.cues == tokens[:1] and segment.spans == tokens[1:2] and segment.events == tokens[2:3]
+    assert segment.cues == tokens[:1] and segment.spans == tokens[1:2] and segment.events == []
+    # The span's "!" ends its sentence, so the laugh opens the next one, as it would after plain text.
+    assert out.plan.segments[1].events == tokens[2:3]
     assert segment.group == "sadness" and segment.rung == "very"
 
 
@@ -518,6 +520,27 @@ def test_sentence_ends_before_a_closing_quote(quoted, data):
     score = parse(f"[breath] One. {quoted} [exhale] Three.", data)
     assert len(score.sentences) == 3
     assert apply_policy(score, data)[1] == []
+
+
+@pytest.mark.parametrize("text, count", [
+    ("[breath] One. [soft: Two.] [exhale] Three.", 3),
+    ('[soft: He said "go."] Then.', 2),
+    ("[soft: Ask Dr.] Smith.", 1),
+    ("[soft: Two.][exhale] Three.", 1),
+])
+def test_a_span_can_end_its_sentence(data, text, count):
+    score = parse(text, data)
+    assert len(score.sentences) == count
+    assert apply_policy(score, data)[1] == []
+
+
+@pytest.mark.parametrize("text, expected", [("[[laughing]] Hi.", "Hi."), ("[[register: happy, laughing]] Hi.", "[happy] Hi."),
+                                            ("[[register: Laughs]] [sad] Hi.", "[sad] Hi.")])
+def test_sounds_off_drops_a_sound_named_in_the_header(text, expected):
+    data = load_data()
+    assert render(text, "fish_s2", {"sounds": False}, data).text == expected
+    on = render(text, "fish_s2", data=data)
+    assert on.dropped == [] or all(d.reason != "sounds off" for d in on.dropped)
 
 
 def test_breaths_and_sounds_are_never_capped(data):
