@@ -44,6 +44,15 @@ def _events(sounds=None):
     return {**{e: e for e in sounds["events"]}, **sounds.get("aliases", {})}
 
 
+def _header_shaped(inner, events, data=None):
+    """Whether a double-bracket group reads as a register header: fields, empty, or only delivery words or sounds."""
+    if any(c in inner for c in ":;[") or not inner.strip():
+        return True
+    lexicon = data if data is not None else _default_data()
+    parts = [RUNG.sub("", p.strip()).lower() for p in inner.split(",")]
+    return all(p and (p in events or lexicon.lookup(p)) for p in parts)
+
+
 def _top_level(text):
     """Split text into top-level pieces: ("text", s) and balanced ("group", "[...]"); stray brackets become text."""
     pieces, start, i = [], 0, 0
@@ -148,7 +157,9 @@ def parse(text: str, data=None) -> Score:
     dropped = []
     body = text
     start = re.match(r"\s*\[\[([^\[\]]*)\]\]", body)
-    if start:
+    # A leading wiki link ("[[Project Plan]] is ready.") is text, parsed below like one anywhere else. Delivery words
+    # outside the lexicon ("[[conversational]]") still open the reply: only a capitalised name reads as a link.
+    if start and (start[1] == start[1].lower() or _header_shaped(start[1], events, data)):
         raw = start[1].strip()
         fields = {}
         for part in raw.split(";"):
@@ -205,12 +216,6 @@ def parse(text: str, data=None) -> Score:
                 return ident(j)
         return False
 
-    def register(inner):
-        """Whether a bare double-bracket group names only delivery words or sounds ("[[warm]]", "[[pause]]")."""
-        lexicon = data if data is not None else _default_data()
-        parts = [RUNG.sub("", p.strip()).lower() for p in inner.split(",")]
-        return all(p and (p in events or lexicon.lookup(p)) for p in parts)
-
     def guard(i):
         """The boundary a rewrite leads with, so its first cue is read as a cue, not as part of a word or code."""
         return GAP if lead(i) or in_code(i) else ""
@@ -227,7 +232,7 @@ def parse(text: str, data=None) -> Score:
                     append_text(body[i:close + 1])
                     kept, i = close, close + 1
                     continue
-                if any(c in inner for c in ":;[") or not inner.strip() or register(inner):
+                if _header_shaped(inner, events, data):
                     dropped.append(Dropped("header", "misplaced"))
                     append_text(GAP)
                 elif in_code(i):

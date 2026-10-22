@@ -715,6 +715,14 @@ def test_cli_can_render_speakers(monkeypatch, capsys):
 def test_a_wiki_link_speaks_its_words_and_a_misplaced_header_is_dropped(data):
     assert render("See [[Project Plan]] for details.", "fish_s2", data=data).text == "See Project Plan for details."
     assert render("Hello [[register: warm]] there.", "fish_s2", data=data).text == "Hello there."
+    # A leading link is a link too; only a header-shaped group at the start is the header.
+    for dialect in ("fish_s2", "tagless", "prose"):
+        assert render("[[Project Plan]] is ready.", dialect, data=data).text == "Project Plan is ready."
+    assert parse("[[Project Plan]] is ready.", data).header is None
+    assert parse("[[sad]] Fine.", data).header.raw == "sad"
+    assert parse("[[Sad]] Fine.", data).header.raw == "Sad"
+    assert parse("[[conversational, a little tired]] Fine.", data).header.raw == "conversational, a little tired"
+    assert parse("[[register: sad; pace: slow]] Fine.", data).header.raw == "register: sad; pace: slow"
 
 
 @pytest.mark.parametrize("text, tagless", [
@@ -733,6 +741,8 @@ def test_a_rewrite_after_a_word_or_call_stays_score_syntax(text, tagless, data):
      "See Mercury (https://en.wikipedia.org/wiki/Mercury_(planet)) now."),
     ("Take v[start..end] and wait.. what.", "eleven_v4", "Take v[start..end] and wait… what."),
     ("Use ../docs/Guide.md here.", "eleven_v4", "Use ../docs/Guide.md here."),
+    ("Take arr[1..] or 0..=5 or [..] next.", "eleven_v4", "Take arr[1..] or 0..=5 or [..] next."),
+    ("Well.. okay..", "eleven_v4", "Well… okay…"),
     ("Okay. [[sad]] Here.", "fish_s2", "Okay. Here."),
     ("Wait [[pause]] go.", "fish_s2", "Wait go."),
     ("Café[[Menu]]is open.", "tagless", "Café Menu is open."),
