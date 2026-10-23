@@ -441,3 +441,39 @@ scope-A3 reply has been scored. Nothing above the Amendments heading changes.
   in `evidence/`. None of its replies are scored.
 - **This is a harness change after the pilot**, so A4's rule applies. The next run starts from a new route record and
   owner-approved A4b, then a clean reference and pilot, all recorded.
+
+### A8 (2026-10-23): what the model can see, Hermes' recovery turns, and the stop count
+
+Reason: before the next scope-A3 run, a read-only audit of the pinned Hermes source and the harness found three
+problems. No scope-A3 reply has been scored. Nothing above the Amendments heading changes. A4, A5 and A7 stay in force
+except as follows.
+
+- **Labels the model could see.** Hermes' system prompt shows every cell its own home, user and scratch paths. The
+  cell directory named the phase, model, set, arm and item (for example `…/pilot/<model>/g1/OFF/…`), and the run
+  directory's name could name the plugin. The `bench-harness` and `bench-native-*` section ids also appear as headings.
+  Normalization hid this from the equality checks, but not from the model, which could read its own arm label.
+  - Each cell's directory is now a 16-hex-digit hash of its identity, and the mapping is kept outside the cells.
+  - The run directory may not contain `emotion`, `chip`, `bench`, `eval`, `pilot`, `heldout`, `voice` or `native`,
+    and the harness refuses one that does.
+  - The section ids are now `channel`, `voice-guide-1` and `voice-guide-2`. Hermes orders sections by id, so the
+    channel instruction comes first in every arm. Texts and A1's hashes are unchanged.
+- **Hermes features that add turns or rewrite results.** These are off in every home:
+  - the intent-ack continuation (on by default for the `openai-codex` route only);
+  - the stall guards;
+  - the tool-loop warnings and hard stops.
+
+  Each one adds a synthetic turn or rewrites a tool result when the model's reply matches a pattern. Check 3 rejects
+  such a turn. On the `gpt-6.1-sol` route the audit estimated that the first fires in a few percent of cells or more;
+  that is not measured, because that route has not run a cell yet. They are settings identical across arms,
+  and with them off nothing adds per-turn text, which is what A4 already asked for. Hermes also reads `SOUL.md` under a
+  5-second deadline, and a miss followed by a hit adds a second copy to `S`, so that deadline is now 600 seconds.
+- **The stop count.** A4 stops a model after a second check 1–3 failure. Some Hermes recovery paths cannot be turned
+  off: retries after an empty reply, the `openai-codex` continuation after an incomplete response, and Hermes' reply to
+  a call of a tool that is not offered. Each is rare, arm-independent and triggered by the model. Over 684 cells per
+  model, two such cells are likely by chance. **A model now stops after more than 10 cells fail check 1, 2 or 3**,
+  counted across its reference, pilot and full phases. An invalid cell is still rerun once and never admitted, so this
+  bounds wasted runs and does not relax validity. A broken harness, which fails every cell, still stops within 11
+  cells.
+- **Pins.** The relay source is a pinned copy, recorded by digest, so a change to its origin cannot reach a run.
+  These are harness changes after a pilot, so A4's rule applies: a new route record, owner-approved A4b, clean
+  reference and pilot.

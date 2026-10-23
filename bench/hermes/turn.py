@@ -23,6 +23,8 @@ from probe import canonical, capture_row, component, expected_codex, expected_re
 TOOLSETS = ["skills"]
 LISTENING_TOOLSETS = ["tts", "skills"]
 MAX_ITERATIONS = 6
+# The text harness's channel section id (text.HARNESS_ID); this file runs inside the cell and cannot import it.
+HARNESS_ID = "channel"
 
 
 def _append(path, row):
@@ -185,7 +187,7 @@ def golden_delta(agent, prompt, args):
     bodies = {s.id: s.content for s in sections}
     if bodies != args["sections"]:
         raise RuntimeError("golden section bodies differ from published inputs")
-    baseline = [s for s in sections if s.id == "bench-harness"]
+    baseline = [s for s in sections if s.id == HARNESS_ID]
     residue = prompt.replace(format_system_prompt_sections(sections), format_system_prompt_sections(baseline), 1)
     skills = _skills_prompt(agent)
     if args["arm"] == "ON":
