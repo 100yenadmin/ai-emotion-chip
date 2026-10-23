@@ -11,6 +11,8 @@ tone, emphasis, pacing, softness, whispers, breaths, sighs and laughter, and the
 > are implemented. See [EVAL-PREREG.md](EVAL-PREREG.md) for how we will judge whether it
 > works.
 
+Where this is going, and why: [VISION.md](VISION.md).
+
 ## The idea in one paragraph
 
 The agent writes its own delivery cues inline, in a small bracket score such as `[slightly frustrated]`,
