@@ -1680,3 +1680,26 @@ def test_fix3_load_paths_expands_canaries_for_real_path_scan(tmp_path, monkeypat
     hits = probe.canaries("Source checkout: " + str(Path("~/src").expanduser()))
     assert hits[str(Path("~/src").expanduser())] is True
     assert hits["literal-marker"] is False
+
+
+def test_build_refuses_a_second_bundle_for_one_session(generated, tmp_path, monkeypatch):
+    # A second bundle would let an operator run two listening sessions and score the preferred one.
+    _, paths, original = generated
+    monkeypatch.setattr(e7, "load_paths", lambda: paths)
+    folder = tmp_path / "session"
+    shutil.copytree(original, folder)
+    e7.build(folder, tmp_path / "bundle-1", tmp_path / "key-1.json")
+    with pytest.raises(ValueError, match="already has a bundle"):
+        e7.build(folder, tmp_path / "bundle-2", tmp_path / "key-2.json")
+
+
+def test_generate_refuses_before_any_attempt_without_ffmpeg(generated, tmp_path, monkeypatch):
+    _, paths, original = generated
+    folder = tmp_path / "session"
+    shutil.copytree(original, folder)
+    before = (folder / "manifest.json").read_bytes()
+    monkeypatch.setattr(e7, "frozen_tag", lambda *a: "fixture-commit")
+    monkeypatch.setattr(e7.shutil, "which", lambda name: None if name == "ffmpeg" else "/bin/" + name)
+    with pytest.raises(RuntimeError, match="ffmpeg is required"):
+        e7.generate("fixture-tag", folder, dry_run=True, paths=paths)
+    assert (folder / "manifest.json").read_bytes() == before

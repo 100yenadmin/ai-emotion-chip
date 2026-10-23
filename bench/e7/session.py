@@ -540,6 +540,8 @@ def generate(tag, session, *, dry_run=False, paths=None, retry=None, reason=None
     if manifest.get("plugin_tree") and manifest["plugin_tree"] != plugin_tree:
         raise ValueError("archived plugin tree changed")
     manifest["plugin_tree"] = plugin_tree
+    if shutil.which("ffmpeg") is None:  # a missing tool must not be recorded as failed cells
+        raise RuntimeError("ffmpeg is required before any E7 cell is attempted")
     if not dry_run:
         check_credentials(session, paths)
     # A killed process cannot finalize its own ledger entry. Recover it before retry admission.
@@ -763,6 +765,9 @@ def build(session, bundle, key_path, *, rerun_of=None, now=None):
         raise ValueError("key already exists")
     if bundle.exists() and any(bundle.iterdir()):
         raise ValueError("bundle is not empty")
+    # One blind bundle per session: a second would let an operator choose which listening session to score.
+    if (session / "manifest.json").exists() and read(session / "manifest.json").get("key_sha256"):
+        raise ValueError("this session already has a bundle")
     source_key = None
     if rerun_of:
         parent = Path(rerun_of).resolve()
