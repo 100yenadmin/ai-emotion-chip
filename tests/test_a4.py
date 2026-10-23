@@ -171,6 +171,10 @@ def test_text_configs_and_published_sections(tmp_path):
             assert cfg["auth"]["adopt_external_logins"] is False and not cfg["fallback_providers"]
             assert cfg["agent"]["reasoning_effort"] == "medium" and "openai_runtime" not in cfg["model"]
             assert cfg["agent"]["environment_probe"] is False
+            assert cfg["agent"]["intent_ack_continuation"] is False and cfg["agent"]["stall_guards"] is False
+            assert not any(cfg["tool_loop_guardrails"][k] for k in
+                           ("warnings_enabled", "hard_stop_enabled", "non_interactive_hard_stop_enabled"))
+            assert cfg["context_file_read_timeout"] == 600
             assert "fish-audio" not in cfg["plugins"]["enabled"]
             assert "emotion-chip" in text.sections(model, "ON")
             if model == items.MODELS[0]:
@@ -178,8 +182,11 @@ def test_text_configs_and_published_sections(tmp_path):
             else:
                 assert cfg["model"] == {"provider": "openai-codex", "default": model}
     native = text.sections(items.MODELS[0], "NATIVE")
-    assert native["bench-harness"] == text.HARNESS
-    assert native["bench-native-1"] + "\n\n" + native["bench-native-2"] == (items.BENCH / "native_guide.md").read_text().strip()
+    assert list(native) == [text.HARNESS_ID, *text.NATIVE_IDS] == sorted(native)
+    assert sorted(text.sections(items.MODELS[0], "ON"))[0] == text.HARNESS_ID == driver().HARNESS_ID
+    assert native[text.HARNESS_ID] == text.HARNESS
+    assert native[text.NATIVE_IDS[0]] + "\n\n" + native[text.NATIVE_IDS[1]] == (items.BENCH / "native_guide.md").read_text().strip()
+    assert not any(word in key for key in native for word in text.LABEL_WORDS[:4])
 
 
 def test_seeded_order_matches_a4():
@@ -235,8 +242,16 @@ def test_critical_repeat_stops_model(check):
     def execute(row, number):
         seen.append(number)
         return attempt(bad=(check,))
-    result = text.run_phase(phase_rows(), execute, lambda v: None)
-    assert seen == [1, 2] and result["stopped"] and result["critical_failures"] == 2
+    result = text.run_phase(phase_rows(text.STOP_AFTER), execute, lambda v: None)
+    assert seen == [1, 2] * (text.STOP_AFTER // 2) + [1]
+    assert result["stopped"] and result["critical_failures"] == text.STOP_AFTER + 1
+
+
+def test_critical_failures_up_to_the_budget_do_not_stop():
+    result = text.run_phase(phase_rows(text.STOP_AFTER), lambda row, number: attempt(bad=(2,) if number == 1 else ()),
+                            lambda v: None)
+    assert not result["stopped"] and result["critical_failures"] == text.STOP_AFTER
+    assert all(v["admitted"] for v in result["attempts"] if v["attempt"] == 2)
 
 
 @pytest.mark.parametrize("check", [1, 2, 3, 5])
@@ -658,13 +673,20 @@ def read_runtime(monkeypatch):
         assert category is None and task_id == "synthetic"
         return fixture["skills_list"]
     skills.skill_view, skills.skills_list = skill_view, skills_list
-    tools.skills_tool = skills
     executor._budget_for_agent = lambda agent: "budget"
     executor.get_active_env = lambda task: "cell-env"
     storage.maybe_persist_tool_result = lambda result, name, call, **kwargs: result
     storage.enforce_turn_budget = lambda rows, **kwargs: rows
     dispatch.make_tool_result_message = lambda name, result, call: {"content": result}
-    for module in (skills, executor, storage, dispatch, tools):
+    # Hermes' dedup matches name forms itself; the cells call the real module. This fake keys on the exact name.
+    dedup, served = ModuleType("tools.skills_tool_dedup"), {}
+    repeat = json.loads((Path(__file__).parent / "fixtures/a8-skill-view-repeat.json").read_text())["stub"]
+    dedup._record_skill_view = lambda task, name, path, payload: served.setdefault(task, set()).add((name, path))
+    dedup._check_skill_view_dedup = lambda task, name, path: repeat if (name, path) in served.get(task, ()) else None
+    dedup.reset_skill_view_dedup = lambda task=None: served.clear() if task is None else served.pop(task, None)
+    dedup.served = served
+    tools.skills_tool, tools.skills_tool_dedup = skills, dedup
+    for module in (skills, executor, storage, dispatch, tools, dedup):
         monkeypatch.setitem(sys.modules, module.__name__, module)
     return fixture
 
@@ -789,7 +811,9 @@ def test_pilot_gate_and_cross_phase_failure_budget(tmp_path, monkeypatch, scenar
     pilot_first = text.cell_order(True)[0]
     def execute(phase, row, number):
         first = all(row[k] == pilot_first[k] for k in ("set", "item", "condition", "run"))
-        bad = (1,) if scenario == "critical" and number == 1 and (phase == "reference" or (phase == "pilot" and first)) else ()
+        early = text.cell_order(True).index(next(r for r in text.cell_order(True) if all(
+            row[k] == r[k] for k in ("set", "item", "condition", "run")))) < text.STOP_AFTER if phase == "pilot" else False
+        bad = (1,) if scenario == "critical" and number == 1 and (phase == "reference" or early) else ()
         return attempt(200 if scenario == "outlier" and phase == "pilot" and first else 100, bad)
     monkeypatch.setattr(harness, "execute", execute)
     monkeypatch.setattr(text, "publish_attempt", lambda *args: None)
@@ -798,7 +822,7 @@ def test_pilot_gate_and_cross_phase_failure_budget(tmp_path, monkeypatch, scenar
         assert any(v["outlier"] for v in result["pilot"]["attempts"])
         assert len(result["full"]["attempts"]) == 684
     else:
-        assert result["pilot"]["stopped"] and result["pilot"]["critical_failures"] == 2
+        assert result["pilot"]["stopped"] and result["pilot"]["critical_failures"] == text.STOP_AFTER + 1
         assert "full" not in result
 
 
@@ -1445,3 +1469,64 @@ def test_route_record_keeps_first_api_call(tmp_path, monkeypatch):
         Transport().preflight_kwargs({"model": agent.model, "instructions": "S", "marker": marker,
                                       "input": [{"role": "user", "content": "hello"}]})
     assert json.loads(relay.read_text())["marker"] == "first-a"
+
+
+def test_cell_paths_name_nothing_tested(tmp_path):
+    harness = text.Harness(tmp_path, tmp_path / "out", {}, {}, None, None)
+    row = {"model": items.MODELS[0], "set": "g1", "condition": "NATIVE", "run": 2, "item": {"id": "g1-h03"}}
+    cells = [harness.cell(phase, row, number) for phase in ("reference", "pilot", "full") for number in (1, 2)]
+    assert len(set(cells)) == 6 and all(c.parent == tmp_path / "cells" for c in cells)
+    assert all(re.fullmatch(r"[0-9a-f]{16}", c.name) for c in cells)
+    assert harness.cell("full", row, 1) == cells[4]
+
+
+def test_run_directory_must_not_name_what_is_tested(tmp_path):
+    # A parent directory counts too: every cell's prompt shows the full path.
+    for name in ("20261023-emotion-chip", "bench-run", "Pilot", "bench-scratch/r1"):
+        harness = text.Harness(tmp_path / name, tmp_path / "out", {"canaries": ["x"]}, {}, None, None)
+        with pytest.raises(ValueError, match="must not name"):
+            harness.prepare()
+        assert not (tmp_path / name).exists()
+
+
+def test_repeat_skill_view_expects_hermes_stub(monkeypatch):
+    turn, _, _, agent = capture_runtime(monkeypatch)
+    fixture = read_runtime(monkeypatch)
+    skills, dedup = sys.modules["tools.skills_tool"], sys.modules["tools.skills_tool_dedup"]
+    recorded = json.loads((Path(__file__).parent / "fixtures/a8-skill-view-repeat.json").read_text())
+    skills.skill_view = lambda name, file_path=None, task_id=None, preprocess=True: fixture["skill_view"]
+    def view(call):
+        return {"role": "assistant", "tool_calls": [{"id": call, "function": {
+            "name": "skill_view", "arguments": json.dumps({"name": recorded["name"]})}}]}
+    def history(second):
+        return [{"role": "user", "content": "hello"}, view("a"),
+                {"role": "tool", "tool_call_id": "a", "content": fixture["skill_view"]}, view("b"),
+                {"role": "tool", "tool_call_id": "b", "content": second}]
+    # The cell's own tracker already holds the first view; the reference must not read or clear it.
+    dedup.served[agent._current_task_id] = {(recorded["name"], None)}
+    assert turn.tool_results_match(history(recorded["stub"]), agent)
+    assert turn.tool_results_match(history(fixture["skill_view"]), agent) is False
+    assert dedup.served == {agent._current_task_id: {(recorded["name"], None)}}
+    assert turn.tool_reference(view("c")["tool_calls"][0]["function"], "c", agent)["content"] == fixture["skill_view"]
+
+
+@pytest.mark.parametrize("second", ["same", "other-file"])
+def test_views_in_one_batch_have_one_result_or_fail(monkeypatch, second):
+    turn, _, _, agent = capture_runtime(monkeypatch)
+    fixture = read_runtime(monkeypatch)
+    skills, dedup = sys.modules["tools.skills_tool"], sys.modules["tools.skills_tool_dedup"]
+    recorded = json.loads((Path(__file__).parent / "fixtures/a8-skill-view-repeat.json").read_text())
+    skills.skill_view = lambda name, file_path=None, task_id=None, preprocess=True: fixture["skill_view"]
+    arguments = [{"name": recorded["name"]}, {"name": recorded["name"]} if second == "same"
+                 else {"name": recorded["name"], "file_path": "references/notes.md"}]
+    batch = {"role": "assistant", "tool_calls": [{"id": str(i), "function": {
+        "name": "skill_view", "arguments": json.dumps(a)}} for i, a in enumerate(arguments)]}
+    # Hermes runs both views at once, so a repeat of the same file may get the full text or the stub.
+    for contents in ([fixture["skill_view"]] * 2, [fixture["skill_view"], recorded["stub"]]):
+        messages = [{"role": "user", "content": "hello"}, batch] + [
+            {"role": "tool", "tool_call_id": str(i), "content": c} for i, c in enumerate(contents)]
+        later = messages + [{"role": "assistant", "tool_calls": []}]
+        expected = second == "other-file" and contents[1] == fixture["skill_view"]
+        assert turn.tool_results_match(messages, agent) is expected
+        assert turn.tool_results_match(later, agent) is expected
+    assert dedup.served == {}

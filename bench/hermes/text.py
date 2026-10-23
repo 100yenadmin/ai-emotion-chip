@@ -21,6 +21,12 @@ from .. import gen
 from ..items import BENCH, CONDITIONS, MODELS, RUNS, SETS, atomic_json, heldout_hashes, load_items, read_json, run_directory
 
 SEED = 20261023
+# A8: a model stops after more than this many of its attempts fail check 1, 2 or 3 (A4 said more than one).
+STOP_AFTER = 10
+# A8: every arm's prompt shows the cell's own paths, so the run directory must not name what is tested.
+LABEL_WORDS = ("emotion", "chip", "bench", "eval", "pilot", "heldout", "voice", "native")
+# A8: neutral section ids; Hermes orders sections by id, so the channel instruction stays first in every arm.
+HARNESS_ID, NATIVE_IDS = "channel", ("voice-guide-1", "voice-guide-2")
 SKILL_TOOLS = frozenset({"skill_manage", "skill_view", "skills_list"})
 HARNESS_ERRORS = frozenset({
     "credential lifetime is too short", "pinned provider copy differs",
@@ -54,12 +60,12 @@ def sections(model, arm):
     from emotion_chip.data import load_data
     from emotion_chip.guide import build_prompt_section
     from emotion_chip.hermes.registration import model_key
-    result = {"bench-harness": HARNESS}
+    result = {HARNESS_ID: HARNESS}
     if arm == "ON":
         result["emotion-chip"] = build_prompt_section("eleven_v4", model_key(model), load_data()).strip()
     if arm == "NATIVE":
         first, second = (BENCH / "native_guide.md").read_text().split("### Notes by voice model", 1)
-        result.update({"bench-native-1": first.strip(), "bench-native-2": ("### Notes by voice model" + second).strip()})
+        result.update({NATIVE_IDS[0]: first.strip(), NATIVE_IDS[1]: ("### Notes by voice model" + second).strip()})
     return result
 
 
@@ -72,6 +78,12 @@ def hermes_config(model, arm, claude_dir):
     cfg["fallback_providers"] = []
     # A7: Hermes adds its toolchain line only if a 10 s background probe finishes first, so it varied between cells.
     cfg["agent"]["environment_probe"] = False
+    # A8: Hermes' recovery nudges and tool-loop notices add turns or rewrite results that check 3 cannot model.
+    cfg["agent"].update(intent_ack_continuation=False, stall_guards=False)
+    cfg["tool_loop_guardrails"] = {"warnings_enabled": False, "hard_stop_enabled": False,
+                                   "non_interactive_hard_stop_enabled": False}
+    # A8: SOUL.md is read under a 5 s deadline; a miss followed by a hit adds a second copy of it to S.
+    cfg["context_file_read_timeout"] = 600
     cfg["tts"] = {"provider": "emotion-chip", "model": "eleven_v4"}
     entries = {"emotion-chip": {"settings": {"backend": "eleven", "eleven_model": "eleven_v4",
                "signals": "off", "guide_mode": "generate" if arm == "ON" else "defer"}}}
@@ -219,7 +231,7 @@ def run_phase(rows, execute, record, failure_count=0):
         if any(not checks[k] for k in (1, 2, 3)):
             failures += 1
         attempts.append(value)
-        if failures > 1:
+        if failures > STOP_AFTER:
             value["stopped"] = True
         return value
     try:
@@ -291,6 +303,9 @@ class Harness:
     def prepare(self):
         if not self.paths.get("canaries"):
             raise ValueError("text harness requires machine repository canaries")
+        if any(word in str(self.run).lower() for word in LABEL_WORDS):
+            # The whole path, parents included, is in every cell's prompt, so the check covers all of it.
+            raise ValueError("the run directory's path must not name the plugin, the bench or a phase (A8)")
         for sub in ("cwd", "src", "tools", "golden", "cells"):
             (self.run / sub).mkdir(parents=True)
         (self.run / "sandbox.sb").write_text(host.SANDBOX)
@@ -368,11 +383,16 @@ class Harness:
             raise RuntimeError("golden arm deltas differ from published inputs")
 
     def cell(self, phase, row, attempt):
-        return self.run / "cells" / phase / row["model"] / row["set"] / row["condition"] / row["item"]["id"] / f'{row["run"]}-{attempt}'
+        # A8: the model sees this path, so its name carries no phase, model, set, arm or item.
+        key = [phase, row["model"], row["set"], row["condition"], row["item"]["id"], row["run"], attempt]
+        return self.run / "cells" / hashlib.sha256(json.dumps(key).encode()).hexdigest()[:16]
 
     def execute(self, phase, row, attempt, route_record=False):
         model, arm = row["model"], row["condition"]
         item = self.cell(phase, row, attempt)
+        with (self.run / "cells.jsonl").open("a") as index:
+            index.write(json.dumps({"cell": item.name, "phase": phase, "model": model, "set": row["set"], "condition": arm,
+                                    "item": row["item"]["id"], "run": row["run"], "attempt": attempt}) + "\n")
         self.home(item, model, arm, self.run / "golden" / model / arm)
         extra = {"route_record_path": str(self.run / f"{model}-{arm}-request.private.json")} if route_record else {}
         result = self.call(item, model, arm, prompt=row["item"]["user_message"], **extra)
