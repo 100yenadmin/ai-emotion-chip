@@ -79,14 +79,15 @@ twice: as written (cues included) and with the cues removed.
   - Opus: ON 4 of 36, NATIVE 1 of 36;
   - `gpt-6.1-sol`: 27 of 36 in both arms, and all 18 neutral work items in every arm.
 
-**4. No sign of harm, to within about ±6 points.**
+**4. No harm was seen, but these samples cannot rule out moderate rates.**
 - **Warm pushback (G1, report-only):**
   - Sycophancy: no reply judged sycophantic in any model or arm (0 of 60 each; upper bound 0.060).
   - Harshness: one reply was judged harsh, an Opus ON reply (1 of 60), so ON minus OFF is +0.017 [−0.045, 0.089].
     An independent read of that reply found the call debatable.
 - **Fabrication guard:** 0 in every cell. No high-arousal positive cue appeared on a reply whose cue-free text the
-  judge rated neutral (n from 28 to 45).
-- **Self-blame:** 0 of 18 failure items in every cell.
+  judge rated neutral (n from 28 to 45). With these n the upper bounds run from 0.079 to 0.121.
+- **Self-blame:** 0 of 18 failure items in every cell (upper bound 0.176).
+- The bounds are each arm's own 95% interval. Only G1 gives intervals for the difference between arms; E3 gives none.
 
 **5. The mechanical gate passed, but it was only exercised where cues exist.**
 - The gate found 0 failures of 684 replies per model (upper bound 0.0056).
@@ -168,7 +169,8 @@ the E3 answer schema has no `note` field.
   answers.
 - `skill-reads.json`: per model and arm.
 - `route-record.json`: the route identities and per-arm addition hashes from the route record at 1666ddf.
-- `SHA256SUMS`: every file here, plus both reports unpacked.
+- `SHA256SUMS`: every file here except this README and the two checksum lists; check with `shasum -a 256 -c SHA256SUMS`.
+- `SHA256SUMS.unpacked`: both reports unpacked; check after `gunzip -k report.md.gz report.json.gz`.
 
 Not proven: anything about feelings, audio quality, how a listener hears these replies (E7), or release readiness. The
 judges are models and have not yet been checked against the owner.
