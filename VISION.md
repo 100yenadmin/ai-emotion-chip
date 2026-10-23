@@ -57,7 +57,10 @@ its own, grounded in what happened, and audibly realised, without a persona laid
 
 **Learned from the first listening pilot.** One listener, one ElevenLabs voice, a third of 24 pairs rated so far.
 Each pair was the same prompt answered with and without the chip.
-- The differences were small. A capable model already writes ElevenLabs tags on its own.
+- The chip changed what the agent wrote. With it, 16 of 20 replies carried delivery cues; without it, 2 of 20 did.
+  The voice performed most of them: speech-to-text heard a laugh, sigh or gasp at 20 of the 24 event cues, and no tag
+  word was ever spoken aloud.
+- The listener still heard only small differences.
 - On both catch trials the listener rated, where the two sides were the same audio, they still picked one side as
   slightly better. So small preferences are within noise.
 - The calls that gave a clear reason went to the chip ("sounds like a person", "100% human quality"). One plain
@@ -65,8 +68,9 @@ Each pair was the same prompt answered with and without the chip.
 - The most audible flaw was register changes with no transition, intense to sweet and back again. The guide now asks
   for a beat at each change.
 
-So rendering alone is not the value. Realism in pacing and transitions, grounding in facts, continuity across turns,
-and hearing the other person are where the product has to earn its place.
+So getting the agent to use its voice is not the hard part, and more expression is not the same as better. Realism in
+pacing and transitions, grounding in facts, continuity across turns, and hearing the other person are where the
+product has to earn its place.
 
 ## Where we're going
 
