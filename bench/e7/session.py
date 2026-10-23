@@ -70,9 +70,11 @@ def write(path, value, *, exclusive=False):
 
 
 def credential_failure(proof):
-    texts = [proof.get("error"), proof.get("final_response")]
+    texts = [proof.get("error")]
     texts.extend(row.get("error") for row in proof.get("tts_results") or [])
-    return bool(proof.get("credential_failure") or any(CREDENTIAL_FAILURE.search(str(t or "")) for t in texts)
+    return bool(proof.get("credential_failure")
+                or run.CREDENTIAL_FAILURE.search(str(proof.get("final_response") or ""))
+                or any(CREDENTIAL_FAILURE.search(str(t or "")) for t in texts)
                 or any(credential_failure(turn) for turn in proof.get("turns") or []))
 
 
@@ -130,7 +132,9 @@ def load_paths():
     if any(not raw.get(k) for k in needed):
         raise ValueError("incomplete E7 paths file")
     literals = {"host_label", "ava_voice_id", "canaries"}
-    return {k: v if k in literals else Path(v).expanduser() for k, v in raw.items() if k in needed}
+    paths = {k: v if k in literals else Path(v).expanduser() for k, v in raw.items() if k in needed}
+    paths["canaries"] = [str(Path(c).expanduser()) if str(c).startswith("~") else str(c) for c in raw["canaries"]]
+    return paths
 
 
 def input_hashes(folder):
@@ -545,8 +549,6 @@ def generate(tag, session, *, dry_run=False, paths=None, retry=None, reason=None
                 attempt.update(status="error", reason="InterruptedError: process ended before recording a result", clips=[])
     manifest["attempt_counts"] = attempt_counts(manifest)
     write(manifest_path, manifest)
-    if not retry and any(a["status"] == "credential" for attempts in manifest["cells"].values() for a in attempts):
-        raise RuntimeError("generation stopped after credential failure")
     if retry and (not reason or not reason.strip()):
         raise ValueError("--retry requires --reason")
     if retry:
@@ -556,20 +558,23 @@ def generate(tag, session, *, dry_run=False, paths=None, retry=None, reason=None
             raise ValueError("retry requires a recorded failure without a usable clip")
         if any(a[-1]["status"] == "credential" for a in eligible):
             raise ValueError("credential failures cannot be retried")
-        used = max(len(a) - 1 for a in prior)
+        used = max(sum("retry_reason" in attempt for attempt in a) for a in prior)
         if used >= 2:
             raise ValueError("at most 2 retries per item")
     for item, arm, messages in jobs(reserve):
         key = item + ":" + arm
         attempts = manifest["cells"].setdefault(key, [])
+        after_credential = not retry and bool(attempts) and attempts[-1]["status"] == "credential"
         if attempts:
-            if item != retry or any(a["status"] == "completed" for a in attempts):
+            if (item != retry and not after_credential) or any(a["status"] == "completed" for a in attempts):
                 continue
         elif retry:
             continue
         attempt = {"status": "started", "clips": []}
         if retry:
             attempt["retry_reason"] = reason
+        elif after_credential:
+            attempt["after_credential"] = True
         attempts.append(attempt)
         try:
             write(manifest_path, manifest)  # first render, including interrupted attempts, is retained

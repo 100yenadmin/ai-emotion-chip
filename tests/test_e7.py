@@ -1242,9 +1242,11 @@ assert.ok(document.querySelectorAll('button,input,textarea,select,audio').every(
     ({"completed": False, "error": "overloaded"}, False),
     ({"completed": True, "failed": True}, False),
     ({"completed": True, "final_response": "HTTP 401"}, True),
+    *[({"completed": True, "final_response": f"Let me explain {word}."}, False)
+      for word in ("401", "unauthorized", "unauthorised", "missing API key", "quota_exceeded")],
     ({"completed": True, "messages": [{"role": "tool", "name": "text_to_speech", "content": '{"error":"HTTP 401"}'}]}, True),
 ])
-def test_fix1_child_preserves_turn_and_credential_failure_proof(tmp_path, monkeypatch, result, credential):
+def test_fix3_child_preserves_turn_and_credential_failure_proof(tmp_path, monkeypatch, result, credential):
     monkeypatch.setattr(run, "key_value", lambda *a: "offline-fixture")
     monkeypatch.setitem(sys.modules, "hermes_cli", SimpleNamespace())
     monkeypatch.setitem(sys.modules, "hermes_cli.oneshot", SimpleNamespace(_close_agent=lambda *a: None))
@@ -1256,7 +1258,7 @@ def test_fix1_child_preserves_turn_and_credential_failure_proof(tmp_path, monkey
     proof = e7.child(args, driver)
     assert proof["credential_failure"] is credential
     if not credential:
-        assert proof["completed"] is False
+        assert proof["completed"] is bool(result.get("completed") and not result.get("failed") and not result.get("error"))
 
 
 def test_fix1_cli_forwards_reason_based_retry(monkeypatch, capsys):
@@ -1550,13 +1552,131 @@ def test_fix2_real_cell_filters_missing_and_empty_clip_files(real_case, defect, 
         assert result["clips"] == []
 
 
-def test_fix2_generation_cannot_resume_after_credential_failure(ledger, monkeypatch):
+@pytest.mark.parametrize("reply", ["401", "unauthorized", "unauthorised", "missing API key", "quota_exceeded"])
+@pytest.mark.parametrize("nested", [False, True])
+def test_fix3_completed_reply_uses_only_runner_credential_pattern(real_case, reply, nested):
+    _, invoke, _, _ = real_case
+    turn_proof = {"completed": True, "final_response": f"The story mentions {reply}.",
+                  "sent_to_voice": [{"clip": "good.mp3"}]}
+    proof = {"completed": True, "turns": [turn_proof]} if nested else turn_proof
+    assert invoke(proof)["status"] == "completed"
+
+
+def test_fix3_plain_generate_resumes_only_credential_cells_after_preflight(ledger, monkeypatch):
+    folder, _ = ledger
+    paths = fixture_paths(folder.parent / "recovery-source")
+    monkeypatch.setattr(run, "prepare", lambda session, *a, **k: (
+        (session / "src/emotion-chip").mkdir(parents=True) or {}))
+    cells = [("b01", "chip"), ("b01", "eva"), ("b02", "chip"), ("b03", "eva")]
+    monkeypatch.setattr(e7, "jobs", lambda reserve: iter((item, arm, ["fixture"]) for item, arm in cells))
+    events, seen = [], []
+    available = [True]
+    def preflight(*a):
+        events.append("preflight")
+        if not available[0]:
+            raise RuntimeError("credential preflight failed")
+    monkeypatch.setattr(e7, "check_credentials", preflight)
+    def cell(session, item, arm, *a):
+        key = item + ":" + arm
+        events.append(key)
+        first = key not in seen
+        seen.append(key)
+        status = "credential" if arm == "eva" and first else "unvoiced" if item == "b02" else "completed"
+        clips = []
+        if status == "completed":
+            clip = session / f"{item}-{arm}.mp3"
+            clip.write_bytes(b"offline fixture audio")
+            clips.append(clip.name)
+        return {"status": status, "clips": clips}
+    monkeypatch.setattr(e7, "real_cell", cell)
+    def generate(**kwargs):
+        return e7.generate("fixture-tag", folder, paths=paths, **kwargs)
+    with pytest.raises(RuntimeError, match="credential"):
+        generate()
+    assert events == ["preflight", "b01:chip", "b01:eva"]
+    original = e7.read(folder / "manifest.json")
+    available[0] = False
+    events.clear()
+    with pytest.raises(RuntimeError, match="preflight"):
+        generate()
+    assert events == ["preflight"]
+    assert e7.read(folder / "manifest.json") == original
+    available[0] = True
+    events.clear()
+    with pytest.raises(ValueError, match="credential"):
+        generate(retry="b01", reason="credentials restored")
+    assert events == ["preflight"]
+    events.clear()
+    with pytest.raises(RuntimeError, match="credential"):
+        generate()
+    assert events == ["preflight", "b01:eva", "b02:chip", "b03:eva"]
+    events.clear()
+    manifest = generate()
+    assert events == ["preflight", "b03:eva"]
+    assert manifest["cells"]["b01:chip"] == original["cells"]["b01:chip"]
+    assert manifest["cells"]["b01:eva"][0] == original["cells"]["b01:eva"][0]
+    for key in ("b01:eva", "b03:eva"):
+        attempts = manifest["cells"][key]
+        assert [a["status"] for a in attempts] == ["credential", "completed"]
+        assert attempts[-1]["after_credential"] is True
+        assert all("retry_reason" not in a for a in attempts)
+        assert e7.completed(manifest, *key.split(":"), folder)[0] == attempts[-1]
+    assert len(manifest["cells"]["b02:chip"]) == 1
+    assert manifest["attempt_counts"]["eva"]["credential"] == 2
+    assert manifest["attempt_counts"]["eva"]["completed"] == 2
+
+
+def test_fix3_credential_resumptions_do_not_consume_retry_budget(ledger, monkeypatch):
     folder, generate = ledger
     monkeypatch.setattr(e7, "dry_cell", lambda *a: {"status": "credential", "clips": []})
+    for _ in range(3):
+        with pytest.raises(RuntimeError, match="credential"):
+            generate()
+    monkeypatch.setattr(e7, "dry_cell", lambda *a: {"status": "unvoiced", "clips": []})
+    generate()
+    for reason in ("first retry", "second retry"):
+        generate(retry="b01", reason=reason)
+    with pytest.raises(ValueError, match="at most 2 retries"):
+        generate(retry="b01", reason="third retry")
+    manifest = e7.read(folder / "manifest.json")
+    attempts = manifest["cells"]["b01:chip"]
+    assert [a["status"] for a in attempts] == ["credential"] * 3 + ["unvoiced"] * 3
+    assert [a.get("after_credential", False) for a in attempts] == [False, True, True, True, False, False]
+    assert [a["retry_reason"] for a in attempts if "retry_reason" in a] == ["first retry", "second retry"]
+    assert manifest["attempt_counts"]["chip"]["credential"] == 3
+    assert manifest["attempt_counts"]["chip"]["unvoiced"] == 3
+
+
+def test_fix3_retry_that_hits_credentials_still_consumes_retry_budget(ledger, monkeypatch):
+    folder, generate = ledger
+    monkeypatch.setattr(e7, "dry_cell", lambda *a: {"status": "unvoiced", "clips": []})
+    generate()
+    monkeypatch.setattr(e7, "dry_cell", lambda *a: {"status": "credential", "clips": []})
     with pytest.raises(RuntimeError, match="credential"):
-        generate()
-    monkeypatch.setattr(e7, "jobs", lambda reserve: iter([("b02", "eva", ["fixture"])]))
-    monkeypatch.setattr(e7, "dry_cell", lambda *a: pytest.fail("continued after credential failure"))
-    with pytest.raises(RuntimeError, match="credential"):
-        generate()
-    assert set(e7.read(folder / "manifest.json")["cells"]) == {"b01:chip"}
+        generate(retry="b01", reason="first retry")
+    monkeypatch.setattr(e7, "dry_cell", lambda *a: {"status": "unvoiced", "clips": []})
+    generate()
+    generate(retry="b01", reason="second retry")
+    with pytest.raises(ValueError, match="at most 2 retries"):
+        generate(retry="b01", reason="third retry")
+    attempts = e7.read(folder / "manifest.json")["cells"]["b01:chip"]
+    assert [a["status"] for a in attempts] == ["unvoiced", "credential", "unvoiced", "unvoiced"]
+    assert attempts[2]["after_credential"] is True
+    assert [a["retry_reason"] for a in attempts if "retry_reason" in a] == ["first retry", "second retry"]
+
+
+def test_fix3_load_paths_expands_canaries_for_real_path_scan(tmp_path, monkeypatch):
+    raw = {key: "~/fixture/" + key for key in (*run.PATH_KEYS, *e7.INPUTS, "sag_binary", "eleven_key_file")}
+    raw.update(host_label="fixture host", ava_voice_id="fixture-ava", canaries=["~/src", "literal-marker"])
+    source = tmp_path / "paths.json"
+    e7.write(source, raw)
+    monkeypatch.setenv(run.PATHS_ENV, str(source))
+    paths = e7.load_paths()
+    assert paths["canaries"] == [str(Path("~/src").expanduser()), "literal-marker"]
+    assert paths["canaries"] == run.load_paths()["canaries"]
+    assert paths["chip_repo"] == Path(raw["chip_repo"]).expanduser()
+    assert paths["host_label"] == raw["host_label"] and paths["ava_voice_id"] == raw["ava_voice_id"]
+    monkeypatch.setattr(probe, "NEGATIVE_CANARIES", tuple(paths["canaries"]))
+    hits = probe.canaries("Source checkout: " + str(Path("~/src").expanduser()))
+    assert hits[str(Path("~/src").expanduser())] is True
+    assert hits["literal-marker"] is False
