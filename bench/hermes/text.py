@@ -104,6 +104,7 @@ def public_a4b(records):
         blocks = []
         for block in record.get("blocks", []):
             text = re.sub(r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}", "<account-email>", block["text"])
+            text = re.sub(r"(Primary working directory: )[^\n]*", r"\1<cwd>", text)
             if block["kind"] == "S2":
                 text = re.sub(r"([\w-]+=)[^;\s]+", r"\1<billing-value>", text)
             blocks.append({**block, "text": text})
@@ -136,12 +137,39 @@ def validity(result, golden, rows, memory_empty):
     count = result.get("api_calls", 0)
     complete = bool(count) and [r["api_call_count"] for r in captures] == list(range(1, count + 1))
     return {1: complete and all(not any(r["canaries"].values()) for r in captures),
-            2: complete and all(r["system"]["sha256"] == golden["system_sha256"] and not r["checks"]
+            # A5: the compare_request result (r["checks"]) is recorded and reported; it does not fail check 2.
+            2: complete and all(r["system"]["sha256"] == golden["system_sha256"]
                                     and r["model"] == golden["route"]["model"] for r in captures),
             3: complete and all(r["history_matches"] for r in captures)
                 and result.get("guardrail") is None
                 and result.get("skill_tree") is not None and result["skill_tree"] == golden.get("skill_tree"),
             5: memory_empty and host.turn_gate(result)["pass"] and bool(result.get("final_response", "").strip())}
+
+
+TRANSPORT_IDS = ("metadata", "extra_headers", "prompt_cache_key")
+
+
+def route_additions(request, item_dir, system_sha256):
+    """A5: the final request minus the arm's S, transport ids, cell directory and dates; None unless one block is S."""
+    key = "instructions" if "instructions" in request else "system"
+    blocks = request.get(key) if isinstance(request.get(key), list) else [request.get(key)]
+    hits = [i for i, b in enumerate(blocks) if probe.digest(probe.normalise(b, item_dir)) == system_sha256]
+    if len(hits) != 1:
+        return None
+    rest = {k: v for k, v in request.items() if k not in TRANSPORT_IDS}
+    if isinstance(request.get(key), list):
+        rest[key] = blocks[:hits[0]] + blocks[hits[0] + 1:]
+    else:
+        rest.pop(key)
+    def scrub(value):
+        if isinstance(value, str):
+            return re.sub(r"\d{4}-\d{2}-\d{2}", "<date>", value.replace(str(item_dir), "<ITEM>"))
+        if isinstance(value, list):
+            return [scrub(v) for v in value]
+        if isinstance(value, dict):
+            return {k: scrub(v) for k, v in value.items()}
+        return value
+    return probe.canonical(scrub(rest))
 
 
 def run_phase(rows, execute, record, failure_count=0):
@@ -307,11 +335,14 @@ class Harness:
         if len({self.golden[model, c]["residue"]["sha256"] for c in CONDITIONS}) != 1:
             raise RuntimeError("golden arm deltas differ from published inputs")
 
+    def cell(self, phase, row, attempt):
+        return self.run / "cells" / phase / row["model"] / row["set"] / row["condition"] / row["item"]["id"] / f'{row["run"]}-{attempt}'
+
     def execute(self, phase, row, attempt, route_record=False):
         model, arm = row["model"], row["condition"]
-        item = self.run / "cells" / phase / model / row["set"] / arm / row["item"]["id"] / f'{row["run"]}-{attempt}'
+        item = self.cell(phase, row, attempt)
         self.home(item, model, arm, self.run / "golden" / model / arm)
-        extra = {"route_record_path": str(self.run / f"{model}-request.private.json")} if route_record else {}
+        extra = {"route_record_path": str(self.run / f"{model}-{arm}-request.private.json")} if route_record else {}
         result = self.call(item, model, arm, prompt=row["item"]["user_message"], **extra)
         if host.credential_failure(result):
             raise RuntimeError("STOP: credential or sign-in need")
@@ -329,10 +360,17 @@ class Harness:
     def run_model(self, model, route_record=False):
         self.warm(model)
         if route_record:
-            neutral = {"model": model, "set": "neutral", "condition": "OFF", "run": 1,
-                       "item": {"id": "neutral", "user_message": "Say hello."}}
-            self.execute("route-record", neutral, 1, True)
-            return {"route_record": "PRIVATE owner inspection required"}
+            additions = {}
+            for arm in CONDITIONS:
+                neutral = {"model": model, "set": "neutral", "condition": arm, "run": 1,
+                           "item": {"id": "neutral", "user_message": "Say hello."}}
+                self.execute("route-record", neutral, 1, True)
+                path = self.run / f"{model}-{arm}-request.private.json"
+                rest = route_additions(read_json(path), self.cell("route-record", neutral, 1),
+                                       self.golden[model, arm]["system_sha256"]) if path.exists() else None
+                additions[arm] = None if rest is None else probe.digest(rest)
+            return {"route_record": "PRIVATE owner inspection required", "additions_sha256": additions,
+                    "route_arm_invariant": None not in additions.values() and len(set(additions.values())) == 1}
         identity = {k: v for k, v in self.provenance.items() if k != "tool_schemas"}
         if not self.records.get(model, {}).get("owner_approved") or self.records[model].get("identity") != identity:
             return {"missing": "owner-approved A4b required"}

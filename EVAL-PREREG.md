@@ -379,3 +379,35 @@ schema hashes stay as A1 records them.
 
   A verdict of `pass` needs the frozen slice to match `prereg-v1`, every generation admitted as valid, both models
   present, and no mechanical-gate failure. It is a mechanical-gate result, not a release-readiness claim.
+
+### A5 (2026-10-23): provider-side additions are disclosed and checked across arms, not matched per call
+
+Reason: A4b's first route record, on the subscription relay route with Claude Code 2.1.306, found blocks that A4's
+kinds do not list:
+- Claude Code puts its billing header before its identity line.
+- Claude Code adds its own environment message directly after the first user turn: working directory, platform, shell,
+  OS version, a model identity line, one sentence about downloaded files, and the date.
+
+Offline probes found no launch option that removes the message.
+
+A4's per-call match against an expected final request exists so that the arms differ only by their guidance. The relay,
+Claude Code and Hermes' codex transport do not know which arm a cell is in. So whatever they add can be checked once,
+across the arms, instead of being predicted on every call. This is recorded before any held-out item has run, and no
+scope-A3 data exists. Nothing above the Amendments heading changes. A4 stays in force except as follows.
+
+- **Route record, per arm.** The neutral route-record call runs once in each arm: OFF, ON and NATIVE.
+  - A route is clean when its three final requests are identical apart from:
+    - `S`, which check 2 already pins to each arm's expected `S`;
+    - the cell's own directory and working directory;
+    - the date;
+    - the identifiers the transport sets per process: the relay's `metadata` and the codex transport's
+      `extra_headers` and `prompt_cache_key`. Like cache-control markers under A4, they are transport metadata, not
+      content.
+  - A route whose additions differ between arms is unclean: that model does not run and is reported missing.
+- **Disclosure.** A4b lists every block the route adds, of any kind, with its placement, and the report publishes it.
+  The email address and the billing values are replaced by A4's placeholders, and the working directory by `<cwd>`.
+- **Per call.** Each call's comparison with the route's expected request is still recorded in the validity table and
+  reported. It no longer fails check 2. Check 2's other conditions stand: `S` equals the arm's expected `S`, the model
+  is the route's model, and the tool names and schemas are the same across arms.
+- **Unchanged.** Checks 1, 3, 4 and 5, the canary scan, the rerun rules, the cell order, isolation and the A4b identity
+  (a new Claude Code version or source pin needs a new route record).
