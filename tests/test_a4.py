@@ -1358,12 +1358,13 @@ def route_request(arm, item, date="2026-10-23"):
                          {"role": "system", "content": env}]}
 
 
-@pytest.mark.parametrize("case", ["same", "extra-block", "unknown-s", "two-s"])
+@pytest.mark.parametrize("case", ["same", "extra-block", "unknown-s", "two-s", "relay-note", "relay-note-differs"])
 def test_route_record_runs_every_arm(tmp_path, monkeypatch, case):
     model = items.MODELS[0]
     harness = text.Harness(tmp_path, tmp_path / "out", {}, {}, None, lambda: None)
     monkeypatch.setattr(harness, "warm", lambda m: harness.golden.update({(m, a): {
-        "system_sha256": probe.digest(f"S for {a}\nhome <ITEM>/home"), "route": {"model": m}, "skill_tree": "tree",
+        "system_sha256": probe.digest(f"S for {a}\nhome <ITEM>/home"), "system_chars": len(f"S for {a}\nhome <ITEM>/home"),
+        "route": {"model": m}, "skill_tree": "tree",
         "sent_tools": []} for a in items.CONDITIONS}))
     monkeypatch.setattr(harness, "home", lambda *a: None)
     for name, fake in (("read_jsonl", lambda *a: []), ("memories_empty", lambda *a: True),
@@ -1382,6 +1383,8 @@ def test_route_record_runs_every_arm(tmp_path, monkeypatch, case):
                 request["system"][2]["text"] = "changed " + request["system"][2]["text"]
             if case == "two-s" and arm == "OFF":
                 request["system"].append(request["system"][2])
+            if case == "relay-note" or (case == "relay-note-differs" and arm == "ON"):
+                request["system"][2]["text"] += "\nRelay note: tags are added by the harness."
             fd = os.open(args["route_record_path"], os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
             with os.fdopen(fd, "w") as handle:
                 handle.write(probe.canonical(request))
@@ -1393,7 +1396,7 @@ def test_route_record_runs_every_arm(tmp_path, monkeypatch, case):
         f"{model}-{a}-request.private.json" for a in items.CONDITIONS)
     assert set(result) == {"route_record", "route_arm_invariant", "additions_sha256"}
     assert result["route_record"] == "PRIVATE owner inspection required"
-    assert result["route_arm_invariant"] is (case == "same")
+    assert result["route_arm_invariant"] is (case in {"same", "relay-note"})
     hashes = result["additions_sha256"]
     assert set(hashes) == set(items.CONDITIONS)
     missing = {"unknown-s": "ON", "two-s": "OFF"}.get(case)
@@ -1413,6 +1416,11 @@ def test_route_additions_scrub_item_and_date(tmp_path):
              "extra_headers": {"session_id": "s-1"}}
     assert text.route_additions(codex, "x", sha("OFF")) == '{"input":[]}'
     assert text.route_additions(route_request("OFF", first), first, sha("ON")) is None
+    noted = route_request("OFF", first)
+    noted["system"][2]["text"] = noted["system"][2]["text"].replace("\nConversation", "\nRelay note.\nConversation")
+    assert text.route_additions(noted, first, sha("OFF")) is None
+    kept = text.route_additions(noted, first, sha("OFF"), len("S for OFF\nhome <ITEM>/home"))
+    assert "Relay note." in kept and "S for" not in kept
 
 
 def test_route_record_keeps_first_api_call(tmp_path, monkeypatch):
@@ -1424,5 +1432,5 @@ def test_route_record_keeps_first_api_call(tmp_path, monkeypatch):
                                api_call_count=call, messages=[], tools_for_api=[])
         Transport().preflight_kwargs({"model": agent.model, "instructions": "S", "marker": marker,
                                       "input": [{"role": "user", "content": "hello"}]})
-    assert json.loads(path.read_text())["marker"] == "first-b"
+    assert json.loads(path.read_text())["marker"] == "first-a"
     assert path.stat().st_mode & 0o777 == 0o600

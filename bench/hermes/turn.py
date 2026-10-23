@@ -342,8 +342,12 @@ def install_text_capture(args, agent):
                               for m in state["M"] if m.get("role") == "tool"]
         finals[state["call"]] = row
         if args.get("route_record_path") and state["call"] == 1:
-            # A5: keep the first API call, whose conversation state is the same in every arm.
-            fd = os.open(args["route_record_path"], os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+            # A5: keep the first request of the first API call, whose conversation state is the same in every arm. On
+            # the relay, Claude Code's own tool loop sends further upstream requests inside that one Hermes call.
+            try:
+                fd = os.open(args["route_record_path"], os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            except FileExistsError:
+                return
             os.fchmod(fd, 0o600)
             with os.fdopen(fd, "w") as handle:
                 handle.write(canonical(final))

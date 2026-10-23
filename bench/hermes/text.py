@@ -165,16 +165,30 @@ def validity(result, golden, rows, memory_empty):
 TRANSPORT_IDS = ("metadata", "extra_headers", "prompt_cache_key")
 
 
-def route_additions(request, item_dir, system_sha256):
-    """A5: the final request minus the arm's S, transport ids, cell directory and dates; None unless one block is S."""
+def route_additions(request, item_dir, system_sha256, system_chars=None):
+    """A5: the final request minus the arm's S, transport ids, cell directory and dates; None unless one block holds S.
+
+    S is a whole block, or (with system_chars) the exact start of one: the relay appends its own note to S's block, and
+    that note stays in the comparison."""
     key = "instructions" if "instructions" in request else "system"
     blocks = request.get(key) if isinstance(request.get(key), list) else [request.get(key)]
-    hits = [i for i, b in enumerate(blocks) if probe.digest(probe.normalise(b, item_dir)) == system_sha256]
+    def remainder(block):
+        text = probe.normalise(block, item_dir)
+        if probe.digest(text) == system_sha256:
+            return ""
+        if system_chars and len(text) > system_chars and probe.digest(text[:system_chars]) == system_sha256:
+            return text[system_chars:]
+        return None
+    hits = [(i, r) for i, r in ((i, remainder(b)) for i, b in enumerate(blocks)) if r is not None]
     if len(hits) != 1:
         return None
+    at, left = hits[0]
     rest = {k: v for k, v in request.items() if k not in TRANSPORT_IDS}
+    kept = [{**blocks[at], "text": left} if isinstance(blocks[at], dict) else left] if left else []
     if isinstance(request.get(key), list):
-        rest[key] = blocks[:hits[0]] + blocks[hits[0] + 1:]
+        rest[key] = blocks[:at] + kept + blocks[at + 1:]
+    elif left:
+        rest[key] = left
     else:
         rest.pop(key)
     def scrub(value):
@@ -382,8 +396,9 @@ class Harness:
                            "item": {"id": "neutral", "user_message": "Say hello."}}
                 self.execute("route-record", neutral, 1, True)
                 path = self.run / f"{model}-{arm}-request.private.json"
-                rest = route_additions(read_json(path), self.cell("route-record", neutral, 1),
-                                       self.golden[model, arm]["system_sha256"]) if path.exists() else None
+                golden = self.golden[model, arm]
+                rest = route_additions(read_json(path), self.cell("route-record", neutral, 1), golden["system_sha256"],
+                                       golden.get("system_chars")) if path.exists() else None
                 additions[arm] = None if rest is None else probe.digest(rest)
             return {"route_record": "PRIVATE owner inspection required", "additions_sha256": additions,
                     "route_arm_invariant": None not in additions.values() and len(set(additions.values())) == 1}
