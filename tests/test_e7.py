@@ -89,7 +89,10 @@ def generated(tmp_path_factory):
 
 @pytest.fixture(scope="module")
 def built(generated):
-    root, paths, session = generated
+    root, paths, original = generated
+    # Build on a copy: a built session refuses a second bundle, and other tests copy the unbuilt one.
+    session = root / "built-session"
+    shutil.copytree(original, session)
     key_path, bundle = root / "key.json", root / "bundle"
     key = e7.build(session, bundle, key_path)
     return root, paths, session, bundle, key_path, key
