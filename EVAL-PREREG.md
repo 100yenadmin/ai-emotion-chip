@@ -564,6 +564,10 @@ amendment, before it starts. Nothing above the Amendments heading changes, and t
   her speech-authorship skill, with no chip plugin. It is synthesized by the same `sag` command and flags she uses. Her
   `voice.md` is always in context here, while in use she reads it when needed. This can only make her baseline stronger.
   The chip arm has no `voice.md`.
+- **Mini-sessions** come from the chip arm only. One agent answers the three messages in order in one conversation, with
+  each turn's history carried, and ElevenLabs request stitching links each turn's audio to the turn before.
+- **Generation order.** Cells run in the prompt file's order: comparison a; then comparison b, with each item's chip
+  cell directly before its eva cell; then the catch cells; then the mini-sessions. Retries run after that first pass.
 - **eva's inputs are frozen per session.** Her `SOUL.md`, `voice.md`, speech-authorship skill and `sag` wrapper are
   copied into the session once and recorded by sha256. Every later generate run refuses to start if the live files
   differ from the copies, the build refuses if the copies changed, and a rerun uses only the copies. The `sag` program's
@@ -587,12 +591,17 @@ amendment, before it starts. Nothing above the Amendments heading changes, and t
   each arm's count per reason. A turn with a credential failure yields no usable clip, even if an earlier call in it
   produced audio. A credential failure stops the run. It produces no usable audio and says nothing about either arm, so
   once the credential is fixed, the next run plays that cell again; this does not count as a retry.
+- **Integrity checks** are mechanical and never look at the audio or the reply's wording. The persona file the agent saw
+  equals the snapshot. No request carries a forbidden marker (a private path or worktree name), and every upstream
+  request goes to `claude-opus-5-5`. The turn count equals the message count. In comparison a, exactly one call produced
+  audio, its authored score was recorded, and its cued render equals what the provider was sent. Each later mini-session
+  turn carries ElevenLabs stitching ids.
 - **Retries exhausted.** If a cell still has no usable clip after its two retries, no listening bundle is built. The
   item is never dropped or replaced, and E7 for ElevenLabs is reported as incomplete, with every attempt and its reason;
   it is never counted as a pass. Any further ElevenLabs E7 session needs a new amendment made before it starts.
 - **Several spoken calls.** If the agent speaks more than once in a turn, comparison b and the mini-sessions play the
   calls in order, as a user would hear them. Calls that produced no audio are dropped. Comparison a needs exactly one
-  call that produced audio.
+  call that produced audio; a cell with more fails its integrity check and may be retried.
 - **Verdict.** Each comparison passes at 15 or more of 20, with ties against. E7 for ElevenLabs passes only if both
   comparisons pass, and its claim class is `owner_accepted(n=1)`. Mini-session ratings and "sounds like acting" flags
   are reported, with no bar.
