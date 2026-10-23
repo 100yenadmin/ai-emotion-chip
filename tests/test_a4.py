@@ -433,6 +433,54 @@ def test_warm_includes_ephemeral_system_prompt(tmp_path, monkeypatch):
     assert value["system_sha256"] == probe.digest("S\n\nephemeral")
 
 
+def relay_tools_fixture():
+    return json.loads((Path(__file__).parent / "fixtures/a4-relay-tools.json").read_text())
+
+
+@pytest.mark.parametrize("model", items.MODELS)
+def test_warm_records_route_sent_tools(tmp_path, monkeypatch, model):
+    turn = driver()
+    fixture = relay_tools_fixture()
+    root = tmp_path / "pinned-relay"
+    root.mkdir()
+    (root / "__init__.py").write_text('raise AssertionError("registration must not run")\n')
+    (root / "fixture.json").write_text(json.dumps(fixture))
+    (root / "directsdk.py").write_text(
+        'import json\nfrom pathlib import Path\n'
+        'fixture = json.loads(Path(__file__).with_name("fixture.json").read_text())\n'
+        'def request_body(kwargs):\n'
+        '    assert kwargs == fixture["request"]\n'
+        '    return json.dumps(fixture["body"]), [], {}\n'
+        'SKILLS_REMINDER = "fixture reminder"\n'
+        'def prepare_history(messages, names):\n'
+        '    return messages[0]["content"], [{"message": {"role": "user", "content": '
+        '[{"type": "text", "text": messages[1]["content"]}]}}]\n')
+    (root / "admission.py").write_text('"""Inert fixture module."""\n')
+    for name in ("a4_pinned_relay", "a4_pinned_relay.directsdk", "a4_pinned_relay.admission"):
+        monkeypatch.setitem(sys.modules, name, ModuleType(name))
+        monkeypatch.delitem(sys.modules, name)
+    module = ModuleType("agent.system_prompt")
+    module.build_system_prompt = lambda agent: "S"
+    monkeypatch.setitem(sys.modules, "agent.system_prompt", module)
+    agent = SimpleNamespace(ephemeral_system_prompt="", tools=deepcopy(fixture["request"]["tools"]),
+        provider="openai-codex" if model == items.MODELS[1] else "relay", close=lambda: None)
+    monkeypatch.setattr(turn, "build_agent", lambda cwd, text=False: (agent, None, {}))
+    monkeypatch.setattr(turn, "golden_delta", lambda *args: {})
+    value = turn.warm({"cwd": str(tmp_path), "item_dir": str(tmp_path), "text": True,
+                       "provider_path": str(root)})
+    assert value["tools"] == ["skill_manage", "skill_view", "skills_list"]
+    assert value["sent_tools"] == (value["tools"] if model == items.MODELS[1] else fixture["sent_tools"])
+    assert agent.tools == fixture["request"]["tools"]
+    if model == items.MODELS[0]:
+        # The expectation uses the same loader and never executes registration.
+        expected = probe.expected_relay("S", [{"role": "user", "content": "hello"}],
+                                        {name: name for name in value["tools"]}, provider_path=root)
+        assert expected["messages"][0]["content"][-1]["text"] == "fixture reminder"
+        assert Path(sys.modules["a4_pinned_relay.directsdk"].__file__).parent == root
+    else:
+        assert "a4_pinned_relay.directsdk" not in sys.modules
+
+
 def test_neutral_route_record_allows_one_model_iteration(tmp_path, monkeypatch):
     turn = driver()
     module = ModuleType("hermes_cli.oneshot")
@@ -647,7 +695,7 @@ def test_schema_reference_survives_empty_first_attempt(tmp_path, monkeypatch):
     model = items.MODELS[0]
     harness = text.Harness(tmp_path, tmp_path / "out", {}, {}, None, None)
     harness.golden[model, "OFF"] = {"skill_tree": "tree", "system_sha256": "S", "route": {"model": model},
-                                  "tools": ["skill_view"]}
+                                  "tools": ["skill_view"], "sent_tools": ["skill_view"]}
     monkeypatch.setattr(harness, "home", lambda *args: None)
     monkeypatch.setattr(run, "read_jsonl", lambda *args: [])
     monkeypatch.setattr(run, "memories_empty", lambda *args: True)
@@ -929,7 +977,7 @@ def test_schema_reference_requires_other_check_two_conditions(tmp_path, monkeypa
     model = items.MODELS[0]
     harness = text.Harness(tmp_path, tmp_path / "out", {}, {}, None, None)
     harness.golden[model, "OFF"] = {"skill_tree": "tree", "system_sha256": "S", "route": {"model": model},
-                                  "tools": ["skill_view"]}
+                                  "tools": ["skill_view"], "sent_tools": ["skill_view"]}
     for name, fake in (("read_jsonl", lambda *a: []), ("memories_empty", lambda *a: True),
                        ("first_call_tokens", lambda *a: 100)):
         monkeypatch.setattr(run, name, fake)
@@ -977,6 +1025,12 @@ def test_harness_warm_host_args_and_checks(tmp_path, monkeypatch, model):
             calls.append(arm)
             return {"canaries": {"synthetic": scenario["kind"] == "canary"},
                     "tools": ["skill_manage", "skill_view", "skills_list"] + (["terminal"] if scenario["kind"] == "tools" else []),
+                    **({} if scenario["kind"] == "sent-missing" else {"sent_tools": {
+                        "sent-short": ["one"], "sent-duplicate": ["one"] * 3,
+                        "sent-not-list": "one", "sent-not-name": ["one", "two", None],
+                        "sent-empty-name": ["one", "two", ""],
+                    }.get(scenario["kind"], relay_tools_fixture()["sent_tools"] if model == items.MODELS[0]
+                          else ["skill_manage", "skill_view", "skills_list"])}),
                     "error": "synthetic" if scenario["kind"] == "error" else None,
                     "residue": {"sha256": arm if scenario["kind"] == "residue" else "same"}}
     monkeypatch.setattr(run, "Host", FakeHost)
@@ -989,7 +1043,8 @@ def test_harness_warm_host_args_and_checks(tmp_path, monkeypatch, model):
     assert [(m, a) for _, m, a in homes] == [(model, a) for a in items.CONDITIONS]
     assert set(harness.golden) == {(model, a) for a in items.CONDITIONS}
     assert all(v["canaries"] == {"marker-1": False} for v in harness.golden.values())
-    for kind in ("error", "canary", "sessions", "usage", "residue", "tools"):
+    for kind in ("error", "canary", "sessions", "usage", "residue", "tools", "sent-missing", "sent-short",
+                 "sent-duplicate", "sent-not-list", "sent-not-name", "sent-empty-name"):
         scenario["kind"] = kind
         with pytest.raises(RuntimeError, match="golden arm deltas" if kind == "residue" else "golden warm failed"):
             harness.warm(model)
@@ -1092,14 +1147,15 @@ def test_non_dict_tool_arguments_have_no_reference(monkeypatch):
 
 
 @pytest.mark.parametrize("referenced", [False, True])
-@pytest.mark.parametrize("extra_call", [0, 1])
-def test_capture_tool_names_match_golden_before_reference(tmp_path, monkeypatch, referenced, extra_call):
-    model = items.MODELS[0]
+@pytest.mark.parametrize("model", items.MODELS)
+@pytest.mark.parametrize("mutation", ["none", "extra-first", "extra-later", "extra-all", "wrong-route"])
+def test_capture_tool_names_match_golden_before_reference(tmp_path, monkeypatch, referenced, model, mutation):
     harness = text.Harness(tmp_path, tmp_path / "out", {}, {}, None, None)
     names = ["skill_manage", "skill_view", "skills_list"]
-    schemas = {name: "schema-" + name for name in names}
+    sent = relay_tools_fixture()["sent_tools"] if model == items.MODELS[0] else names
+    schemas = {name: "schema-" + name for name in sent}
     harness.golden[model, "OFF"] = {"skill_tree": "tree", "system_sha256": "S",
-                                   "route": {"model": model}, "tools": names}
+                                   "route": {"model": model}, "tools": names, "sent_tools": sent}
     for name, fake in (("read_jsonl", lambda *a: []), ("memories_empty", lambda *a: True),
                        ("first_call_tokens", lambda *a: 100)):
         monkeypatch.setattr(run, name, fake)
@@ -1110,13 +1166,19 @@ def test_capture_tool_names_match_golden_before_reference(tmp_path, monkeypatch,
     monkeypatch.setattr(harness, "call", lambda *a, **kw: {
         "captures": deepcopy(captures), "skill_tree": "tree", "api_calls": 2,
         "completed": True, "final_response": "reply"})
-    row = {**phase_rows(1)[0], "item": {"id": "0", "user_message": "hello"}}
+    row = {**phase_rows(1)[0], "model": model, "item": {"id": "0", "user_message": "hello"}}
     if referenced:
         assert harness.execute("reference", row, 1)["checks"][2]
         assert harness.provenance["tool_schemas"][model] == schemas
-    captures[extra_call]["tool_schemas"]["terminal"] = "unexpected-schema"
-    assert harness.execute("reference", row, 2)["checks"][2] is False
-    if referenced:
+    if mutation == "wrong-route":
+        wrong = names if model == items.MODELS[0] else relay_tools_fixture()["sent_tools"]
+        for capture in captures:
+            capture["tool_schemas"] = {name: "schema-" + name for name in wrong}
+    elif mutation.startswith("extra"):
+        for index in ({"extra-first": [0], "extra-later": [1], "extra-all": [0, 1]}[mutation]):
+            captures[index]["tool_schemas"]["terminal"] = "unexpected-schema"
+    assert harness.execute("reference", row, 2)["checks"][2] is (mutation == "none")
+    if referenced or mutation == "none":
         assert harness.provenance["tool_schemas"][model] == schemas
     else:
         assert "tool_schemas" not in harness.provenance

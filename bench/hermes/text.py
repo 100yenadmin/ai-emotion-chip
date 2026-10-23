@@ -294,9 +294,13 @@ class Harness:
             self.home(item, model, arm)
             result = self.call(item, model, arm, mode="warm", sections=sections(model, arm))
             db = host.db_summary(item / "home/state.db")
+            sent = result.get("sent_tools")
             if (result.get("error") or db["sessions"] or db["usage_rows"]
                     or any(result.get("canaries", {}).values())
-                    or sorted(result.get("tools", [])) != sorted(SKILL_TOOLS)):
+                    or sorted(result.get("tools", [])) != sorted(SKILL_TOOLS)
+                    or not isinstance(sent, list) or len(sent) != len(result["tools"])
+                    or any(not isinstance(name, str) or not name for name in sent)
+                    or len(set(sent)) != len(sent)):
                 raise RuntimeError("golden warm failed")
             result["canaries"] = {f"marker-{i}": hit for i, hit in enumerate(result["canaries"].values(), 1)}
             self.golden[model, arm] = result
@@ -314,7 +318,7 @@ class Harness:
         rows = host.read_jsonl(item / "probe.jsonl")
         schemas = [r["tool_schemas"] for r in result.get("captures", [])]
         checks = validity(result, self.golden[model, arm], rows, host.memories_empty(item / "home"))
-        checks[2] = checks[2] and all(set(s) == set(self.golden[model, arm]["tools"]) for s in schemas)
+        checks[2] = checks[2] and all(set(s) == set(self.golden[model, arm]["sent_tools"]) for s in schemas)
         if checks[2] and schemas:
             reference = self.provenance.setdefault("tool_schemas", {}).setdefault(model, schemas[0])
             checks[2] = all(s == reference for s in schemas)

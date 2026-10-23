@@ -98,23 +98,26 @@ def expected_codex(S, M, options, *, build_kwargs=None, preflight=None):
     return preflight(kwargs, sanitize_harmony_tokens=sanitize)
 
 
+def load_pinned_relay(provider_path):
+    """Load only the run's provider copy, without executing plugin registration."""
+    import importlib.util
+    import sys
+    from pathlib import Path
+    from importlib import import_module
+    root = Path(provider_path).resolve()
+    if "profiles" in root.parts or Path.home() / ".hermes" in root.parents:
+        raise ValueError("expectation requires the run's pinned provider copy")
+    spec = importlib.util.spec_from_file_location("a4_pinned_relay", root / "__init__.py",
+                                                submodule_search_locations=[str(root)])
+    package = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = package
+    return import_module("a4_pinned_relay.directsdk"), import_module("a4_pinned_relay.admission")
+
+
 def expected_relay(S, M, names, *, prepare_history=None, admission=None, reminder=None, provider_path=None):
     """Only a pinned provider copy is importable here; callers may inject pure fakes."""
     if prepare_history is None or admission is None:
-        import importlib.util
-        import sys
-        from pathlib import Path
-        root = Path(provider_path).resolve()
-        if "profiles" in root.parts or Path.home() / ".hermes" in root.parents:
-            raise ValueError("expectation requires the run's pinned provider copy")
-        spec = importlib.util.spec_from_file_location("a4_pinned_relay", root / "__init__.py",
-                                                    submodule_search_locations=[str(root)])
-        package = importlib.util.module_from_spec(spec)
-        sys.modules[spec.name] = package
-        # Do not execute the plugin registration entry point.
-        from importlib import import_module
-        source = import_module("a4_pinned_relay.directsdk")
-        admission = import_module("a4_pinned_relay.admission")
+        source, admission = load_pinned_relay(provider_path)
         prepare_history, reminder = source.prepare_history, source.SKILLS_REMINDER
     system, frames = prepare_history([{"role": "system", "content": S}] + copy.deepcopy(M), names)
     messages = [copy.deepcopy(frame["message"]) for frame in frames]

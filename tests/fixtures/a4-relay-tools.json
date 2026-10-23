@@ -1,0 +1,476 @@
+{
+  "source": "Hermes v0.22.2 skills schemas and registry.get_definitions; pinned relay request_body; no registration",
+  "source_sha256": {
+    "hermes/tools/skills_tool.py": "a5fac64ae3c2f2496cd7da46aacd396d6a50a0dd5d9f4ef4d1ba2d8d7ba9df2f",
+    "hermes/tools/skill_manager_tool.py": "131d3720957659c37addd27430693d5d0b7dec0b5176a83b2bedad783b7edcd7",
+    "hermes/tools/registry.py": "4a05aae5b4dd40bf9a104d23582d4363326ad7ce3fdac1ac249e0af04334d909",
+    "relay/__init__.py": "b44ee1c78304f4e72aa752da9e0f6785858a9f4ce6ff67a39372f15127a4d6be",
+    "relay/admission.py": "b73647c8618fd504a37d190ead054a07059ac6090e08162026cea6528642dab8",
+    "relay/conftest.py": "e2d15b4ee035f536e2605f40f0c06f8ae9ae19a4186b221a143c09427c9d973f",
+    "relay/directsdk.py": "7b9d40f65281286ee5d0f4519af2df171e9eb829bebd750b23408f7855f886f3",
+    "relay/directsdk_setup.py": "ef732bd2fa1de138d3335f38b02cd260b4887805724d3cf0ccc5ebc841b10235",
+    "relay/inert_mcp.py": "bf20a09b2358600981b115c32845ec24722cb66adfc18d247d1c35ed999a0e0a",
+    "relay/model_catalog.py": "aaeb89d1aee6573c490309036b3ada0e7894efcd971aade6b12bffb93a63cb42",
+    "relay/pruned_skills.py": "475062eabfa5dcfb795cfa01c33446801627f938e7d1cca864acc9a94c8d7fbd"
+  },
+  "request": {
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "skill_manage",
+          "description": "Create, update, or delete skills \u2014 your procedural memory for recurring task types. The call is an operations array (a single edit is a list of one); it applies atomically \u2014 any failure rolls every touched skill back. Ops: create (full SKILL.md; lands in the profile's skills directory or configured skills.create_dir; must precede that skill's other ops), patch (targeted old_string/new_string fix \u2014 preferred; content alone REPLACES the whole file, read it via skill_view() first), write_file/remove_file (supporting files), delete (sole op only). Existing skills are modified wherever they live. Keep the description's first 57 chars a self-contained trigger: 'Use when <trigger>. <one-line behavior>.' Write lessons, not logs: imperative rule + why, no PR numbers/dates/incident narration, one rule per lesson, references/ named by topic (extend before adding). skill_view() shows format conventions.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "operations": {
+                "type": "array",
+                "description": "Ordered ops; each names its target skill (lowercase, hyphens/underscores, max 64 chars). Each action is its own shape; another action's text slot is invalid.",
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "action": {
+                          "type": "string",
+                          "enum": [
+                            "create"
+                          ]
+                        },
+                        "content": {
+                          "type": "string",
+                          "description": "Full SKILL.md text (YAML frontmatter + markdown body)."
+                        },
+                        "category": {
+                          "type": "string",
+                          "description": "Optional category subdir (e.g. 'devops')."
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "action",
+                        "content"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "action": {
+                          "type": "string",
+                          "enum": [
+                            "patch"
+                          ]
+                        },
+                        "old_string": {
+                          "type": "string",
+                          "description": "Text to find (same matching semantics as the patch tool)."
+                        },
+                        "new_string": {
+                          "type": "string",
+                          "description": "Replacement; empty string deletes the match."
+                        },
+                        "replace_all": {
+                          "type": "boolean",
+                          "description": "Replace all occurrences (default false)."
+                        },
+                        "file_path": {
+                          "type": "string",
+                          "description": "Optional supporting file (write_file's shape); default SKILL.md."
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "action",
+                        "old_string",
+                        "new_string"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "action": {
+                          "type": "string",
+                          "enum": [
+                            "patch"
+                          ]
+                        },
+                        "content": {
+                          "type": "string",
+                          "description": "Full SKILL.md rewrite (REPLACES the whole file; last resort)."
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "action",
+                        "content"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "action": {
+                          "type": "string",
+                          "enum": [
+                            "write_file"
+                          ]
+                        },
+                        "file_path": {
+                          "type": "string",
+                          "description": "Path RELATIVE to the skill's own directory, e.g. 'references/api.md' \u2014 no leading slash, never absolute; first segment references/, templates/, scripts/, or assets/."
+                        },
+                        "file_content": {
+                          "type": "string",
+                          "description": "Full text of the supporting file."
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "action",
+                        "file_path",
+                        "file_content"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "action": {
+                          "type": "string",
+                          "enum": [
+                            "remove_file"
+                          ]
+                        },
+                        "file_path": {
+                          "type": "string",
+                          "description": "Supporting file (write_file's shape)."
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "action",
+                        "file_path"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "action": {
+                          "type": "string",
+                          "enum": [
+                            "delete"
+                          ]
+                        },
+                        "absorbed_into": {
+                          "type": "string",
+                          "description": "Curator consolidation only: umbrella skill that absorbed this one (must exist)."
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "action"
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            "required": [
+              "operations"
+            ]
+          }
+        }
+      },
+      {
+        "type": "function",
+        "function": {
+          "name": "skill_view",
+          "description": "Skills allow for loading information about specific tasks and workflows, as well as scripts and templates. Load a skill's full content or access its linked files (references, templates, scripts). First call returns SKILL.md content plus a 'linked_files' dict showing available references/templates/scripts. To access those, call again with file_path parameter.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "The skill name (use skills_list to see available skills). For plugin-provided skills, use the qualified form 'plugin:skill' (e.g. 'superpowers:writing-plans')."
+              },
+              "file_path": {
+                "type": "string",
+                "description": "OPTIONAL: Path to a linked file within the skill (e.g., 'references/api.md', 'templates/config.yaml', 'scripts/validate.py'). Omit to get the main SKILL.md content."
+              }
+            },
+            "required": [
+              "name"
+            ]
+          }
+        }
+      },
+      {
+        "type": "function",
+        "function": {
+          "name": "skills_list",
+          "description": "List available skills (name + description). Use skill_view(name) to load full content.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "category": {
+                "type": "string",
+                "description": "Optional category filter to narrow results"
+              }
+            },
+            "required": []
+          }
+        }
+      }
+    ]
+  },
+  "body": {
+    "tools": [
+      {
+        "name": "mcp__hermes__skill_manage",
+        "description": "Create, update, or delete skills \u2014 your procedural memory for recurring task types. The call is an operations array (a single edit is a list of one); it applies atomically \u2014 any failure rolls every touched skill back. Ops: create (full SKILL.md; lands in the profile's skills directory or configured skills.create_dir; must precede that skill's other ops), patch (targeted old_string/new_string fix \u2014 preferred; content alone REPLACES the whole file, read it via skill_view() first), write_file/remove_file (supporting files), delete (sole op only). Existing skills are modified wherever they live. Keep the description's first 57 chars a self-contained trigger: 'Use when <trigger>. <one-line behavior>.' Write lessons, not logs: imperative rule + why, no PR numbers/dates/incident narration, one rule per lesson, references/ named by topic (extend before adding). skill_view() shows format conventions.",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "operations": {
+              "type": "array",
+              "description": "Ordered ops; each names its target skill (lowercase, hyphens/underscores, max 64 chars). Each action is its own shape; another action's text slot is invalid.",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "create"
+                        ]
+                      },
+                      "content": {
+                        "type": "string",
+                        "description": "Full SKILL.md text (YAML frontmatter + markdown body)."
+                      },
+                      "category": {
+                        "type": "string",
+                        "description": "Optional category subdir (e.g. 'devops')."
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "action",
+                      "content"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "patch"
+                        ]
+                      },
+                      "old_string": {
+                        "type": "string",
+                        "description": "Text to find (same matching semantics as the patch tool)."
+                      },
+                      "new_string": {
+                        "type": "string",
+                        "description": "Replacement; empty string deletes the match."
+                      },
+                      "replace_all": {
+                        "type": "boolean",
+                        "description": "Replace all occurrences (default false)."
+                      },
+                      "file_path": {
+                        "type": "string",
+                        "description": "Optional supporting file (write_file's shape); default SKILL.md."
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "action",
+                      "old_string",
+                      "new_string"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "patch"
+                        ]
+                      },
+                      "content": {
+                        "type": "string",
+                        "description": "Full SKILL.md rewrite (REPLACES the whole file; last resort)."
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "action",
+                      "content"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "write_file"
+                        ]
+                      },
+                      "file_path": {
+                        "type": "string",
+                        "description": "Path RELATIVE to the skill's own directory, e.g. 'references/api.md' \u2014 no leading slash, never absolute; first segment references/, templates/, scripts/, or assets/."
+                      },
+                      "file_content": {
+                        "type": "string",
+                        "description": "Full text of the supporting file."
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "action",
+                      "file_path",
+                      "file_content"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "remove_file"
+                        ]
+                      },
+                      "file_path": {
+                        "type": "string",
+                        "description": "Supporting file (write_file's shape)."
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "action",
+                      "file_path"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "delete"
+                        ]
+                      },
+                      "absorbed_into": {
+                        "type": "string",
+                        "description": "Curator consolidation only: umbrella skill that absorbed this one (must exist)."
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "action"
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          "required": [
+            "operations"
+          ]
+        }
+      },
+      {
+        "name": "mcp__hermes__skill_view",
+        "description": "Skills allow for loading information about specific tasks and workflows, as well as scripts and templates. Load a skill's full content or access its linked files (references, templates, scripts). First call returns SKILL.md content plus a 'linked_files' dict showing available references/templates/scripts. To access those, call again with file_path parameter.",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "The skill name (use skills_list to see available skills). For plugin-provided skills, use the qualified form 'plugin:skill' (e.g. 'superpowers:writing-plans')."
+            },
+            "file_path": {
+              "type": "string",
+              "description": "OPTIONAL: Path to a linked file within the skill (e.g., 'references/api.md', 'templates/config.yaml', 'scripts/validate.py'). Omit to get the main SKILL.md content."
+            }
+          },
+          "required": [
+            "name"
+          ]
+        }
+      },
+      {
+        "name": "mcp__hermes__skills_list",
+        "description": "List available skills (name + description). Use skill_view(name) to load full content.",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "category": {
+              "type": "string",
+              "description": "Optional category filter to narrow results"
+            }
+          },
+          "required": []
+        }
+      }
+    ]
+  },
+  "sent_tools": [
+    "mcp__hermes__skill_manage",
+    "mcp__hermes__skill_view",
+    "mcp__hermes__skills_list"
+  ]
+}

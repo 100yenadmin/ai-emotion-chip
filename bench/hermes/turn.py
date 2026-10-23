@@ -18,7 +18,7 @@ from pathlib import Path
 # In the run dir probe.py sits beside this file; in the repo it is bench_probe/probe.py.
 sys.path[:0] = [str(Path(__file__).resolve().parent), str(Path(__file__).resolve().parent / "bench_probe")]
 from probe import CHIP_SECTION, SKILL_ROW, canaries, digest, normalise, tool_names, upstream_row  # noqa: E402
-from probe import canonical, capture_row, component, expected_codex, expected_relay  # noqa: E402
+from probe import canonical, capture_row, component, expected_codex, expected_relay, load_pinned_relay  # noqa: E402
 
 TOOLSETS = ["skills"]
 LISTENING_TOOLSETS = ["tts", "skills"]
@@ -163,10 +163,15 @@ def warm(args):
         if agent.ephemeral_system_prompt:
             prompt = (prompt + "\n\n" + agent.ephemeral_system_prompt).strip()
         names = tool_names(getattr(agent, "tools", None))
+        sent = names
+        if args.get("text") and agent.provider != "openai-codex":
+            source, _ = load_pinned_relay(args["provider_path"])
+            body, _, _ = source.request_body({"tools": agent.tools})
+            sent = tool_names(json.loads(body)["tools"])
         return {"route": route, "system_sha256": digest(normalise(prompt, args["item_dir"])),
                 "system_chars": len(normalise(prompt, args["item_dir"])), "chip_section": CHIP_SECTION in prompt,
                 "skill_row": SKILL_ROW in prompt, "tools": names, "canaries": canaries(prompt),
-                **(golden_delta(agent, prompt, args) if args.get("text") else {})}
+                **({"sent_tools": sent, **golden_delta(agent, prompt, args)} if args.get("text") else {})}
     finally:
         agent.close()
         if session_db is not None:
