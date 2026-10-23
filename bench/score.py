@@ -103,10 +103,10 @@ def header_leak(text, data):
     return any(_header_shaped(m[1], events, data) for m in re.finditer(r"\[\[([^\[\]]*)\]\]", text))
 
 
-def g3_checks(reply, data=None):
+def g3_checks(reply, data=None, dialect="fish_s2"):
     data = data or load_data()
     original = parse(reply)
-    rendered = render(original, "fish_s2", data=data)
+    rendered = render(original, dialect, data=data)
     checks = [("register_leak", header_leak(rendered.text, data)),
               ("consistency", bool(check(original, rendered, data)))]
     return [name for name, fails in checks if fails]

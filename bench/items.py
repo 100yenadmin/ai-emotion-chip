@@ -11,7 +11,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 BENCH = ROOT / "bench"
 SETS = ("g1", "g2", "g3", "e3")
-MODELS = ("claude-opus-5-5",)
+MODELS = ("claude-opus-5-5", "gpt-6.1-sol")
 CONDITIONS = ("OFF", "ON", "NATIVE")
 RUNS = (1, 2, 3)
 FIELDS = {

@@ -14,6 +14,7 @@ from emotion_chip.guide import build_prompt_section, build_skill
 from .items import (BENCH, ROOT, SETS, MODELS, CONDITIONS, RUNS, atomic_json,
                     heldout_hashes, load_items, read_json, run_directory, sha256)
 
+CLAUDE_P_MODELS = ("claude-opus-5-5",)
 
 def system_prompt(model, condition):
     base = (BENCH / "base_system.md").read_text(encoding="utf-8").strip()
@@ -31,9 +32,7 @@ def system_prompt(model, condition):
 
 def isolated_environment(token, config, environ=None):
     source = os.environ if environ is None else environ
-    env = {k: v for k, v in source.items() if k != "CLAUDECODE"
-           and not k.startswith("CLAUDE_CODE_")
-           and k not in {"ANTHROPIC_BASE_URL", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_API_KEY"}}
+    env = {k: source[k] for k in ("PATH", "HOME", "USER", "LANG", "LC_ALL", "TMPDIR") if k in source}
     # CLAUDE.md files from the user, the working directory or its parents never reach the subject model.
     env.update(CLAUDE_CONFIG_DIR=str(config), CLAUDE_CODE_OAUTH_TOKEN=token, CLAUDE_CODE_DISABLE_CLAUDE_MDS="1")
     return env
@@ -114,10 +113,10 @@ def record_failure(path, lock, row, exc):
             handle.write(json.dumps(entry, sort_keys=True) + "\n")
 
 
-def generate(set_name, out, models=MODELS, conditions=CONDITIONS, limit=None, concurrency=4, generate_fn=None):
+def generate(set_name, out, models=CLAUDE_P_MODELS, conditions=CONDITIONS, limit=None, concurrency=4, generate_fn=None):
     if not 1 <= concurrency <= 4 or (limit is not None and limit < 1):
         raise ValueError("concurrency must be 1..4 and limit must be positive")
-    if not models or len(set(models)) != len(models) or any(m not in MODELS for m in models):
+    if not models or len(set(models)) != len(models) or any(m not in CLAUDE_P_MODELS for m in models):
         raise ValueError("unsupported or duplicate models")
     if not conditions or len(set(conditions)) != len(conditions) or any(c not in CONDITIONS for c in conditions):
         raise ValueError("unsupported or duplicate conditions")
@@ -181,7 +180,7 @@ def generate(set_name, out, models=MODELS, conditions=CONDITIONS, limit=None, co
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--set", choices=SETS, required=True)
-    parser.add_argument("--models", nargs="+", choices=MODELS, default=MODELS)
+    parser.add_argument("--models", nargs="+", choices=CLAUDE_P_MODELS, default=CLAUDE_P_MODELS)
     parser.add_argument("--conditions", nargs="+", choices=CONDITIONS, default=CONDITIONS)
     parser.add_argument("--limit", type=int)
     parser.add_argument("--concurrency", type=int, default=4)

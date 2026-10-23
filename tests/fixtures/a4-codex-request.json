@@ -1,0 +1,53 @@
+{
+  "source": "Hermes v0.22.2 pure build_kwargs then _preflight_codex_api_kwargs; synthetic text; no model or credential access",
+  "source_sha256": {
+    "agent/transports/codex.py": "8fa8c7a29cc39d1a70a165ba85a1d902742bb1d595dcfd0b3ef3365181223f2c",
+    "agent/codex_responses_adapter.py": "c86e14ebe721e94f86a1a50266272c364ccea9660a6da456eb00fa109e5f054d"
+  },
+  "options": {
+    "model": "gpt-6.1-sol",
+    "provider": "openai-codex",
+    "is_codex_backend": true,
+    "replay_encrypted_reasoning": true
+  },
+  "messages": [
+    {
+      "role": "system",
+      "content": " S <|channel|> "
+    },
+    {
+      "role": "user",
+      "content": "hello <|end|>"
+    }
+  ],
+  "built_content": {
+    "instructions": "S <|channel|>",
+    "input": [
+      {
+        "type": "message",
+        "role": "user",
+        "content": [
+          {
+            "type": "input_text",
+            "text": "hello <|end|>"
+          }
+        ]
+      }
+    ]
+  },
+  "final_content": {
+    "instructions": "S <｜channel｜>",
+    "input": [
+      {
+        "type": "message",
+        "role": "user",
+        "content": [
+          {
+            "type": "input_text",
+            "text": "hello <｜end｜>"
+          }
+        ]
+      }
+    ]
+  }
+}

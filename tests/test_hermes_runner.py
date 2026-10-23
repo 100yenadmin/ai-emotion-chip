@@ -76,7 +76,9 @@ def test_child_env_is_built_from_nothing(tmp_path, monkeypatch):
     monkeypatch.setenv("CLAUDE_CODE_ENTRYPOINT", "cli")
     env = run.child_env(tmp_path, "fishkey", "tok")
     assert env["CLAUDE_CODE_OAUTH_TOKEN"] == "tok" and env["FISH_API_KEY"] == "fishkey"
-    assert not [k for k in env if k.startswith(("ANTHROPIC_", "CLAUDE_CODE_")) and k != "CLAUDE_CODE_OAUTH_TOKEN"]
+    assert not [k for k in env if k.startswith(("ANTHROPIC_", "CLAUDE_CODE_"))
+                and k not in {"CLAUDE_CODE_OAUTH_TOKEN", "CLAUDE_CODE_DISABLE_CLAUDE_MDS"}]
+    assert env["CLAUDE_CODE_DISABLE_CLAUDE_MDS"] == "1"
     assert "CLAUDECODE" not in env
     for key in ("HOME", "TMPDIR", "HERMES_HOME", "XDG_CACHE_HOME", "BENCH_PROBE_OUT"):
         assert env[key].startswith(str(tmp_path))
@@ -309,7 +311,8 @@ def test_turn_driver_extracts_text_to_speech_calls():
     calls, results = turn.tts_calls(messages)
     assert calls == [{"text": "[warm] Hi.", "arguments": ["text"]}]
     assert results == [{"success": True}]
-    assert turn.TOOLSETS == ["tts", "skills"]
+    assert turn.TOOLSETS == ["skills"]
+    assert turn.LISTENING_TOOLSETS == ["tts", "skills"]
 
 
 # --- machine paths ----------------------------------------------------------------------------------------------
