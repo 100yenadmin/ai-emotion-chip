@@ -27,7 +27,8 @@ STOP_AFTER = 10
 LABEL_WORDS = ("emotion", "chip", "bench", "eval", "pilot", "heldout", "voice", "native")
 # A8: neutral section ids; Hermes orders sections by id, so the channel instruction stays first in every arm.
 HARNESS_ID, NATIVE_IDS = "channel", ("voice-guide-1", "voice-guide-2")
-SKILL_TOOLS = frozenset({"skill_manage", "skill_view", "skills_list"})
+# A9: cells are Hermes one-shot sessions, which offer no skill_manage; warm fails if a host still offers it.
+SKILL_TOOLS = frozenset({"skill_view", "skills_list"})
 HARNESS_ERRORS = frozenset({
     "credential lifetime is too short", "pinned provider copy differs",
     "Claude Code changed; a new route record is required", "pinned Claude Code binary changed",

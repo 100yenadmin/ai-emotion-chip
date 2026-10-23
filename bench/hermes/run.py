@@ -497,6 +497,8 @@ class Host:
                         eleven_key=self.eleven_key)
         if args_obj.get("text"):
             env["CLAUDE_SUBSCRIPTION_DIRECTSDK_SESSION_MODE"] = "0"
+            # A9: Hermes' one-shot marker (as `hermes chat -q`): no skill_manage, one-shot skills guidance.
+            env["HERMES_SINGLE_QUERY_SESSION"] = "1"
             if args_obj.get("claude_command"):
                 env["CLAUDE_SUBSCRIPTION_DIRECTSDK_COMMAND"] = args_obj["claude_command"]
         try:
