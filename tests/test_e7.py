@@ -218,7 +218,7 @@ def test_rule4_provider_seed_top_level_and_unset_unchanged(tmp_path, monkeypatch
 
 def test_rule4_prompt_pin_and_seed_order(generated):
     _, _, folder = generated
-    assert e7.sha(e7.HERE / "prompts.json") == e7.PROMPTS_SHA256
+    assert e7.sha(e7.HERE / "prompts.json") == "8d8498b85d1e3525e9019e3a5bbed0ec2945d451b0b630cd21d2d034702b534c"
     expected = {item: __import__("random").Random(f"{e7.SEED_ROOT}:{item}").randrange(2**32)
                 for group in e7.prompts().values() for item in group}
     assert e7.read(folder / "manifest.json")["seeds"] == expected
@@ -232,7 +232,7 @@ def test_comparison_a_uses_provider_score_and_checks_render():
     assert e7.render_pair("Plain.", "Plain.", render) == ("Plain.", "Plain.")
 
 
-def test_rule5_no_overwrite_and_infra_retry_preserves_attempts(generated, tmp_path, monkeypatch):
+def test_rule5_no_overwrite_and_retry_preserves_attempts(generated, tmp_path, monkeypatch):
     _, paths, source = generated
     folder = tmp_path / "session"
     shutil.copytree(source, folder)
@@ -241,16 +241,16 @@ def test_rule5_no_overwrite_and_infra_retry_preserves_attempts(generated, tmp_pa
     monkeypatch.setattr(e7, "dry_cell", lambda *a: pytest.fail("recorded cell was regenerated"))
     e7.generate("fixture-tag", folder, dry_run=True, paths=paths)
     assert e7.read(folder / "manifest.json") == before
-    with pytest.raises(ValueError, match="infrastructure"):
-        e7.generate("fixture-tag", folder, dry_run=True, paths=paths, retry_infra="a01", reason="outage")
-    before["cells"]["a01:chip"] = [{"status": "infra_failure", "clips": [], "reason": "first outage"}]
+    with pytest.raises(ValueError, match="recorded failure"):
+        e7.generate("fixture-tag", folder, dry_run=True, paths=paths, retry="a01", reason="outage")
+    before["cells"]["a01:chip"] = [{"status": "turn_error", "clips": [], "reason": "turn_error"}]
     e7.write(folder / "manifest.json", before)
     good = e7.read(source / "manifest.json")["cells"]["a01:chip"][0]
     monkeypatch.setattr(e7, "dry_cell", lambda *a: good)
-    e7.generate("fixture-tag", folder, dry_run=True, paths=paths, retry_infra="a01", reason="network recovered")
+    e7.generate("fixture-tag", folder, dry_run=True, paths=paths, retry="a01", reason="network recovered")
     attempts = e7.read(folder / "manifest.json")["cells"]["a01:chip"]
-    assert [a["status"] for a in attempts] == ["infra_failure", "completed"]
-    assert attempts[1]["reason"] == "network recovered"
+    assert [a["status"] for a in attempts] == ["turn_error", "completed"]
+    assert attempts[1]["retry_reason"] == "network recovered"
 
 
 def test_rule5_missing_duplicate_and_unvoiced_refused(generated):
@@ -378,32 +378,6 @@ def test_output_path_and_eva_capture_at_imported_function(tmp_path, monkeypatch)
     assert writes == []
 
 
-def test_mini_session_one_agent_history_and_stitch_capture(tmp_path, monkeypatch):
-    (tmp_path / "out").mkdir()
-    captured = []
-    chip = SimpleNamespace(_prepare=lambda *a, **k: None,
-        eleven=SimpleNamespace(synthesize=lambda text, path, **k: Path(path).write_bytes(b"audio")))
-    monkeypatch.setitem(sys.modules, "tools", SimpleNamespace(tts_tool=SimpleNamespace(text_to_speech_tool=lambda *a, **k: None)))
-    monkeypatch.setitem(sys.modules, "agent", SimpleNamespace())
-    monkeypatch.setitem(sys.modules, "agent.tts_registry", SimpleNamespace(get_provider=lambda name: chip))
-    sent, scores, _ = e7.install_capture({"arm": "chip", "item_dir": str(tmp_path)}, turn)
-    history = []
-    class Agent:
-        def run_conversation(self, message, **kwargs):
-            index = len(history)
-            assert kwargs == ({} if index == 0 else {"conversation_history": history[-1]})
-            chip._prepare("post-cleanup score")
-            chip.eleven.synthesize("rendered", tmp_path / f"out/{index}.mp3", seed=42,
-                                   previous_request_ids=[f"id-{i}" for i in range(index)])
-            history.append([{"role": "user", "content": message}])
-            return {"completed": True, "messages": history[-1]}
-    e7.conversations(Agent(), ["one", "two", "three"], lambda index, result: captured.append(index))
-    assert captured == [0, 1, 2]
-    assert [s["previous_request_ids"] for s in sent] == [[], ["id-0"], ["id-0", "id-1"]]
-    assert all(s["seed"] == 42 for s in sent)
-    assert scores == ["post-cleanup score"] * 3
-
-
 def test_warm_frozen_soul_voice_and_arm_config(tmp_path, monkeypatch):
     paths = fixture_paths(tmp_path / "source")
     folder = tmp_path / "session"
@@ -434,60 +408,6 @@ def test_warm_frozen_soul_voice_and_arm_config(tmp_path, monkeypatch):
             e7.warm_proof(args, driver)
 
 
-def test_rule9_page_awaits_saves_and_reloads_lock(tmp_path):
-    script = (e7.HERE / "template.html").read_text().split("<script>")[1].split("</script>")[0]
-    script = script[:script.rindex("\nbuild();")]
-    test = r'''
-const assert = require('node:assert/strict');
-(async () => {
-  const events = [];
-  let release;
-  db = {doc: path => ({set: body => {
-    events.push(path);
-    if (path.endsWith('/lock')) return Promise.resolve();
-    return new Promise(resolve => {release = resolve;});
-  }})};
-  ready = true;
-  const first = save('t01', {choice:'a'});
-  const second = save('t02', {choice:'b'});
-  const lockingWork = lockRatings();
-  await Promise.resolve();
-  assert.equal(events.length, 1);
-  assert.equal(locked, false);
-  release();
-  await first; await Promise.resolve(); await Promise.resolve();
-  assert.equal(events.length, 2);
-  assert.ok(!events.some(p => p.endsWith('/lock')));
-  release(); await second; await lockingWork;
-  assert.equal(events.length, 3);
-  assert.ok(events[2].endsWith('/lock'));
-  assert.equal(locked, true);
-  await save('t01', {choice:'b'});
-  assert.equal(events.length, 3);
-  assert.ok(elements.every(el => el.disabled));
-  locked = false; ready = false;
-  window.claude = {use: async () => ({
-    doc: path => ({get: async () => ({data: () => ({lockedAt:'2026-10-22T00:00:00Z'})})}),
-    collection: name => ({get: async () => ({docs:[]})})
-  })};
-  await load();
-  assert.equal(locked, true);
-  assert.ok(elements.every(el => el.disabled));
-  console.log('lock behavior verified');
-})().catch(e => {console.error(e); process.exitCode = 1;});
-'''
-    dom = r'''
-const elements = [{disabled:false,tagName:'BUTTON'}, {disabled:false,tagName:'INPUT'}];
-const status = {textContent:''};
-const document = {querySelector:s=>status, querySelectorAll:s=>elements, getElementById:s=>null};
-const window = {};
-'''
-    path = tmp_path / "page-test.js"
-    path.write_text(dom + script + test)
-    result = subprocess.run([shutil.which("node"), str(path)], capture_output=True, text=True, check=True)
-    assert result.stdout.strip() == "lock behavior verified"
-
-
 def test_rule11_rerun_gate_and_byte_identical_real_pairs(built, tmp_path, monkeypatch):
     _, paths, folder, bundle, key_path, first_key = built
     parent = tmp_path / "first"
@@ -496,8 +416,10 @@ def test_rule11_rerun_gate_and_byte_identical_real_pairs(built, tmp_path, monkey
     new = tmp_path / "rerun"
     with pytest.raises(ValueError, match="lock"):
         e7.rerun_admission(parent, new)
-    manifest["locked_at"] = "2026-10-22T12:00:00Z"
-    e7.write(parent / "manifest.json", manifest)
+    ratings_path = tmp_path / "void-ratings.json"
+    e7.write(ratings_path, ratings_for(first_key, catches=2))
+    scoring.score_files(ratings_path, key_path, parent / "manifest.json")
+    manifest = e7.read(parent / "manifest.json")
     with pytest.raises(ValueError, match="12 hours"):
         e7.rerun_admission(parent, new, datetime(2026, 10, 22, 23, tzinfo=timezone.utc))
     monkeypatch.setattr(e7, "load_paths", lambda: dict(paths))
@@ -569,13 +491,15 @@ def test_child_turn_mini_stitches_and_missing_ids_fail(tmp_path, monkeypatch):
         env=lambda k: "fixture-session" if k == "HERMES_SESSION_ID" else "",
         opener=lambda *a, **k: Response(b"fixture audio"))
     monkeypatch.setitem(sys.modules, "agent.tts_registry", SimpleNamespace(get_provider=lambda name: provider))
-    count = [0]
+    count, histories = [0], []
     class Agent:
         session_id = "fixture-session"
         def run_conversation(self, prompt, **kwargs):
+            assert kwargs == ({} if not histories else {"conversation_history": histories[-1]})
             count[0] += 1
             provider.synthesize("[soft: Hello.]", tmp_path / f"out/turn-{count[0]}.mp3")
-            return {"completed": True, "messages": [{"role": "assistant", "content": "fixture"}]}
+            histories.append((histories[-1] if histories else []) + [{"role": "user", "content": prompt}])
+            return {"completed": True, "messages": histories[-1]}
     driver = SimpleNamespace(build_agent=lambda cwd: (Agent(), None, {}), _recorder=turn._recorder,
                              wrap_upstream=lambda item: ["fake-relay"], tts_calls=lambda messages: ([], []),
                              stop_natives=lambda: None)
@@ -587,8 +511,9 @@ def test_child_turn_mini_stitches_and_missing_ids_fail(tmp_path, monkeypatch):
     assert "ELEVENLABS_API_KEY" not in __import__("os").environ
     # Same child mode with no stitch identity must fail on the second turn.
     provider.env = lambda key: ""
+    histories.clear()
     result = e7.child(args, driver)
-    assert result["completed"] is False and result["error_type"] == "RuntimeError"
+    assert result["completed"] is False and result["error_type"] == "IntegrityError"
 
 
 def test_child_comparison_render_seed_no_stitch_and_mismatch(tmp_path, monkeypatch):
@@ -626,7 +551,7 @@ def test_loudness_actual_high_crest_tone_lowers_global_target(tmp_path, generate
     assert gains[0] < -18 - measurements[0]["lufs"]
 
 
-def test_generate_unvoiced_and_infra_failure_are_recorded(tmp_path, monkeypatch):
+def test_generate_unvoiced_and_error_are_recorded(tmp_path, monkeypatch):
     paths = fixture_paths(tmp_path / "source")
     monkeypatch.setattr(e7, "frozen_tag", lambda *a: "fixture-commit")
     monkeypatch.setattr(e7, "jobs", lambda reserve: iter([("a01", "chip", ["fixture"])]))
@@ -637,10 +562,9 @@ def test_generate_unvoiced_and_infra_failure_are_recorded(tmp_path, monkeypatch)
     assert manifest["cells"]["a01:chip"][0]["status"] == "unvoiced"
     monkeypatch.setattr(e7, "dry_cell", lambda *a: (_ for _ in ()).throw(OSError("offline fixture outage")))
     folder = tmp_path / "failure"
-    with pytest.raises(RuntimeError, match="infra_failure"):
-        e7.generate("fixture-tag", folder, dry_run=True, paths=paths)
+    e7.generate("fixture-tag", folder, dry_run=True, paths=paths)
     manifest = e7.read(folder / "manifest.json")
-    assert manifest["cells"]["a01:chip"][0]["status"] == "infra_failure"
+    assert manifest["cells"]["a01:chip"][0]["status"] == "error"
     (folder / "src/emotion-chip/changed").write_text("changed")
     with pytest.raises(ValueError, match="plugin tree"):
         e7.generate("fixture-tag", folder, dry_run=True, paths=paths)
@@ -682,3 +606,656 @@ def test_rule10_both_comparisons_and_all_auxiliary_ratings_required(built, monke
     result = scoring.score(ratings, key, manifest)
     assert result["comparisons"]["comparison_b"]["acting"][trial["sides"]["a"]] == 1
     assert result["notes"] == 47
+
+
+@pytest.fixture
+def ledger(tmp_path, monkeypatch):
+    """A single-cell generation, with no ffmpeg, archive or host access."""
+    paths = fixture_paths(tmp_path / "source")
+    folder = tmp_path / "session"
+    monkeypatch.setattr(e7, "frozen_tag", lambda *a: "fixture-commit")
+    monkeypatch.setattr(e7, "jobs", lambda reserve: iter([("b01", "chip", ["fixture"])]))
+    monkeypatch.setattr(run, "archive", lambda repo, ref, dest: dest.mkdir(parents=True))
+    def generate(**kwargs):
+        return e7.generate("fixture-tag", folder, dry_run=True, paths=paths, **kwargs)
+    return folder, generate
+
+
+@pytest.mark.parametrize("exception", [ValueError, RuntimeError, OSError, KeyboardInterrupt, SystemExit])
+def test_fix1_every_cell_exception_is_finalized(ledger, monkeypatch, exception):
+    folder, generate = ledger
+    def fail(*a):
+        raise exception("private text and credential-shaped payload must not be copied")
+    monkeypatch.setattr(e7, "dry_cell", fail)
+    if issubclass(exception, Exception):
+        generate()
+    else:
+        with pytest.raises(exception):
+            generate()
+    manifest = e7.read(folder / "manifest.json")
+    attempt = manifest["cells"]["b01:chip"][0]
+    assert attempt["status"] == "error" and attempt["clips"] == []
+    assert attempt["reason"].startswith(exception.__name__ + ": ")
+    assert "private text" not in json.dumps(manifest)
+    assert manifest["attempt_counts"]["chip"]["error"] == 1
+
+
+def test_fix1_clip_hash_failure_is_finalized(ledger, monkeypatch):
+    folder, generate = ledger
+    monkeypatch.setattr(e7, "dry_cell", lambda *a: {"status": "completed", "clips": ["missing.mp3"]})
+    generate()
+    row = e7.read(folder / "manifest.json")["cells"]["b01:chip"][0]
+    assert row["status"] == "error" and row["clip_sha256"] == []
+
+
+def test_fix1_killed_attempt_becomes_retryable_error(ledger, monkeypatch):
+    folder, generate = ledger
+    monkeypatch.setattr(e7, "dry_cell", lambda *a: {"status": "unvoiced", "clips": []})
+    generate()
+    manifest = e7.read(folder / "manifest.json")
+    manifest["cells"]["b01:chip"] = [{"status": "started", "clips": []}]
+    e7.write(folder / "manifest.json", manifest)
+    monkeypatch.setattr(e7, "dry_cell", lambda *a: pytest.fail("unrequested regeneration"))
+    generate()
+    manifest = e7.read(folder / "manifest.json")
+    assert manifest["cells"]["b01:chip"][0]["status"] == "error"
+    assert manifest["attempt_counts"]["chip"]["error"] == 1
+    monkeypatch.setattr(e7, "dry_cell", lambda *a: {"status": "unvoiced", "clips": []})
+    assert len(generate(retry="b01", reason="interruption resolved")["cells"]["b01:chip"]) == 2
+
+
+@pytest.mark.parametrize("reason", e7.FAILURE_REASONS)
+def test_fix1_retry_by_reason_is_bounded_and_keeps_all_attempts(ledger, monkeypatch, reason):
+    folder, generate = ledger
+    monkeypatch.setattr(e7, "dry_cell", lambda *a: {"status": reason, "reason": reason, "clips": []})
+    if reason == "credential":
+        with pytest.raises(RuntimeError, match="credential"):
+            generate()
+        with pytest.raises(ValueError, match="credential"):
+            generate(retry="b01", reason="try again")
+        return
+    generate()
+    with pytest.raises(ValueError, match="requires --reason"):
+        generate(retry="b01")
+    for _ in range(2):
+        generate(retry="b01", reason="operator checked the cause")
+    with pytest.raises(ValueError, match="at most 2 retries"):
+        generate(retry="b01", reason="fourth attempt")
+    manifest = e7.read(folder / "manifest.json")
+    assert len(manifest["cells"]["b01:chip"]) == 3
+    assert manifest["attempt_counts"]["chip"][reason] == 3
+    assert manifest["attempt_counts"]["eva"][reason] == 0
+
+
+def test_fix1_credential_stops_before_next_cell(ledger, monkeypatch):
+    folder, generate = ledger
+    monkeypatch.setattr(e7, "jobs", lambda reserve: iter([("b01", "chip", ["one"]), ("b02", "eva", ["two"])]))
+    seen = []
+    def cell(session, item, *args):
+        seen.append(item)
+        return {"status": "credential", "clips": []}
+    monkeypatch.setattr(e7, "dry_cell", cell)
+    with pytest.raises(RuntimeError, match="credential"):
+        generate()
+    assert seen == ["b01"]
+    assert "b02:eva" not in e7.read(folder / "manifest.json")["cells"]
+
+
+def test_fix1_first_usable_attempt_counts_and_is_never_replaced(ledger, monkeypatch):
+    folder, generate = ledger
+    monkeypatch.setattr(e7, "dry_cell", lambda *a: {"status": "synthesis_failed", "clips": []})
+    generate()
+    (folder / "fixture.mp3").write_bytes(b"first usable clip")
+    good = {"status": "completed", "clips": ["fixture.mp3"]}
+    monkeypatch.setattr(e7, "dry_cell", lambda *a: good)
+    manifest = generate(retry="b01", reason="synthesis recovered")
+    row, clips = e7.completed(manifest, "b01", "chip", folder)
+    assert row["status"] == "completed" and clips[0].read_bytes() == b"first usable clip"
+    monkeypatch.setattr(e7, "dry_cell", lambda *a: pytest.fail("usable attempt replaced"))
+    generate()
+    with pytest.raises(ValueError, match="recorded failure"):
+        generate(retry="b01", reason="cherry pick")
+    assert len(e7.read(folder / "manifest.json")["cells"]["b01:chip"]) == 2
+
+
+def test_fix1_retry_budget_is_shared_between_arms(ledger, monkeypatch):
+    folder, generate = ledger
+    monkeypatch.setattr(e7, "jobs", lambda reserve: iter([("b01", "chip", ["one"]), ("b01", "eva", ["one"])]))
+    monkeypatch.setattr(e7, "dry_cell", lambda *a: {"status": "unvoiced", "clips": []})
+    generate()
+    generate(retry="b01", reason="first retry")
+    generate(retry="b01", reason="second retry")
+    with pytest.raises(ValueError, match="at most 2"):
+        generate(retry="b01", reason="third retry")
+    assert {len(a) for a in e7.read(folder / "manifest.json")["cells"].values()} == {3}
+
+
+@pytest.fixture
+def real_case(tmp_path, monkeypatch):
+    """Exercise real_cell, faking only the host and private-input setup."""
+    from bench import gen
+    folder = tmp_path / "session"
+    calls, joined = [], []
+    serial = [0]
+    monkeypatch.setattr(gen, "keychain_token", lambda: "offline-fixture")
+    def build_home(item, *a):
+        (item / "out").mkdir(parents=True)
+        return "frozen-soul"
+    monkeypatch.setattr(e7, "build_home", build_home)
+    monkeypatch.setattr(run, "read_jsonl", lambda p: [{"canaries": {"fixture": False}}])
+    def concat(sources, dest):
+        joined.append([p.read_bytes() for p in sources])
+        dest.write_bytes(b"|".join(p.read_bytes() for p in sources))
+        return True
+    monkeypatch.setattr(run, "concat_clips", concat)
+    def invoke(proof, *, item="b01", arm="chip", messages=None, warm=None, rendered=None):
+        serial[0] += 1
+        class Host:
+            def __init__(self, *a):
+                pass
+            def call(self, cell, args, **kwargs):
+                calls.append(args)
+                if args["mode"] == "e7-warm":
+                    return {"soul_sha256": "frozen-soul"} if warm is None else warm
+                if args["mode"] == "e7-render":
+                    if rendered is not None:
+                        return rendered
+                    clips = [cell / "out/cued.mp3", cell / "out/stripped.mp3"]
+                    for clip in clips:
+                        clip.write_bytes(clip.stem.encode())
+                    return {"clips": [str(p) for p in clips], "cued_differs": True}
+                rows = proof.get("sent_to_voice", []) + [r for t in proof.get("turns", []) for r in t.get("sent_to_voice", [])]
+                for row in rows:
+                    if row.get("clip"):
+                        (cell / "out" / row["clip"]).write_bytes(row["clip"].encode())
+                return proof
+        monkeypatch.setattr(e7, "E7Host", Host)
+        return e7.real_cell(folder, item, arm, messages or ["fixture"], 42, {"ava_voice_id": "fixture"}, serial[0])
+    return folder, invoke, calls, joined
+
+
+@pytest.mark.parametrize("proof,warm,status", [
+    ({}, {"error": "relay timeout"}, "turn_error"),
+    ({}, {"rc": 1}, "turn_error"),
+    ({}, {"credential_failure": True}, "credential"),
+    ({}, {"error": "HTTP 401"}, "credential"),
+    ({}, {"soul_sha256": "changed"}, "integrity"),
+    ({"rc": 1}, None, "turn_error"),
+    ({"completed": False, "error_type": "TimeoutError"}, None, "turn_error"),
+    ({"completed": True, "failed": True}, None, "turn_error"),
+    ({"completed": True, "error": "overload"}, None, "turn_error"),
+    ({"credential_failure": True}, None, "credential"),
+    ({"final_response": "access token has been revoked"}, None, "credential"),
+    ({"completed": True, "tts_results": [{"error": "HTTP 401"}]}, None, "credential"),
+    ({"completed": True, "turns": [{"tts_results": [{"error": "HTTP 401"}]}]}, None, "credential"),
+    ({"completed": False, "integrity": True}, None, "integrity"),
+    ({"completed": True, "sent_to_voice": [], "tts_calls": []}, None, "unvoiced"),
+    ({"completed": True, "sent_to_voice": [], "tts_calls": [{"text": "fixture"}]}, None, "synthesis_failed"),
+    ({"completed": True, "sent_to_voice": [{"text": "failed"}]}, None, "synthesis_failed"),
+])
+def test_fix1_real_cell_status_mapping(real_case, proof, warm, status):
+    _, invoke, _, _ = real_case
+    result = invoke(proof, warm=warm)
+    assert result["status"] == result["reason"] == status
+    assert result["clips"] == []
+
+
+@pytest.mark.parametrize("arm", ["chip", "eva"])
+@pytest.mark.parametrize("successes", [1, 2])
+def test_fix1_real_cell_selects_successes_in_order(real_case, arm, successes):
+    folder, invoke, _, joined = real_case
+    rows = [{"text": "failure"}] + [{"clip": f"good-{i}.mp3"} for i in range(successes)] + [{"text": "failure"}]
+    result = invoke({"completed": True, "sent_to_voice": rows}, arm=arm)
+    assert result["status"] == "completed" and len(result["clips"]) == 1
+    assert (folder / result["clips"][0]).read_bytes() == b"|".join(f"good-{i}.mp3".encode() for i in range(successes))
+    assert len(joined) == (successes > 1)
+
+
+@pytest.mark.parametrize("successes", [1, 2])
+def test_fix1_comparison_a_requires_one_success_and_uses_its_score(real_case, successes):
+    _, invoke, calls, _ = real_case
+    rows = [{"text": "failed", "score": "wrong score"}] + [
+        {"clip": f"good-{i}.mp3", "text": "recorded", "score": "successful score"} for i in range(successes)]
+    result = invoke({"completed": True, "sent_to_voice": rows, "scores": ["wrong score", "successful score"]}, item="a01")
+    assert result["status"] == ("completed" if successes == 1 else "integrity")
+    renders = [c for c in calls if c["mode"] == "e7-render"]
+    if successes == 1:
+        assert renders[0]["score"] == "successful score" and renders[0]["recorded"] == "recorded"
+    else:
+        assert renders == []
+
+
+@pytest.mark.parametrize("rendered,status", [
+    ({"completed": False, "integrity": True}, "integrity"),
+    ({"credential_failure": True}, "credential"),
+    ({"clips": []}, "synthesis_failed"),
+])
+def test_fix1_comparison_a_render_failure_reason(real_case, rendered, status):
+    _, invoke, _, _ = real_case
+    result = invoke({"completed": True, "sent_to_voice": [{"clip": "good.mp3", "text": "text", "score": "score"}]},
+                    item="a01", rendered=rendered)
+    assert result["status"] == status and not result["clips"]
+
+
+@pytest.mark.parametrize("missing", [False, True])
+def test_fix1_mini_session_concatenates_per_turn_and_checks_stitching(real_case, missing):
+    folder, invoke, _, joined = real_case
+    turns = [{"sent_to_voice": [{"text": "failed"}] + [
+        {"clip": f"turn-{i}-{j}.mp3", "previous_request_ids": [] if missing or i == 0 else ["earlier"]}
+        for j in range(2)]} for i in range(3)]
+    result = invoke({"completed": True, "turns": turns}, item="m1", messages=["one", "two", "three"])
+    assert result["status"] == ("integrity" if missing else "completed")
+    if not missing:
+        assert len(result["clips"]) == len(joined) == 3
+        for i, clip in enumerate(result["clips"]):
+            assert (folder / clip).read_bytes() == f"turn-{i}-0.mp3|turn-{i}-1.mp3".encode()
+
+
+@pytest.mark.parametrize("failure", ["raise", "false", "error_object"])
+def test_fix1_eva_capture_ignores_failed_command_runs(tmp_path, monkeypatch, failure):
+    (tmp_path / "out").mkdir()
+    output = tmp_path / "out/stale.mp3"
+    output.write_bytes(b"partial file")
+    def command(*a, **k):
+        if failure == "raise":
+            raise RuntimeError("failed command")
+        return False if failure == "false" else {"error": "failed"}
+    module = SimpleNamespace(_generate_command_tts=command, text_to_speech_tool=lambda *a, **k: None)
+    monkeypatch.setitem(sys.modules, "tools", SimpleNamespace(tts_tool=module))
+    sent, _, _ = e7.install_capture({"arm": "eva", "item_dir": str(tmp_path)}, turn)
+    if failure == "raise":
+        with pytest.raises(RuntimeError):
+            module._generate_command_tts("text", output)
+    else:
+        module._generate_command_tts("text", output)
+    assert sent == []
+
+
+def test_fix1_eva_command_provider_voice_result_compatibility(tmp_path):
+    cfg = e7.config(tmp_path, "eva", tmp_path, {"ava_voice_id": "fixture"}, 42)
+    assert cfg["tts"]["providers"]["e7-sag"]["voice_compatible"] is True
+
+
+@pytest.mark.parametrize("check", ["hash", "soul", "voice", "canary"])
+def test_fix1_each_warm_guard_independently(tmp_path, monkeypatch, check):
+    home, inputs = tmp_path / "home", tmp_path / "inputs"
+    home.mkdir(); inputs.mkdir()
+    (home / "SOUL.md").write_text("frozen persona")
+    (inputs / "voice.md").write_text("separate frozen voice")
+    monkeypatch.setenv("HERMES_HOME", str(home))
+    prompt = "frozen persona\nseparate frozen voice"
+    args = {"cwd": str(tmp_path), "arm": "eva", "soul_sha256": e7.sha(home / "SOUL.md"), "inputs": str(inputs)}
+    if check == "hash":
+        args["soul_sha256"] = "wrong digest"
+    elif check == "soul":
+        prompt = "separate frozen voice"
+    elif check == "voice":
+        prompt = "frozen persona"
+    closed = []
+    agent = SimpleNamespace(ephemeral_system_prompt="", close=lambda: closed.append("agent"))
+    db = SimpleNamespace(close=lambda: closed.append("db"))
+    monkeypatch.setitem(sys.modules, "agent", SimpleNamespace())
+    monkeypatch.setitem(sys.modules, "agent.system_prompt", SimpleNamespace(build_system_prompt=lambda agent: prompt))
+    driver = SimpleNamespace(build_agent=lambda cwd: (agent, db, {}), canaries=lambda text: {"private": check == "canary"})
+    with pytest.raises(RuntimeError, match={"hash": "SOUL", "soul": "SOUL", "voice": "voice", "canary": "canary"}[check]):
+        e7.warm_proof(args, driver)
+    assert closed == ["agent", "db"]
+
+
+@pytest.mark.parametrize("mode", ["e7-warm", "e7-turn", "e7-render"])
+def test_fix1_turn_main_dispatches_archived_e7_child(tmp_path, monkeypatch, capsys, mode):
+    from contextlib import contextmanager
+    args = {"mode": mode, "chip_root": str(tmp_path / "archived-chip")}
+    path = tmp_path / "args.json"
+    e7.write(path, args)
+    events = []
+    @contextmanager
+    def scope(profile):
+        assert profile is None
+        events.append("enter")
+        yield
+        events.append("exit")
+    monkeypatch.setitem(sys.modules, "hermes_cli", SimpleNamespace())
+    monkeypatch.setitem(sys.modules, "hermes_cli.plugins", SimpleNamespace(discover_plugins=lambda: events.append("discover")))
+    monkeypatch.setitem(sys.modules, "hermes_cli.web_server_profiles", SimpleNamespace(_config_profile_scope=scope))
+    def child(received, driver):
+        assert received == args and driver is turn
+        assert sys.path[0] == args["chip_root"]
+        events.append("child")
+        return {"offline": True}
+    monkeypatch.setattr(e7, "child", child)
+    monkeypatch.setattr(sys, "path", list(sys.path))
+    monkeypatch.setattr(sys, "argv", [str(turn.__file__), str(path)])
+    def exit(code):
+        assert code == 0
+        raise SystemExit(code)
+    monkeypatch.setattr(turn.os, "_exit", exit)
+    with pytest.raises(SystemExit):
+        turn.main()
+    assert events == ["enter", "discover", "child", "exit"]
+    assert capsys.readouterr().out.strip() == 'PROOF={"offline": true}'
+
+
+def frozen_repo(path, message="frozen"):
+    """Write a tiny fixture repository directly; every git command in this lane stays read-only."""
+    import hashlib
+    import struct
+    import zlib
+    meta = path / ".git"
+    (meta / "objects").mkdir(parents=True)
+    (meta / "refs/tags").mkdir(parents=True)
+    (meta / "refs/heads").mkdir()
+    (meta / "config").write_text("[core]\nrepositoryformatversion = 0\nbare = false\n")
+    def object(kind, content):
+        raw = kind.encode() + b" " + str(len(content)).encode() + b"\0" + content
+        digest = hashlib.sha1(raw).hexdigest()
+        dest = meta / "objects" / digest[:2] / digest[2:]
+        dest.parent.mkdir(exist_ok=True)
+        dest.write_bytes(zlib.compress(raw))
+        return digest
+    content = b"frozen\n"
+    blob = object("blob", content)
+    name = b"tracked.txt"
+    tree = object("tree", b"100644 " + name + b"\0" + bytes.fromhex(blob))
+    commit = object("commit", f"tree {tree}\nauthor Fixture <fixture@example.invalid> 1 +0000\ncommitter Fixture <fixture@example.invalid> 1 +0000\n\n{message}\n".encode())
+    (meta / "HEAD").write_text(commit + "\n")
+    (meta / "refs/tags/frozen").write_text(commit + "\n")
+    (meta / "refs/heads/branch").write_text(commit + "\n")
+    (path / name.decode()).write_bytes(content)
+    entry = struct.pack(">10I20sH", 0, 0, 0, 0, 0, 0, 0o100644, 0, 0, len(content), bytes.fromhex(blob), len(name)) + name + b"\0"
+    entry += b"\0" * (-len(entry) % 8)
+    index = struct.pack(">4sII", b"DIRC", 2, 1) + entry
+    (meta / "index").write_bytes(index + hashlib.sha1(index).digest())
+    return commit
+
+
+@pytest.mark.parametrize("dirty_repo", ["chip", "bench"])
+def test_fix1_frozen_tag_checks_two_repos_and_ignores_untracked(tmp_path, monkeypatch, dirty_repo):
+    monkeypatch.setenv("GIT_OPTIONAL_LOCKS", "0")
+    repos = {name: tmp_path / name for name in ("chip", "bench")}
+    commits = {name: frozen_repo(path) for name, path in repos.items()}
+    assert commits["chip"] == commits["bench"]
+    (repos["bench"] / "untracked.txt").write_text("not a tracked edit")
+    assert e7.frozen_tag("frozen", repos["chip"], repos["bench"]) == commits["chip"]
+    with pytest.raises(ValueError, match="branches"):
+        e7.frozen_tag("branch", repos["chip"], repos["bench"])
+    (repos[dirty_repo] / "tracked.txt").write_text("changed")
+    with pytest.raises(ValueError, match="dirty"):
+        e7.frozen_tag("frozen", repos["chip"], repos["bench"])
+
+
+@pytest.mark.parametrize("changed_repo", ["chip", "bench"])
+def test_fix1_frozen_tag_checks_both_heads(tmp_path, monkeypatch, changed_repo):
+    monkeypatch.setenv("GIT_OPTIONAL_LOCKS", "0")
+    repos = {name: tmp_path / name for name in ("chip", "bench")}
+    commits = {name: frozen_repo(path) for name, path in repos.items()}
+    different = tmp_path / "different"
+    other_commit = frozen_repo(different, "other commit")
+    shutil.copytree(different / ".git/objects", repos[changed_repo] / ".git/objects", dirs_exist_ok=True)
+    (repos[changed_repo] / ".git/HEAD").write_text(other_commit + "\n")
+    with pytest.raises(ValueError, match="HEAD"):
+        e7.frozen_tag("frozen", repos["chip"], repos["bench"])
+
+
+@pytest.mark.parametrize("status", [None, "pass", "fail", "incomplete", "void"])
+def test_fix1_rerun_requires_void_score_receipt_bound_to_key(built, tmp_path, monkeypatch, status):
+    _, _, source, _, source_key, key = built
+    parent = tmp_path / "first"
+    parent.mkdir()
+    key_path = tmp_path / "key.json"
+    shutil.copyfile(source_key, key_path)
+    manifest = e7.read(source / "manifest.json")
+    manifest.update(key_path=str(key_path), locked_at="2026-10-22T12:00:00Z")
+    e7.write(parent / "manifest.json", manifest)
+    if status is not None:
+        e7.write(e7.score_receipt_path(key_path), {"status": status, "key_sha256": e7.sha(key_path)})
+    now = datetime(2026, 10, 23, 1, tzinfo=timezone.utc)
+    if status != "void":
+        monkeypatch.setattr(e7, "load_paths", lambda: pytest.fail("rerun got beyond receipt gate"))
+        with pytest.raises(ValueError, match="void score receipt"):
+            e7.build(tmp_path / "new", tmp_path / "bundle", tmp_path / "new-key", rerun_of=parent, now=now)
+        assert not (parent / "rerun.json").exists()
+    else:
+        assert e7.rerun_admission(parent, tmp_path / "new", now)["locked_at"] == manifest["locked_at"]
+        e7.write(e7.score_receipt_path(key_path), {"status": "void", "key_sha256": "wrong"})
+        with pytest.raises(ValueError, match="commitment"):
+            e7.rerun_admission(parent, tmp_path / "new", now)
+        e7.write(e7.score_receipt_path(key_path), {"status": "void", "key_sha256": manifest["key_sha256"]})
+        key_path.write_text("tampered")
+        with pytest.raises(ValueError, match="commitment"):
+            e7.rerun_admission(parent, tmp_path / "new", now)
+
+
+def test_fix1_score_writes_key_bound_receipt_and_attempt_counts(built, tmp_path, monkeypatch):
+    _, _, source, _, source_key, key = built
+    manifest_path, key_path, ratings_path = (tmp_path / name for name in ("manifest.json", "key.json", "ratings.json"))
+    shutil.copyfile(source_key, key_path)
+    manifest = e7.read(source / "manifest.json")
+    manifest["cells"]["b01:chip"].insert(0, {"status": "turn_error", "clips": []})
+    manifest["cells"]["b01:eva"].insert(0, {"status": "synthesis_failed", "clips": []})
+    e7.write(manifest_path, manifest)
+    e7.write(ratings_path, ratings_for(key))
+    monkeypatch.setattr(scoring.report, "prereg_check", lambda: {"matches": True})
+    result = scoring.score_files(ratings_path, key_path, manifest_path)
+    assert result["attempt_counts"]["chip"]["turn_error"] == 1
+    assert result["attempt_counts"]["eva"]["synthesis_failed"] == 1
+    assert e7.read(e7.score_receipt_path(key_path)) == {"status": "pass", "key_sha256": e7.sha(key_path)}
+    # A fresh, void score has no comparison numbers, including in its adjacent receipt.
+    e7.write(manifest_path, manifest)
+    e7.write(ratings_path, ratings_for(key, catches=2))
+    assert scoring.score_files(ratings_path, key_path, manifest_path) == {"status": "void", "catch_preferences": 2}
+    assert e7.read(e7.score_receipt_path(key_path)) == {"status": "void", "key_sha256": e7.sha(key_path)}
+
+
+def test_fix1_bundle_publishes_only_shared_user_messages(built):
+    _, _, _, bundle, _, key = built
+    page = (bundle / "index.html").read_text()
+    import re
+    trials = json.loads(re.search(r"const TRIALS = (.*);", page)[1])
+    private = {t["id"]: t for t in key["trials"]}
+    data = e7.prompts()
+    for trial in trials:
+        row = private[trial["id"]]
+        if row["kind"] == "mini":
+            assert trial["messages"] == data["mini_sessions"][row["item"]]
+            assert len(trial["messages"]) == len(trial["clips"]) == 3
+        else:
+            assert trial["message"] == data[row["comparison"] or "catch"][row["item"]]
+        assert not ({"item", "comparison", "seed", "sides"} & trial.keys())
+
+
+PAGE_DOM = r'''
+const assert = require('node:assert/strict');
+class Element {
+  constructor(tag) {
+    this.tagName = tag.toUpperCase(); this.children = []; this.dataset = {}; this.style = {};
+    this.listeners = {}; this.disabled = false; this.value = ''; this.textContent = ''; this.className = '';
+  }
+  append(...children) { this.children.push(...children.filter(c => typeof c !== 'string')); }
+  insertBefore(child, before) { this.children.splice(this.children.indexOf(before), 0, child); }
+  addEventListener(name, callback) { this.listeners[name] = callback; }
+  setAttribute(name, value) { this[name] = value; }
+  pause() {}
+  set innerHTML(value) {
+    if (this.tagName === 'ARTICLE') {
+      const title = new Element('span'), players = new Element('div');
+      title.className = 'tid'; players.className = 'players'; this.append(title, players);
+    }
+  }
+  querySelectorAll(selector) {
+    const matches = el => selector.split(',').some(s =>
+      s[0] === '.' ? el.className.split(' ').includes(s.slice(1)) :
+      s[0] === '#' ? el.id === s.slice(1) :
+      s === '[data-v]' ? 'v' in el.dataset : s === '[data-side]' ? 'side' in el.dataset : el.tagName === s.toUpperCase());
+    return this.children.flatMap(el => [...(matches(el) ? [el] : []), ...el.querySelectorAll(selector)]);
+  }
+  querySelector(selector) { return this.querySelectorAll(selector)[0] || null; }
+}
+const root = new Element('body');
+for (const id of ['trials', 'lock', 'status', 'count', 'fill']) {
+  const el = new Element(id === 'lock' ? 'button' : 'div'); el.id = id; root.append(el);
+}
+const document = {createElement: tag => new Element(tag), activeElement: null,
+  querySelector: s => root.querySelector(s), querySelectorAll: s => root.querySelectorAll(s),
+  getElementById: id => root.querySelector('#' + id)};
+let clock = 0, timerId = 0;
+const timers = new Map();
+const setTimeout = (callback, delay) => {timers.set(++timerId, {callback, due: clock + delay}); return timerId;};
+const clearTimeout = id => timers.delete(id);
+function tick(ms) {
+  clock += ms;
+  for (const [id, timer] of [...timers]) if (timer.due <= clock) {timers.delete(id); timer.callback();}
+}
+async function drain() { for (let i = 0; i < 20; i++) await Promise.resolve(); }
+let confirmAnswer = true, confirmations = 0, listener, hold = false;
+const writes = [], releases = [], stored = new Map();
+const snapshot = (id, data) => ({id, exists: data !== undefined, data: () => data});
+const store = {
+  doc: path => ({get: async () => snapshot(path.split('/').at(-1), stored.get(path.split('/').at(-1))),
+    set: body => {
+      writes.push({path, body});
+      const finish = () => stored.set(path.split('/').at(-1), body);
+      if (hold && !path.endsWith('/lock')) return new Promise(resolve => releases.push(() => {finish(); resolve();}));
+      finish(); return Promise.resolve();
+    }}),
+  collection: name => ({get: async () => ({docs: [...stored].map(([id, data]) => snapshot(id, data))}),
+    onSnapshot: callback => {listener = callback;}})
+};
+const window = {confirm: () => {confirmations++; return confirmAnswer;}, claude: {use: async () => store}};
+'''
+
+
+def page_check(tmp_path, test):
+    script = (e7.HERE / "template.html").read_text().split("<script>")[1].split("</script>")[0]
+    script = script[:script.rindex("\nbuild();")]
+    trials = [{"id": "t01", "a": "a.mp3", "b": "b.mp3", "message": "Shared <user> moment"},
+              {"id": "m01", "clips": ["1.mp3", "2.mp3", "3.mp3"], "messages": ["First moment", "Second moment", "Third moment"]}]
+    script = script.replace("/*TRIALS*/[]", json.dumps(trials))
+    path = tmp_path / "page-test.js"
+    path.write_text(PAGE_DOM + script + "\n(async () => {\n" + test + "\nconsole.log('page verified');\n})().catch(e => {console.error(e); process.exitCode = 1;});")
+    result = subprocess.run([shutil.which("node"), str(path)], capture_output=True, text=True, check=True)
+    assert result.stdout.strip() == "page verified"
+
+
+def test_fix1_page_moments_progress_and_confirmation(tmp_path):
+    page_check(tmp_path, r'''
+build(); await load();
+const pair = document.getElementById('trial-t01'), mini = document.getElementById('trial-m01');
+assert.equal(pair.querySelector('.prompt').textContent, 'Shared <user> moment');
+assert.equal(pair.children.indexOf(pair.querySelector('.prompt')) + 1, pair.children.indexOf(pair.querySelector('.players')));
+mini.querySelector('.players').children.forEach((player, i) => {
+  assert.equal(player.children[0].textContent, TRIALS[1].messages[i]);
+  assert.equal(player.children[2].tagName, 'AUDIO');
+});
+assert.equal(document.querySelector('#count').textContent, '0 of 2 rated');
+assert.equal(document.querySelector('#lock').disabled, true);
+await lockRatings(); assert.equal(confirmations, 0);
+await save('t01', {choice:'none'});
+assert.equal(document.querySelector('#count').textContent, '1 of 2 rated');
+assert.equal(document.querySelector('#lock').disabled, true);
+await save('m01', {rating:4});
+assert.equal(document.querySelector('#count').textContent, '2 of 2 rated');
+assert.equal(document.querySelector('#lock').disabled, false);
+confirmAnswer = false;
+await lockRatings(); assert.equal(confirmations, 1); assert.equal(locked, false);
+assert.ok(!writes.some(w => w.path.endsWith('/lock')));
+confirmAnswer = true;
+await lockRatings(); assert.equal(confirmations, 2); assert.equal(locked, true);
+assert.ok(document.querySelectorAll('button,input,textarea,select,audio').every(el => el.disabled));
+''')
+
+
+def test_fix1_page_note_debounce_and_lock_flush(tmp_path):
+    page_check(tmp_path, r'''
+build(); await load();
+const note = document.getElementById('trial-t01').querySelector('textarea');
+note.value = 'first'; note.listeners.input();
+tick(400); note.value = 'latest'; note.listeners.input();
+tick(799); await drain(); assert.equal(writes.length, 0);
+tick(1); await drain(); assert.equal(writes.length, 1); assert.equal(writes[0].body.note, 'latest');
+await save('t01', {choice:'a'}); await save('m01', {rating:3});
+note.value = 'final note'; note.listeners.input();
+await lockRatings();
+const lastRating = writes.at(-2), lock = writes.at(-1);
+assert.equal(lastRating.body.note, 'final note');
+assert.ok(lock.path.endsWith('/lock')); assert.equal(timers.size, 0);
+tick(800); await drain(); assert.equal(writes.at(-1), lock);
+''')
+
+
+def test_fix1_page_lock_awaits_all_pending_saves(tmp_path):
+    page_check(tmp_path, r'''
+build(); await load(); hold = true;
+const first = save('t01', {choice:'a'}), second = save('m01', {rating:5});
+const lockingWork = lockRatings();
+await drain(); assert.equal(writes.length, 1); assert.equal(locked, false);
+releases.shift()(); await first; await drain();
+assert.equal(writes.length, 2); assert.ok(!writes.some(w => w.path.endsWith('/lock')));
+releases.shift()(); await second; await lockingWork;
+assert.equal(writes.length, 3); assert.ok(writes[2].path.endsWith('/lock')); assert.equal(locked, true);
+''')
+
+
+def test_fix1_page_second_tab_observes_any_lock_and_stops_saving(tmp_path):
+    page_check(tmp_path, r'''
+build(); await load();
+save('t01', {note:'pending note'}, true);
+listener({docs:[snapshot('lock', {})]});
+assert.equal(locked, true);
+assert.ok(document.querySelectorAll('button,input,textarea,select,audio').every(el => el.disabled));
+await save('t01', {choice:'b'}); tick(800); await drain();
+assert.equal(writes.length, 0); assert.equal(state.t01.choice, null);
+''')
+
+
+def test_fix1_page_lock_rechecks_store_before_writing(tmp_path):
+    page_check(tmp_path, r'''
+build(); await load();
+await save('t01', {choice:'b'}); await save('m01', {rating:2});
+const before = writes.length;
+stored.set('lock', {lockedAt:'earlier tab'});
+await lockRatings();
+assert.equal(locked, true); assert.equal(writes.length, before);
+''')
+
+
+def test_fix1_page_load_respects_existing_lock(tmp_path):
+    page_check(tmp_path, r'''
+stored.set('lock', {});
+build(); await load();
+assert.equal(locked, true); await save('t01', {choice:'a'});
+assert.equal(writes.length, 0);
+assert.ok(document.querySelectorAll('button,input,textarea,select,audio').every(el => el.disabled));
+''')
+
+
+@pytest.mark.parametrize("result,credential", [
+    ({"completed": False, "error": "overloaded"}, False),
+    ({"completed": True, "failed": True}, False),
+    ({"completed": True, "final_response": "HTTP 401"}, True),
+    ({"completed": True, "messages": [{"role": "tool", "name": "text_to_speech", "content": '{"error":"HTTP 401"}'}]}, True),
+])
+def test_fix1_child_preserves_turn_and_credential_failure_proof(tmp_path, monkeypatch, result, credential):
+    monkeypatch.setattr(run, "key_value", lambda *a: "offline-fixture")
+    monkeypatch.setitem(sys.modules, "hermes_cli", SimpleNamespace())
+    monkeypatch.setitem(sys.modules, "hermes_cli.oneshot", SimpleNamespace(_close_agent=lambda *a: None))
+    monkeypatch.setattr(e7, "install_capture", lambda *a: ([], [], []))
+    driver = SimpleNamespace(build_agent=lambda cwd: (SimpleNamespace(run_conversation=lambda *a, **k: result), None, {}),
+        wrap_upstream=lambda item: [], tts_calls=turn.tts_calls, stop_natives=lambda: None)
+    args = {"mode": "e7-turn", "inputs": str(tmp_path), "key_file": "unread-fixture-reference", "item_dir": str(tmp_path),
+            "cwd": str(tmp_path), "arm": "chip", "prompts": ["fixture"]}
+    proof = e7.child(args, driver)
+    assert proof["credential_failure"] is credential
+    if not credential:
+        assert proof["completed"] is False
+
+
+def test_fix1_cli_forwards_reason_based_retry(monkeypatch, capsys):
+    from bench.e7 import __main__ as cli
+    calls = []
+    monkeypatch.setattr(cli, "generate", lambda *a, **k: calls.append((a, k)))
+    cli.main(["generate", "--tag", "fixture-tag", "--session", "fixture-session", "--dry-run",
+              "--retry", "b01", "--reason", "cause resolved"])
+    assert calls == [(("fixture-tag", "fixture-session"),
+                      {"dry_run": True, "retry": "b01", "reason": "cause resolved"})]
+    assert capsys.readouterr().out.strip() == "generation recorded"

@@ -13,7 +13,7 @@ def main(argv=None):
     gen.add_argument("--tag", required=True)
     gen.add_argument("--session", required=True)
     gen.add_argument("--dry-run", action="store_true")
-    gen.add_argument("--retry-infra")
+    gen.add_argument("--retry")
     gen.add_argument("--reason")
     bundle = commands.add_parser("build")
     bundle.add_argument("--session", required=True)
@@ -26,7 +26,7 @@ def main(argv=None):
     scoring.add_argument("--manifest", required=True)
     args = parser.parse_args(argv)
     if args.command == "generate":
-        generate(args.tag, args.session, dry_run=args.dry_run, retry_infra=args.retry_infra, reason=args.reason)
+        generate(args.tag, args.session, dry_run=args.dry_run, retry=args.retry, reason=args.reason)
         print("generation recorded")
     elif args.command == "build":
         build(args.session, args.bundle, args.key, rerun_of=args.rerun_of)

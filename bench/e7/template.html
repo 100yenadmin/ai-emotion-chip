@@ -54,6 +54,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .prompt { margin: 0; font-size: 1.02rem; min-width: 0; }
 .prompt::before { content: "User says: "; color: var(--muted); font-size: 0.85rem; }
 .players { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.trial.sequence .players { grid-template-columns: 1fr; }
 @media (max-width: 520px) { .players { grid-template-columns: 1fr; } }
 .player { display: grid; gap: 6px; min-width: 0; }
 .player b { font-family: var(--font-display); font-size: 1.1rem; }
@@ -75,6 +76,7 @@ textarea { font: inherit; font-size: 0.9rem; width: 100%; box-sizing: border-box
   <h1>Which reply sounds right?</h1>
   <p class="lede">Each trial plays two clips. Pick the one that sounds more natural for the moment, or 'No difference'.</p>
   <p class="lede">For a sequence of three clips, play them in order and rate 1–5 how much it sounds like the same conversation.</p>
+  <div class="progress" aria-live="polite"><span id="count">0 of 0 rated</span><div class="bar"><i id="fill"></i></div></div>
   <p id="status" class="status">Connecting…</p>
   <section id="trials" class="trials" aria-label="Trials"></section>
   <button id="lock" type="button" disabled>Lock my ratings</button>
@@ -85,6 +87,7 @@ const STORE = /*STORE*/"ratings";
 const state = {};
 let db = null, locked = false, locking = false, ready = false;
 const pending = new Set();
+const notes = new Map();
 let queue = Promise.resolve();
 const $ = (s, el = document) => el.querySelector(s);
 function controls(disabled) {
@@ -92,6 +95,23 @@ function controls(disabled) {
     el.disabled = disabled;
     if (el.tagName === "AUDIO") { el.controls = !disabled; if (disabled) el.pause(); }
   });
+  progress();
+}
+function rated(t) {
+  const s = state[t.id] || {};
+  return t.clips ? Number.isInteger(s.rating) && s.rating >= 1 && s.rating <= 5 : ["a", "b", "none"].includes(s.choice);
+}
+function progress() {
+  const done = TRIALS.filter(rated).length;
+  $("#count").textContent = `${done} of ${TRIALS.length} rated`;
+  $("#fill").style.width = TRIALS.length ? `${100 * done / TRIALS.length}%` : "0";
+  $("#lock").disabled = !ready || locked || locking || done !== TRIALS.length;
+}
+function observeLock(doc) {
+  if (doc?.exists === true || doc?.data() != null) {
+    locked = true; controls(true); $("#status").textContent = "Ratings locked";
+  }
+  return locked;
 }
 function apply(id) {
   const card = document.getElementById("trial-" + id), s = state[id] || {};
@@ -105,14 +125,22 @@ function apply(id) {
 function build() {
   for (const t of TRIALS) {
     const card = document.createElement("article");
-    card.className = "trial"; card.id = "trial-" + t.id;
+    card.className = t.clips ? "trial sequence" : "trial"; card.id = "trial-" + t.id;
     card.innerHTML = `<span class="tid">TRIAL ${t.id}</span><div class="players"></div>`;
+    if (!t.clips) {
+      const message = document.createElement("p"); message.className = "prompt"; message.textContent = t.message;
+      card.insertBefore(message, $(".players", card));
+    }
     const files = t.clips || [t.a, t.b];
     files.forEach((file, i) => {
       const player = document.createElement("div"); player.className = "player";
       const title = document.createElement("b"); title.textContent = t.clips ? String(i + 1) : ["A", "B"][i];
       const audio = document.createElement("audio"); audio.controls = true; audio.preload = "none"; audio.src = file;
       audio.addEventListener("play", () => document.querySelectorAll("audio").forEach(o => { if (o !== audio) o.pause(); }));
+      if (t.clips) {
+        const message = document.createElement("p"); message.className = "prompt"; message.textContent = t.messages[i];
+        player.append(message);
+      }
       player.append(title, audio); $(".players", card).append(player);
     });
     if (t.clips) {
@@ -134,32 +162,48 @@ function build() {
       }
     }
     const note = document.createElement("textarea"); note.placeholder = "Optional note";
-    note.addEventListener("input", () => save(t.id, {note: note.value})); card.append(note);
+    note.addEventListener("input", () => save(t.id, {note: note.value}, true)); card.append(note);
     $("#trials").append(card);
   }
 }
-function save(id, patch) {
+function save(id, patch, debounce = false) {
   if (locked || locking || !ready) return Promise.resolve();
   state[id] = {choice: TRIALS.find(t => t.id === id)?.clips ? "none" : null, acting: {a: false, b: false}, note: "", ...state[id], ...patch};
-  apply(id);
+  apply(id); progress();
+  if (debounce) {
+    clearTimeout(notes.get(id));
+    notes.set(id, setTimeout(() => { notes.delete(id); persist(id); }, 800));
+    return Promise.resolve();
+  }
+  return persist(id);
+}
+function persist(id) {
+  if (locked || !ready) return Promise.resolve();
   const body = JSON.parse(JSON.stringify({...state[id], trial: id, updatedAt: new Date().toISOString()}));
   // Every save has an awaitable promise, including a save queued behind an earlier one.
-  const work = queue.then(() => db.doc(STORE + "/" + id).set(body));
+  const work = queue.then(async () => {
+    if (locked || observeLock(await db.doc(STORE + "/lock").get())) return;
+    await db.doc(STORE + "/" + id).set(body);
+  });
   queue = work.catch(() => {});
   pending.add(work);
-  work.then(() => { pending.delete(work); $("#status").textContent = "Saved"; },
+  work.then(() => { pending.delete(work); if (!locked) $("#status").textContent = "Saved"; },
     () => { $("#status").textContent = "Save failed. Reload before locking."; });
   return work;
 }
 async function lockRatings() {
-  if (locked || locking || !ready) return;
+  if (locked || locking || !ready || !TRIALS.every(rated)) return;
+  if (!window.confirm("Lock all ratings? You cannot change them afterwards.")) return;
   locking = true; controls(true);
   try {
+    for (const [id, timer] of notes) { clearTimeout(timer); persist(id); }
+    notes.clear();
     await Promise.all([...pending]);
+    if (observeLock(await db.doc(STORE + "/lock").get())) return;
     await db.doc(STORE + "/lock").set({lockedAt: new Date().toISOString()});
     locked = true; $("#status").textContent = "Ratings locked";
   } catch (e) { $("#status").textContent = "Could not lock. Reload and check your ratings."; }
-  finally { locking = false; controls(locked); }
+  finally { locking = false; controls(locked || !ready); }
 }
 async function load() {
   controls(true);
@@ -167,9 +211,12 @@ async function load() {
     db = await window.claude?.use?.("db");
     if (!db) throw new Error("store unavailable");
     const lock = await db.doc(STORE + "/lock").get();
-    locked = !!lock?.data()?.lockedAt;
+    observeLock(lock);
     const snap = await db.collection(STORE).get();
     for (const doc of snap.docs) { if (doc.id !== "lock") { state[doc.id] = doc.data(); apply(doc.id); } }
+    db.collection(STORE).onSnapshot(snap => {
+      for (const doc of snap.docs) { if (doc.id === "lock") observeLock(doc); }
+    }, () => { ready = false; controls(true); $("#status").textContent = "Connection lost. Reload to reconnect."; });
     ready = true;
     controls(locked);
     $("#status").textContent = locked ? "Ratings locked" : "Your choices save automatically.";

@@ -27,6 +27,19 @@ VOICE_SETTINGS = {"speed": 0.90, "stability": 0.5, "similarity_boost": 0.75, "st
 INPUTS = {"eva_soul": "SOUL.md", "eva_voice": "voice.md", "eva_skill_dir": "speech-authorship",
           "eva_sag_wrapper": "sag-original.sh"}
 FIXED_MTIME = 946684800
+FAILURE_REASONS = ("turn_error", "credential", "unvoiced", "synthesis_failed", "integrity", "error")
+
+
+class IntegrityError(RuntimeError):
+    """A frozen comparison or stitching invariant failed inside the child."""
+
+
+def attempt_counts(manifest):
+    counts = {arm: dict.fromkeys((*FAILURE_REASONS, "completed"), 0) for arm in ("chip", "eva")}
+    for key, attempts in manifest["cells"].items():
+        for attempt in attempts:
+            counts[key.split(":")[1]][attempt["status"]] += 1
+    return counts
 
 
 def sha(path):
@@ -143,7 +156,7 @@ def config(item, arm, session, paths, seed):
     else:
         wrapper = item / "sag-seeded.sh"
         cfg["tts"] = {"provider": "e7-sag", "voice": voice, "providers": {"e7-sag": {
-            "type": "command", "output_format": "mp3", "voice": voice, "model": "eleven_v4",
+            "type": "command", "output_format": "mp3", "voice_compatible": True, "voice": voice, "model": "eleven_v4",
             "env_passthrough": ["ELEVENLABS_API_KEY"],
             "command": f"sh {shlex.quote(str(wrapper))} {{input_path}} {{output_path}} {{format}} {seed}"}}}
     return cfg
@@ -199,8 +212,16 @@ def install_capture(args, driver):
         return original_tool(text, output_path=rewrite_output(args["item_dir"], output_path, rewrites), **kwargs)
     tts_tool.text_to_speech_tool = tool
     if args["arm"] == "eva":
-        tts_tool._generate_command_tts = driver._recorder(args["item_dir"], sent,
-            tts_tool._generate_command_tts, "sag", lambda k: {"route": "sag"})
+        original_command = tts_tool._generate_command_tts
+
+        def command(text, output_path, *a, **k):
+            # Failed commands can leave partial/stale files. Only record a successful return.
+            result = original_command(text, output_path, *a, **k)
+            if isinstance(result, (str, Path)) and Path(result).is_file() and Path(result).stat().st_size:
+                driver._recorder(args["item_dir"], sent, lambda *a, **k: result,
+                                 "sag", lambda k: {"route": "sag"})(text, output_path)
+            return result
+        tts_tool._generate_command_tts = command
     else:
         from agent.tts_registry import get_provider
         chip = get_provider("emotion-chip")
@@ -218,6 +239,7 @@ def install_capture(args, driver):
             return original_synth(text, output_path, **kwargs)
         chip.eleven.synthesize = driver._recorder(args["item_dir"], sent, synth, "eleven", lambda k: {
             "voice": k.get("voice"), "model": k.get("model"), "params": dict(VOICE_SETTINGS),
+            "score": scores[-1] if scores else None,
             "seed": k.get("seed"), "previous_request_ids": list(k.get("previous_request_ids", ()))})
     return sent, scores, rewrites
 
@@ -252,14 +274,14 @@ def conversations(agent, messages, observe):
         turns.append(observe(index, result))
         previous = result.get("messages")
         if not result.get("completed") or result.get("failed") or result.get("error"):
-            raise RuntimeError("Hermes turn failed")
+            break
     return turns
 
 
 def render_pair(score, recorded, render):
     cued, stripped = render(score, "eleven_v4").text, render(score, "tagless").text
     if cued != recorded:
-        raise RuntimeError("comparison-a cued render differs from recorded provider input")
+        raise IntegrityError("comparison-a cued render differs from recorded provider input")
     return cued, stripped
 
 
@@ -290,28 +312,47 @@ def child(args, driver):
         agent, db, route = driver.build_agent(args["cwd"])
         sent, scores, rewrites = install_capture(args, driver)
         relays = driver.wrap_upstream(args["item_dir"])
-        cursor = [0]
+        cursor, message_cursor = [0], [0]
 
         def observe(index, result):
             rows = sent[cursor[0]:]
             cursor[0] = len(sent)
-            if index and (not rows or not rows[0].get("previous_request_ids")):
-                raise RuntimeError("mini-session missing stitching ids")
-            calls, results = driver.tts_calls(result.get("messages"))
-            return {"sent_to_voice": rows, "tts_calls": calls, "tts_results": results}
+            if index and any(r.get("clip") and not r.get("previous_request_ids") for r in rows):
+                raise IntegrityError("mini-session missing stitching ids")
+            history = result.get("messages") or []
+            calls, results = driver.tts_calls(history[message_cursor[0]:])
+            # The legacy collector omits failed tool results without a file_path.
+            # Classify their error in E7 too, without returning the raw tool content.
+            for message in history[message_cursor[0]:]:
+                if message.get("role") == "tool" and message.get("name") == "text_to_speech":
+                    try:
+                        content = json.loads(message.get("content") or "{}")
+                    except (ValueError, TypeError):
+                        continue
+                    error = content.get("error") if isinstance(content, dict) else None
+                    match = run.CREDENTIAL_FAILURE.search(str(error or ""))
+                    if match:
+                        results.append({"error": match.group(0)})
+            message_cursor[0] = len(history)
+            credential = bool(result.get("credential_failure") or run.credential_failure(dict(result, tts_results=results)))
+            return {"sent_to_voice": rows, "tts_calls": calls, "tts_results": results,
+                    "credential_failure": credential, "completed": bool(result.get("completed")),
+                    "failed": bool(result.get("failed") or result.get("error"))}
         try:
             turns = conversations(agent, args["prompts"], observe)
         finally:
             _close_agent(agent, db, getattr(agent, "session_id", None))
             driver.stop_natives()
         return {"turns": turns, "scores": scores, "sent_to_voice": sent, "rewrites": rewrites,
-                "completed": True, "route": route, "relays": relays}
+                "completed": len(turns) == len(args["prompts"]) and all(t["completed"] and not t["failed"] for t in turns),
+                "credential_failure": any(t["credential_failure"] for t in turns), "route": route, "relays": relays}
     except Exception as exc:
         # Never let SDK/provider exceptions print credential values or private text to the parent.
         key = os.environ["ELEVENLABS_API_KEY"]
         message = str(exc).replace(key, "[redacted]")
         credential = bool(run.CREDENTIAL_FAILURE.search(message))
-        return {"completed": False, "error_type": type(exc).__name__, "credential_failure": credential}
+        return {"completed": False, "error_type": type(exc).__name__, "credential_failure": credential,
+                "integrity": isinstance(exc, IntegrityError)}
     finally:
         os.environ.pop("ELEVENLABS_API_KEY", None)
 
@@ -349,30 +390,68 @@ def real_cell(session, item, arm, messages, seed, paths, attempt):
     from bench.gen import keychain_token
     token = keychain_token()
     warm = host.call(folder, dict(base, mode="e7-warm"), token=token)
-    if "error" in warm or warm.get("soul_sha256") != soul_sha:
-        return {"status": "infra_failure", "clips": [], "proof": {"warm": warm}}
+    def failure(reason, proof):
+        return {"status": reason, "reason": reason, "clips": [], "proof": proof}
+
+    def credential(proof):
+        return proof.get("credential_failure") or run.credential_failure(proof) or any(
+            credential(t) for t in proof.get("turns", []))
+
+    if credential(warm):
+        return failure("credential", {"warm": warm})
+    if "error" in warm or "rc" in warm or not warm.get("soul_sha256"):
+        return failure("turn_error", {"warm": warm})
+    if warm["soul_sha256"] != soul_sha:
+        return failure("integrity", {"warm": warm})
     proof = host.call(folder, dict(base, mode="e7-turn", prompts=messages), token=token)
     del token
-    if proof.get("credential_failure") or run.credential_failure(proof):
-        return {"status": "credential_failure", "clips": [], "proof": proof}
-    if "rc" in proof:
-        return {"status": "infra_failure", "clips": [], "proof": proof}
-    if not proof.get("completed"):
-        return {"status": "failed", "clips": [], "proof": proof}
+    if credential(proof):
+        return failure("credential", proof)
+    if proof.get("integrity"):
+        return failure("integrity", proof)
+    if "rc" in proof or not proof.get("completed") or proof.get("failed") or proof.get("error"):
+        return failure("turn_error", proof)
     pre = run.read_jsonl(folder / "probe.jsonl")
     upstream = run.read_jsonl(folder / "upstream.jsonl")
     if not pre or not upstream or any(any(r.get("canaries", {}).values()) for r in pre + upstream):
-        return {"status": "failed", "clips": [], "proof": proof, "integrity": "missing/negative canary evidence"}
-    rows = proof["sent_to_voice"]
-    clips = [str((folder / "out" / r["clip"]).relative_to(session)) for r in rows if r.get("clip")]
-    result = {"status": "completed" if len(clips) == len(messages) else "unvoiced", "clips": clips, "proof": proof}
-    if item in prompts()["comparison_a"] and result["status"] == "completed":
-        if len(proof["scores"]) != 1 or len(rows) != 1:
-            raise RuntimeError("comparison-a requires one authored score and one provider call")
-        rendered = host.call(folder, dict(base, mode="e7-render", score=proof["scores"][0], recorded=rows[0]["text"],
+        return failure("integrity", proof)
+    turns = proof.get("turns") or [proof]
+    if len(turns) != len(messages):
+        return failure("integrity", proof)
+    clips, successful = [], []
+    for index, turn in enumerate(turns):
+        rows = turn.get("sent_to_voice", [])
+        good = [r for r in rows if r.get("clip") and (folder / "out" / r["clip"]).is_file()
+                and (folder / "out" / r["clip"]).stat().st_size]
+        if not good:
+            return failure("synthesis_failed" if rows or turn.get("tts_calls") else "unvoiced", proof)
+        if item in prompts()["comparison_a"] and len(good) != 1:
+            return failure("integrity", proof)
+        if len(messages) > 1 and index and any(not r.get("previous_request_ids") for r in good):
+            return failure("integrity", proof)
+        sources = [folder / "out" / r["clip"] for r in good]
+        dest = sources[0] if len(sources) == 1 else folder / "out" / f"joined-{index + 1}.mp3"
+        if len(sources) > 1 and not run.concat_clips(sources, dest):
+            return failure("error", proof)
+        clips.append(str(dest.relative_to(session)))
+        successful.extend(good)
+    result = {"status": "completed", "clips": clips, "proof": proof}
+    if item in prompts()["comparison_a"]:
+        row = successful[0]
+        score = row.get("score")
+        if score is None and len(proof.get("scores", [])) == len(proof.get("sent_to_voice", [])):
+            score = proof["scores"][proof["sent_to_voice"].index(row)]
+        if score is None:
+            return failure("integrity", proof)
+        rendered = host.call(folder, dict(base, mode="e7-render", score=score, recorded=row["text"],
                                          seed=seed, voice=paths["ava_voice_id"]))
+        evidence = {"turn": proof, "render": rendered}
+        if credential(rendered):
+            return failure("credential", evidence)
+        if rendered.get("integrity"):
+            return failure("integrity", evidence)
         if len(rendered.get("clips", [])) != 2:
-            return {"status": "infra_failure", "clips": [], "proof": {"turn": proof, "render": rendered}}
+            return failure("synthesis_failed", evidence)
         result.update(clips=[str(Path(p).relative_to(session)) for p in rendered["clips"]],
                       cued_differs=rendered["cued_differs"])
     return result
@@ -391,7 +470,7 @@ def jobs(reserve=False):
             yield item, "chip", [t + " " + run.SUFFIX for t in texts]
 
 
-def generate(tag, session, *, dry_run=False, paths=None, retry_infra=None, reason=None, reserve=False):
+def generate(tag, session, *, dry_run=False, paths=None, retry=None, reason=None, reserve=False):
     session = Path(session).resolve()
     paths = paths or load_paths()
     commit = frozen_tag(tag, paths["chip_repo"])
@@ -416,34 +495,61 @@ def generate(tag, session, *, dry_run=False, paths=None, retry_infra=None, reaso
     if manifest.get("plugin_tree") and manifest["plugin_tree"] != plugin_tree:
         raise ValueError("archived plugin tree changed")
     manifest["plugin_tree"] = plugin_tree
-    if retry_infra and not reason:
-        raise ValueError("--retry-infra requires --reason")
-    if retry_infra:
-        prior = [a for key, attempts in manifest["cells"].items() if key.split(":")[0] == retry_infra for a in attempts]
-        if not prior or not any(a["status"] == "infra_failure" for a in prior):
-            raise ValueError("retry requires a recorded infrastructure failure")
+    # A killed process cannot finalize its own ledger entry. Recover it before retry admission.
+    for attempts in manifest["cells"].values():
+        for attempt in attempts:
+            if attempt["status"] == "started":
+                attempt.update(status="error", reason="InterruptedError: process ended before recording a result", clips=[])
+    manifest["attempt_counts"] = attempt_counts(manifest)
     write(manifest_path, manifest)
+    if retry and (not reason or not reason.strip()):
+        raise ValueError("--retry requires --reason")
+    if retry:
+        prior = [attempts for key, attempts in manifest["cells"].items() if key.split(":")[0] == retry]
+        eligible = [a for a in prior if a and not any(x["status"] == "completed" for x in a)]
+        if not eligible or any(a[-1]["status"] not in FAILURE_REASONS for a in eligible):
+            raise ValueError("retry requires a recorded failure without a usable clip")
+        if any(a[-1]["status"] == "credential" for a in eligible):
+            raise ValueError("credential failures cannot be retried")
+        retry_counts = manifest.setdefault("retry_counts", {})
+        used = max(retry_counts.get(retry, 0), max(len(a) - 1 for a in prior))
+        if used >= 2:
+            raise ValueError("at most 2 retries per item")
+        retry_counts[retry] = used + 1
+        write(manifest_path, manifest)
     for item, arm, messages in jobs(reserve):
         key = item + ":" + arm
         attempts = manifest["cells"].setdefault(key, [])
         if attempts:
-            if item != retry_infra or attempts[-1]["status"] != "infra_failure":
+            if item != retry or any(a["status"] == "completed" for a in attempts):
                 continue
-        elif retry_infra:
+        elif retry:
             continue
-        attempts.append({"status": "started", "reason": reason if retry_infra else None, "clips": []})
-        write(manifest_path, manifest)  # first render, including interrupted attempts, is retained
+        attempt = {"status": "started", "clips": []}
+        if retry:
+            attempt["retry_reason"] = reason
+        attempts.append(attempt)
         try:
+            write(manifest_path, manifest)  # first render, including interrupted attempts, is retained
             result = dry_cell(session, item, arm, messages, manifest["seeds"][item]) if dry_run else real_cell(
                 session, item, arm, messages, manifest["seeds"][item], paths, len(attempts))
-        except (OSError, subprocess.SubprocessError):
-            result = {"status": "infra_failure", "clips": []}
-        attempts[-1].update(result)
-        attempts[-1]["reason"] = reason if retry_infra else None
-        attempts[-1]["clip_sha256"] = [sha(session / p) for p in result["clips"]]
+            digests = [sha(session / p) for p in result["clips"]]
+            attempt.update(result, clip_sha256=digests)
+            if result["status"] != "completed":
+                attempt.setdefault("reason", result["status"])
+        except BaseException as exc:
+            # Arbitrary SDK/filesystem messages can contain keys, text, or private paths.
+            # Keep the type and a safe short description, never copy exception payloads.
+            attempt.update(status="error", reason=type(exc).__name__ + ": cell did not finish (details withheld)",
+                           clips=[], clip_sha256=[])
+            if not isinstance(exc, Exception):
+                manifest["attempt_counts"] = attempt_counts(manifest)
+                write(manifest_path, manifest)
+                raise
+        manifest["attempt_counts"] = attempt_counts(manifest)
         write(manifest_path, manifest)
-        if result["status"] in {"credential_failure", "failed", "infra_failure"}:
-            raise RuntimeError("generation stopped after " + result["status"])
+        if attempt["status"] == "credential":
+            raise RuntimeError("generation stopped after credential failure")
     return manifest
 
 
@@ -574,6 +680,15 @@ def rerun_admission(parent, session, now=None):
         raise ValueError("cannot rerun a rerun")
     if not source.get("locked_at"):
         raise ValueError("first session has no recorded lock")
+    key_path = Path(source["key_path"])
+    score_path = score_receipt_path(key_path)
+    if not score_path.exists():
+        raise ValueError("rerun requires a void score receipt")
+    scored = read(score_path)
+    if scored.get("status") != "void":
+        raise ValueError("rerun requires a void score receipt")
+    if scored.get("key_sha256") != source["key_sha256"] or sha(key_path) != source["key_sha256"]:
+        raise ValueError("score receipt key commitment changed")
     locked = datetime.fromisoformat(source["locked_at"].replace("Z", "+00:00"))
     if ((now or datetime.now(timezone.utc)) - locked).total_seconds() < 12 * 3600:
         raise ValueError("rerun requires 12 hours after first lock")
@@ -584,6 +699,11 @@ def rerun_admission(parent, session, now=None):
     else:
         write(receipt, {"session": str(session)}, exclusive=True)
     return source
+
+
+def score_receipt_path(key_path):
+    key_path = Path(key_path)
+    return key_path.with_name(key_path.name + ".score.json")
 
 
 def build(session, bundle, key_path, *, rerun_of=None, now=None):
@@ -672,7 +792,8 @@ def build(session, bundle, key_path, *, rerun_of=None, now=None):
             names = {side: f"{trial_id}-{side}.mp3" for side in mapping}
             record["sides"] = {}
             record["files"] = list(names.values())
-            public.append({"id": trial_id, "clips": list(names.values())})
+            public.append({"id": trial_id, "clips": list(names.values()),
+                           "messages": prompts()["mini_sessions"][row["item"]]})
         else:
             pair_index += 1
             trial_id = f"t{pair_index:02d}"
@@ -682,7 +803,8 @@ def build(session, bundle, key_path, *, rerun_of=None, now=None):
             mapping = {side: row["arms"][arm] for side, arm in record["sides"].items()}
             names = {side: f"{trial_id}-{side}.mp3" for side in mapping}
             record["files"] = names
-            public.append({"id": trial_id, **names})
+            group = row["comparison"] or ("catch_reserve" if rerun_of else "catch")
+            public.append({"id": trial_id, **names, "message": prompts()[group][row["item"]]})
         record.update(id=trial_id, gains={}, commands={}, clip_sha256={})
         first_catch = None
         first_catch_gain = None
@@ -706,7 +828,8 @@ def build(session, bundle, key_path, *, rerun_of=None, now=None):
             record["commands"][side] = {"analysis": measurements[src]["command"], "calibration": calibration, "encode": command}
             record["clip_sha256"][names[side]] = sha(dest)
         key["trials"].append(record)
-    page = (HERE / "template.html").read_text().replace('/*TRIALS*/[]', json.dumps(public)).replace(
+    # Escape markup in user messages without changing the rendered text.
+    page = (HERE / "template.html").read_text().replace('/*TRIALS*/[]', json.dumps(public).replace("<", "\\u003c")).replace(
         '/*STORE*/"ratings"', json.dumps(collection))
     (bundle / "index.html").write_text(page, encoding="utf-8")
     forbidden = ["chip", "eva", "cued", "stripped", "comparison_a", "comparison_b", "seed", str(session), str(ROOT),

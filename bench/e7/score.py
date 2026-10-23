@@ -5,7 +5,7 @@ from pathlib import Path
 import statistics
 
 from bench import report
-from .session import prompts, read, sha, write
+from .session import attempt_counts, prompts, read, score_receipt_path, sha, write
 
 
 def timestamp(value):
@@ -83,6 +83,7 @@ def score(ratings, key, manifest):
         raise ValueError("pass refused: preregistration does not match")
     mini = [docs[t["id"]]["rating"] for t in trials if t["kind"] == "mini"]
     result = {"status": "pass" if passed else "fail", "comparisons": comparisons,
+              "attempt_counts": attempt_counts(manifest),
               "catch_preferences": catches, "notes": sum(bool(docs[t["id"]]["note"].strip()) for t in trials),
               "mini_ratings": mini, "mini_median": statistics.median(mini)}
     if passed and not key.get("dry_run"):
@@ -105,4 +106,5 @@ def score_files(ratings_path, key_path, manifest_path):
             raise ValueError("locked ratings changed")
         manifest.update(locked_at=lock, ratings_sha256=sha(ratings_path), score=result)
         write(manifest_path, manifest)
+    write(score_receipt_path(key_path), {"key_sha256": sha(key_path), "status": result["status"]})
     return result
