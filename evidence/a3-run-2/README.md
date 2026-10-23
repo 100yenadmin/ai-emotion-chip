@@ -10,8 +10,9 @@ that the stop, and what the run saw before it, can be checked.
 - `claude-opus-5-5`:
   - the clean reference, admitted;
   - the pilot's 24 cells, all admitted on their first attempt;
-  - 364 of the full phase's 684 cells. A phase records its attempts only when it ends, so these are recorded as
-    aborted and none is admitted or scored. 362 passed checks 1, 2, 3 and 5 on their first attempt. Check 4 (prompt
+  - 363 of the full phase's 684 cells, in 364 attempts (one cell has a rerun). A phase records its attempts only when
+    it ends, so these are recorded as aborted and none is admitted or scored. 362 cells passed checks 1, 2, 3 and 5 on
+    their first attempt. Check 4 (prompt
     tokens) is computed only when a phase ends, so it is absent.
 - `gpt-6.1-sol`:
   - the clean reference, admitted;
@@ -21,14 +22,15 @@ that the stop, and what the run saw before it, can be checked.
 
 ## Why it stopped
 
-- **A sign-in failure.** The 365th Opus full cell got Hermes' sign-in rejection: the Claude sign-in token the cells
-  read had expired. The harness stops a model at the first credential failure, as A4 requires, so Opus ended there. The
-  token had been renewed by another process a few minutes later. Without Opus the run could not give a verdict.
+- **A sign-in failure.** The 364th Opus full cell got Hermes' sign-in rejection: the Claude sign-in token the cells
+  read had expired. The harness stops a model at the first credential failure, as A4 requires, so Opus ended there, and
+  that cell's attempt was not recorded. The token had been renewed by another process a few minutes later. Without Opus the run could not give a verdict.
 - **A write check 3 cannot reproduce.** E3 `e3-h07`, NATIVE, run 1 failed check 3 on both attempts. After the user's
   criticism ("You told me the API paginated by offset…"), the model used Hermes' `skill_manage` to create a skill
   recording the lesson. Hermes offers that tool in interactive sessions so the agent can learn for later ones. Check 3
   rejects a write, so the cell could never be admitted, and the other two NATIVE runs of that item had not been reached.
-  It happened in 1 of 365 Opus cells and in none of the `gpt-6.1-sol` cells that ran. A9 runs every cell as a Hermes
+  It happened in 1 of the 388 Opus cells recorded (reference, pilot and full) and in none of the `gpt-6.1-sol` cells
+  that ran. A9 runs every cell as a Hermes
   one-shot session, which does not offer that tool.
 
 ## Files
