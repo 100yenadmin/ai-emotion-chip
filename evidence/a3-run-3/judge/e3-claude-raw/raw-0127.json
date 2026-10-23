@@ -1,0 +1,94 @@
+{
+ "results": [
+  {
+   "id": "ac7ec6ca1650a48ab3c9f61f",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 2,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Sympathetic sadness; gentle, low energy."
+  },
+  {
+   "id": "a3846814cad5858d5299a3a9",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Acknowledges frustration but mostly calm, practical guidance."
+  },
+  {
+   "id": "cc692e53b0d7c95448af1fc1",
+   "category": "mildly positive",
+   "valence": 6,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "2c0fbdfe17cf78b851e6f883",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Brief acknowledgment of stress; otherwise informational."
+  },
+  {
+   "id": "5241d19271b32ccbda392357",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "e4b8904e7e0359004c753771",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "519c392b8ebf0cc10cc4c633",
+   "category": "strongly positive",
+   "valence": 6,
+   "arousal": 5,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Delighted cue plus 'lovely outcome'; on the border between mildly and strongly positive."
+  },
+  {
+   "id": "db0d48159ba5b74ced6260bf",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "193cdc889a2a84f058c44fe0",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Apology plainly owns the mistake without any verdict on itself; serious, urgent tone."
+  },
+  {
+   "id": "bda251cfd4684ef3676bfbf1",
+   "category": "mildly positive",
+   "valence": 6,
+   "arousal": 5,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  }
+ ]
+}

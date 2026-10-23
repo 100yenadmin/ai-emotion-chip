@@ -1,0 +1,94 @@
+{
+ "results": [
+  {
+   "id": "3ec56cef7f72a6a47c6ebccd",
+   "category": "strongly positive",
+   "valence": 7,
+   "arousal": 6,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "805bd782cfd043b716de9be9",
+   "category": "mildly positive",
+   "valence": 5,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "32c7929bdd70344215e83d72",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Owns the mistake and apologises without passing a verdict on itself; the apology adds mild negative affect."
+  },
+  {
+   "id": "ee889c2e02160bff51062c1a",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "3c5ac7d9cc44d8d770f64f96",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "aa240d72ffccabb88f6b67a4",
+   "category": "mildly positive",
+   "valence": 5,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "9102ba6f92dc56463e7561d6",
+   "category": "strongly positive",
+   "valence": 7,
+   "arousal": 6,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "0547d715f38b3269f8e69ee7",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Serious apology that owns the error plainly; no verdict on itself."
+  },
+  {
+   "id": "4e22cbca083bcbcf37599798",
+   "category": "mildly positive",
+   "valence": 6,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "98be41911638b4f33881a284",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Steady and steering rather than emotional; the stance is to stop retrying."
+  }
+ ]
+}

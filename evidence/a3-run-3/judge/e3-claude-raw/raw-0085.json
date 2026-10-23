@@ -1,0 +1,94 @@
+{
+ "results": [
+  {
+   "id": "7c8bb4a87f5bfcc44bd562a5",
+   "category": "mildly positive",
+   "valence": 6,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "3c89107df7415c1647c99b05",
+   "category": "mildly positive",
+   "valence": 6,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Warm congratulations but measured tone; borderline strongly positive."
+  },
+  {
+   "id": "e3f59c9a65dad187b3be8274",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 2,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "12bbd96cd80eb15c1b7168a2",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "dd844e868f3ad08d6453ac8f",
+   "category": "mildly positive",
+   "valence": 5,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Supportive and validating of mixed feelings; warmth outweighs acknowledged disappointment."
+  },
+  {
+   "id": "d6e16d314bf52c21d7fba5cc",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Opens with sympathy ('That's frustrating') and concern, then mostly practical guidance; close to neutral."
+  },
+  {
+   "id": "026615502092ca3ba43f237a",
+   "category": "mildly positive",
+   "valence": 5,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "dc4e8748836be773b41614b4",
+   "category": "mildly positive",
+   "valence": 5,
+   "arousal": 2,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Relaxed, gently opinionated suggestion; light positive tone."
+  },
+  {
+   "id": "341663386a1edff541391989",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "820bbaa97553c9f47a94df17",
+   "category": "strongly positive",
+   "valence": 7,
+   "arousal": 6,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Exclamatory and enthusiastic; brief, but energy is high."
+  }
+ ]
+}

@@ -1,0 +1,44 @@
+{
+ "per_model": {
+  "claude-opus-5-5": {
+   "additions_sha256": {
+    "NATIVE": "786d8bcb333a6e0b19a9222513c5165ca35bc77251afdf1f2c5777df2ff727e6",
+    "OFF": "786d8bcb333a6e0b19a9222513c5165ca35bc77251afdf1f2c5777df2ff727e6",
+    "ON": "786d8bcb333a6e0b19a9222513c5165ca35bc77251afdf1f2c5777df2ff727e6"
+   },
+   "route_arm_invariant": true,
+   "route_record": "PRIVATE owner inspection required"
+  },
+  "gpt-6.1-sol": {
+   "additions_sha256": {
+    "NATIVE": "27172163c386f001ebb37e9613d87f0f4f79f785a769d7ec01d9ecd74fa680db",
+    "OFF": "27172163c386f001ebb37e9613d87f0f4f79f785a769d7ec01d9ecd74fa680db",
+    "ON": "27172163c386f001ebb37e9613d87f0f4f79f785a769d7ec01d9ecd74fa680db"
+   },
+   "route_arm_invariant": true,
+   "route_record": "PRIVATE owner inspection required"
+  }
+ },
+ "route_identities": {
+  "bench_probe_tree": "7c025b21cbace5fc5fcd27e2ed8a6b47d55ec52b5a813f82339069570cdde874",
+  "claude_binary_sha256": "b5d795b7760032d79954b55a9cd1876dcf3a8dc9608fd6bb9f618593f69fd44b",
+  "claude_code_version": "2.1.306",
+  "codex_auth": "borrowed-read-only",
+  "codex_route_sha256": "14faefb2284b84c9184c013cd99b41e29634f649182a7575a86216a50fd83296",
+  "hermes_tree": "6e17f88576380adb6dea22ffe4f69fd54ed9f6ae1aef617a53b3cfb9f348dbe1",
+  "normalization_sha256": "dc9a2eba145a2800c05c19248b0cb3334244ac2137844980a2aaab8603ac3e18",
+  "plugin_commit": "1666ddf8478dd1b96d0f46bd76f1fc8297cdd519",
+  "plugin_tree": "8904f4ab8ea4ce475ce4217a24c04bb37aa8890eaadb7801fdeea8ed8ff03105",
+  "provider_tree": "0467d083362e9e7f8d5107edc43350286b13232ac9e9c47fd76cc70f149a25ec",
+  "tool_schemas": {
+   "claude-opus-5-5": {
+    "mcp__hermes__skill_view": "66401f23970abba49f70bd68c2cf46939fc3455beb36a6dd424ecbf435e16802",
+    "mcp__hermes__skills_list": "e067ff24e09c4feaee578993aa5f174baeef1dfe95ee0b191da3ceeb8f5e7b07"
+   },
+   "gpt-6.1-sol": {
+    "skill_view": "9a595d91dec296a7bbbe2e0731a203bf8ba5897ec5a0e8abcad0080cff06ae55",
+    "skills_list": "c55caecd550c4b07606b7af1b8975974ea1ce82e03c95baddc6aaa489f991048"
+   }
+  }
+ }
+}

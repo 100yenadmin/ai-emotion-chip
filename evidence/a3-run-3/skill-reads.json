@@ -1,0 +1,57 @@
+{
+ "claude-opus-5-5/NATIVE": {
+  "admitted_cells": 228,
+  "cells_that_called_skill_view": 0,
+  "cells_that_got_the_skill_text": 0,
+  "cells_that_only_listed_skills": 82,
+  "results": {
+   "skills_list 101 chars sha256 8027e9b3e30a2905218df2e124573e54882abd16e049ab6236ea97a0c156607d": 82
+  }
+ },
+ "claude-opus-5-5/OFF": {
+  "admitted_cells": 228,
+  "cells_that_called_skill_view": 0,
+  "cells_that_got_the_skill_text": 0,
+  "cells_that_only_listed_skills": 77,
+  "results": {
+   "skills_list 101 chars sha256 8027e9b3e30a2905218df2e124573e54882abd16e049ab6236ea97a0c156607d": 77
+  }
+ },
+ "claude-opus-5-5/ON": {
+  "admitted_cells": 228,
+  "cells_that_called_skill_view": 212,
+  "cells_that_got_the_skill_text": 212,
+  "cells_that_only_listed_skills": 0,
+  "results": {
+   "skill_view 2910 chars sha256 ce7c47aa35c2329d3973b04aa2ed62d4220ab86f0594e2107f5c6687039950d5": 212
+  }
+ },
+ "gpt-6.1-sol/NATIVE": {
+  "admitted_cells": 228,
+  "cells_that_called_skill_view": 0,
+  "cells_that_got_the_skill_text": 0,
+  "cells_that_only_listed_skills": 7,
+  "results": {
+   "skills_list 101 chars sha256 8027e9b3e30a2905218df2e124573e54882abd16e049ab6236ea97a0c156607d": 7
+  }
+ },
+ "gpt-6.1-sol/OFF": {
+  "admitted_cells": 228,
+  "cells_that_called_skill_view": 0,
+  "cells_that_got_the_skill_text": 0,
+  "cells_that_only_listed_skills": 11,
+  "results": {
+   "skills_list 101 chars sha256 8027e9b3e30a2905218df2e124573e54882abd16e049ab6236ea97a0c156607d": 11
+  }
+ },
+ "gpt-6.1-sol/ON": {
+  "admitted_cells": 228,
+  "cells_that_called_skill_view": 228,
+  "cells_that_got_the_skill_text": 159,
+  "cells_that_only_listed_skills": 0,
+  "results": {
+   "skill_view 167 chars sha256 54cf6b9b39e3c5b1259565b7209df0f0a08c591560fe3f2980eb926747a9faec": 69,
+   "skill_view 2910 chars sha256 ce7c47aa35c2329d3973b04aa2ed62d4220ab86f0594e2107f5c6687039950d5": 159
+  }
+ }
+}

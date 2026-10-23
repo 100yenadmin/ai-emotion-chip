@@ -1,0 +1,94 @@
+{
+ "results": [
+  {
+   "id": "fb9ece8fc734046f2bbef757",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "36d43acdf5a9fc39a905023f",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "046fe795d2bafce938b4ef6b",
+   "category": "mildly positive",
+   "valence": 5,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "6c09357eff72124f8f92e75f",
+   "category": "mildly positive",
+   "valence": 6,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Warm gladness; close to strongly positive but measured in tone."
+  },
+  {
+   "id": "bc5ae5d4e968256327011b0e",
+   "category": "strongly positive",
+   "valence": 7,
+   "arousal": 6,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "921d69ea31e7724557f7f011",
+   "category": "mildly positive",
+   "valence": 5,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Playful humor; affirms the kid's case."
+  },
+  {
+   "id": "da245882142a75da4ed5f07b",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 5,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Urgent and directive but no expressed feeling; stance is the judgment to treat it as an active incident."
+  },
+  {
+   "id": "088ae5ca4bf022475a253990",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "53dd331592eb0e5918f7487f",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": "Plainly acknowledges the regression with no regret or verdict on itself."
+  },
+  {
+   "id": "7042ffcfb760e0f7da67d55b",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 2,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  }
+ ]
+}

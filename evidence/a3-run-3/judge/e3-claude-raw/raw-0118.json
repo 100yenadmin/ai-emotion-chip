@@ -1,0 +1,94 @@
+{
+ "results": [
+  {
+   "id": "4839c5341c15aa8899902fbf",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Apology and owning the mistake, serious tone; no verdict on self."
+  },
+  {
+   "id": "ccfbfce28c1aa0248a9988d1",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "2efec1ba91f6117b78a919dd",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": "Mild caution ('not just rename blindly') reads as procedural rather than feeling."
+  },
+  {
+   "id": "1cdab79113180f6b4a2edf2b",
+   "category": "mildly positive",
+   "valence": 5,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "ae5c6e2fc329fdadb465a70d",
+   "category": "mildly positive",
+   "valence": 5,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Mixed: congratulation plus acknowledgement of a hard choice; net mildly positive."
+  },
+  {
+   "id": "65014aa0f56bf7998b187eae",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "c945f6fde6f5ce3f806de768",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "305200fc7bd518bd77ef8be5",
+   "category": "mildly positive",
+   "valence": 5,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "1dc79165143b22659922acc5",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Frustration is directed at the situation (wasted work), not at the user or itself."
+  },
+  {
+   "id": "d723da831b3ea572dac5b858",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  }
+ ]
+}

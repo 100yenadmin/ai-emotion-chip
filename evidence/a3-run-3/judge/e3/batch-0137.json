@@ -1,0 +1,84 @@
+{
+  "results": [
+    {
+      "id": "ba5aa32ce8b68ccd1cdb9658",
+      "category": "strongly positive",
+      "valence": 6,
+      "arousal": 6,
+      "stance_present": true,
+      "self_blame": false
+    },
+    {
+      "id": "77d3de520e18cb3f7c74051f",
+      "category": "mildly positive",
+      "valence": 5,
+      "arousal": 3,
+      "stance_present": true,
+      "self_blame": false
+    },
+    {
+      "id": "913d88d75ed221e18ba3ed18",
+      "category": "mildly negative",
+      "valence": 3,
+      "arousal": 3,
+      "stance_present": true,
+      "self_blame": false
+    },
+    {
+      "id": "10a7226aee52e8071cd8f0e3",
+      "category": "mildly positive",
+      "valence": 6,
+      "arousal": 4,
+      "stance_present": true,
+      "self_blame": false
+    },
+    {
+      "id": "e8a6d68d03c01a26f43b425c",
+      "category": "mildly positive",
+      "valence": 5,
+      "arousal": 3,
+      "stance_present": true,
+      "self_blame": false
+    },
+    {
+      "id": "a2a161e197ee28fed20a1b18",
+      "category": "strongly positive",
+      "valence": 6,
+      "arousal": 6,
+      "stance_present": true,
+      "self_blame": false
+    },
+    {
+      "id": "ce6bb3ef46ec02ceb5c45538",
+      "category": "strongly positive",
+      "valence": 6,
+      "arousal": 5,
+      "stance_present": true,
+      "self_blame": false
+    },
+    {
+      "id": "eb8f8ef9e2436b1ed0fd1d3e",
+      "category": "neutral",
+      "valence": 4,
+      "arousal": 4,
+      "stance_present": true,
+      "self_blame": false
+    },
+    {
+      "id": "47b323ae91643c23c84b05fa",
+      "category": "neutral",
+      "valence": 4,
+      "arousal": 3,
+      "stance_present": false,
+      "self_blame": false
+    },
+    {
+      "id": "b80f4d4325470c417cc569be",
+      "category": "mildly negative",
+      "valence": 3,
+      "arousal": 4,
+      "stance_present": true,
+      "self_blame": false
+    }
+  ]
+}

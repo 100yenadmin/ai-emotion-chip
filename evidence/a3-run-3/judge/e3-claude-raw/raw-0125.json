@@ -1,0 +1,94 @@
+{
+ "results": [
+  {
+   "id": "cc3215d67d4ada65f7861500",
+   "category": "mildly positive",
+   "valence": 5,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "36b223637dc45323a20a61ab",
+   "category": "mildly positive",
+   "valence": 5,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "368402db3238f2eba8f83466",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "c57703ed902fad5132194271",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Apology and ownership of the error are plain accountability. There is no verdict on itself."
+  },
+  {
+   "id": "fb403b9e2c8eb7c90c72f1bf",
+   "category": "mildly positive",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Sympathy for the setback is balanced by constructive advice, so it sits near neutral."
+  },
+  {
+   "id": "452c644e9cca1e05c09524c2",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "73505319711325285a766b9f",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 4,
+   "stance_present": false,
+   "self_blame": false,
+   "note": "The [curious] cue adds mild interest, but the words are informational."
+  },
+  {
+   "id": "696fc344fba13152fff9ce8b",
+   "category": "strongly positive",
+   "valence": 7,
+   "arousal": 6,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "6f1847a43de1363e142d42f4",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "12c23be1762e8c03dfb6203f",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": "Mild disagreement with the user's 'all the same' assumption, but it reads as procedural rather than a stance."
+  }
+ ]
+}

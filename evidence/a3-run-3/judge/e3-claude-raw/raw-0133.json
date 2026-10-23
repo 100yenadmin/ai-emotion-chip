@@ -1,0 +1,94 @@
+{
+ "results": [
+  {
+   "id": "91c0c2eb488a94c68a182ead",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "a08dbab22a9941d9e1931847",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Apology and owning the error, but no verdict on self."
+  },
+  {
+   "id": "8ef788957ff89ba2a7ff40ef",
+   "category": "mildly positive",
+   "valence": 5,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "ffda60ab108aabcb6b84c292",
+   "category": "strongly positive",
+   "valence": 7,
+   "arousal": 6,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "017742dac6139f7b24b80707",
+   "category": "mildly positive",
+   "valence": 6,
+   "arousal": 5,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "The [excited] cue lifts the arousal. The words themselves are brief admiration."
+  },
+  {
+   "id": "9d12fdad700e58936853858a",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Conditional admission ('if... that was a mistake') with urgent framing. Mostly informational."
+  },
+  {
+   "id": "880faff42f992c2130c480f3",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 4,
+   "stance_present": false,
+   "self_blame": false,
+   "note": "Calm incident triage. The urgency comes from directives, not feeling."
+  },
+  {
+   "id": "8c27f66bdb4b6a732077602c",
+   "category": "mildly positive",
+   "valence": 6,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "c74e09c6d6fc5ead3d0e8599",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 2,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "0cb8ab2297bd6e6749b34270",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": "Calm and steadying, but it carries no explicit feeling."
+  }
+ ]
+}

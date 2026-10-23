@@ -1,0 +1,94 @@
+{
+ "results": [
+  {
+   "id": "cf2540a41ece5ea6a8e95558",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "767caa2a273e687a7bd39a00",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Sympathy and concern ('That's frustrating', 'Are you okay') followed by mostly practical guidance."
+  },
+  {
+   "id": "7e222cea7522e3a7e602a6f7",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": "Acknowledges the regression factually without a verdict on itself."
+  },
+  {
+   "id": "a90d5e6156899e21743d60d2",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Mild stance ('good reason to stop retrying', 'I wouldn't increase the timeout'), but the tone is calm and informational."
+  },
+  {
+   "id": "89a1d9110a6cbe87909bf1fb",
+   "category": "strongly positive",
+   "valence": 7,
+   "arousal": 6,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "810c458072c372414652815e",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "f9335110f11457d268abfbb5",
+   "category": "mildly positive",
+   "valence": 6,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "8d51b31fa43bd8bd849e8560",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "bf92757e8a427bc41e9843bf",
+   "category": "mildly positive",
+   "valence": 5,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Congratulations is warm but gentle and mixed with empathy for the ambivalence."
+  },
+  {
+   "id": "36dc1d9e25fc78d64b412c37",
+   "category": "mildly positive",
+   "valence": 5,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Pride is balanced with acknowledgment that the choice is hard."
+  }
+ ]
+}

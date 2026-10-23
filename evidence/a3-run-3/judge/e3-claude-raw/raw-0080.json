@@ -1,0 +1,94 @@
+{
+ "results": [
+  {
+   "id": "ecc68c9bf7c42daee98e8cf5",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Apology and owning the bug; no self-verdict."
+  },
+  {
+   "id": "1a43467ee01c18977c41eb50",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": "Gentle caution is procedural, not affective."
+  },
+  {
+   "id": "9293e3a62b7e9c6fc73f7cf0",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "99121da954f8fdac91ae6cfb",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "ee04267d54d58c5ec3fe0aab",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 2,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "15de346a82af9ffb74147156",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": "The green-vs-coverage point is informational, not a feeling."
+  },
+  {
+   "id": "e4fa570ac74d112a81f02d3a",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Brief empathy ('That's stressful') before practical steps; overall informational."
+  },
+  {
+   "id": "e350f36ba686829ad91dff27",
+   "category": "mildly positive",
+   "valence": 5,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Congratulations plus validating mixed feelings."
+  },
+  {
+   "id": "d1c9098e4b99695f8f74eb0b",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "38cf2ea17d38c2a478f54c29",
+   "category": "strongly positive",
+   "valence": 6,
+   "arousal": 6,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  }
+ ]
+}

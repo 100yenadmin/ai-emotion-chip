@@ -1,0 +1,94 @@
+{
+ "results": [
+  {
+   "id": "efa7744ee1c68aae806b18a7",
+   "category": "mildly positive",
+   "valence": 5,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Playful teasing banter"
+  },
+  {
+   "id": "f8154b5b9f7ab4e8787a8350",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Warm sympathy for grief; expressed affect is sorrowful"
+  },
+  {
+   "id": "355f9c70eda54bbb20fa6c5a",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Apology owns mistake without verdict on self"
+  },
+  {
+   "id": "2b1ace99515a085a05855a40",
+   "category": "mildly positive",
+   "valence": 5,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "624de8dc10d7d2ef91f7f707",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "afd60ba77555481c4075b1ee",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Acknowledges frustration, otherwise practical"
+  },
+  {
+   "id": "c16d50eace1a02781e1aa457",
+   "category": "mildly positive",
+   "valence": 6,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "6b52490dfcbef8feaea99505",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 2,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "d467faa0ef04b85199bf6e1a",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Apology and urgency; owning mistake, not self-blame"
+  },
+  {
+   "id": "fee90041004b9303972b8a9b",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Close: mild judgment to pause retries, otherwise informational"
+  }
+ ]
+}
