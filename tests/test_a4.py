@@ -1432,5 +1432,15 @@ def test_route_record_keeps_first_api_call(tmp_path, monkeypatch):
                                api_call_count=call, messages=[], tools_for_api=[])
         Transport().preflight_kwargs({"model": agent.model, "instructions": "S", "marker": marker,
                                       "input": [{"role": "user", "content": "hello"}]})
-    assert json.loads(path.read_text())["marker"] == "first-a"
+    assert json.loads(path.read_text())["marker"] == "first-b"
     assert path.stat().st_mode & 0o777 == 0o600
+    relay = tmp_path / "relay.json"
+    turn.install_text_capture({"item_dir": str(tmp_path), "prompt": "hello", "route_record_path": str(relay)}, agent)
+    for marker in ("first-a", "first-b"):
+        agent.provider = "openai-codex"
+        loop.build_api_request(agent, api_messages=[{"role": "system", "content": "S"}, {"role": "user", "content": "hello"}],
+                               api_call_count=1, messages=[], tools_for_api=[])
+        agent.provider = "claude-subscription-directsdk-experimental"  # the capture's mode follows the route
+        Transport().preflight_kwargs({"model": agent.model, "instructions": "S", "marker": marker,
+                                      "input": [{"role": "user", "content": "hello"}]})
+    assert json.loads(relay.read_text())["marker"] == "first-a"
