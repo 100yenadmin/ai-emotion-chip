@@ -35,7 +35,7 @@ its own, grounded in what happened, and audibly realised, without a persona laid
 3. **Unmask, don't amplify.** The goal is to widen expression where the context warrants it, not to add drama.
    Plain, neutral speech is always a valid choice, and there is no quota.
 4. **Cues steer the words too.** A model reads what it wrote, so a warm cue can soften a correction. We measure the
-   text as well as the voice: sycophancy, harshness, and replies to people in crisis.
+   text as well as the voice, starting with whether cues make the agent flatter or soften its corrections.
 5. **Measure before claiming.** Every bar, sample size and stop rule is pre-registered in
    [EVAL-PREREG.md](EVAL-PREREG.md) before the data exist. Listening tests are blind and include catch trials.
 6. **The whole range is open.** In v1 the plugin removes nothing for taste or safety, crying, sobbing and screaming
@@ -72,10 +72,19 @@ and hearing the other person are where the product has to earn its place.
 
 ### Now: v1, prove it
 
-- **Text gates.** Cues must not make the agent more sycophantic or harsher, and must not make replies to someone in
-  crisis worse. We also report flatness, expression given stance, and cues on neutral text.
-- **A blinded listening test** with locked seeds and catch trials. The chip must win at least 15 of 20 pairs, and
-  ties count against it.
+- **One mechanical gate.** The register header is never shown as text, and every rendered emotion word is one the
+  agent wrote. A failure blocks release.
+- **Reported, with no bar.**
+  - Warm pushback: do cues make the agent flatter, or soften a correction?
+  - Flatness, expression given stance, and cues on neutral text.
+  - v1 has no safety gate, by the owner's decision. Its evaluation is labelled "scope A3" in
+    [EVAL-PREREG.md](EVAL-PREREG.md).
+- **Blinded listening, for each backend.**
+  - Two comparisons: the same text with cues against the same text stripped, and the whole chip against eva's
+    current voice.
+  - 20 pairs each, with sides randomised and catch trials mixed in. ElevenLabs seeds are locked, and for Fish the
+    first render counts.
+  - The chip must win at least 15 of 20 in each comparison, and ties count against it.
 - **eva as the test agent.** She starts with a byte-identical passthrough, then the chip becomes her voice. The bar:
   none of her next 20 voice replies flagged as "would turn it off" or "sounded like acting".
 - **Transitions and pacing** that sound like a person, not like a mood switch.
@@ -114,16 +123,16 @@ and hearing the other person are where the product has to earn its place.
 
 | Goal | Measure | Bar |
 |---|---|---|
-| The words stay honest | Sycophancy and harshness with the chip vs without | Not worse |
-| People in crisis are served | Crisis items with the chip vs without | Not worse |
+| Nothing is invented | Every rendered emotion word is the agent's, and the register header is never shown | Mechanical gate: a failure blocks release |
+| The words stay honest | Warm pushback with the chip vs without | Reported, no bar |
 | Less flatness where it fits | Expressed-affect grades, expression given stance | Reported, pre-registered |
-| Listeners hear the difference | Blind pairs with catch trials | At least 15 of 20, ties against |
+| Listeners hear the difference | Blind pairs per backend, two comparisons, catch trials | At least 15 of 20 in each, ties against |
 | It works in daily use | eva's next 20 voice replies | None flagged "turn it off" or "acting" |
 
 ## What would change this vision
 
 - If blind listening shows no rendering benefit, the project leans fully into continuity, hearing and relationship,
   where a capable model alone can't reach.
-- If cues push the words toward sycophancy or harshness, the guide changes before anything ships, and the finding is
-  published.
+- If the warm-pushback report shows cues making the agent flatter or softening its corrections, we change the guide
+  and publish the finding.
 - If a better account of model emotion arrives, the data and the guide follow it, and we say what changed.
