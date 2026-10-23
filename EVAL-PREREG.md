@@ -495,12 +495,13 @@ Nothing above the Amendments heading changes. A4 to A8 stay in force except as f
 - **A write that check 3 cannot reproduce.** One Opus cell (an E3 item, NATIVE, run 1) used Hermes' `skill_manage` on
   both attempts: after the user's criticism, the model created a skill recording the lesson. Hermes offers that tool in
   interactive sessions so the agent can learn for later sessions. Check 3 rejects a write, so that cell could never be
-  admitted, and under A3 a verdict of `pass` needs every cell. It was 1 of 365 Opus cells and none of the
-  `gpt-6.1-sol` cells that ran.
+  admitted, and under A3 a verdict of `pass` needs every cell. It was 1 of the 388 Opus cells recorded in run 2, and
+  none of the `gpt-6.1-sol` cells that ran.
   - Every warm and cell process now runs as a Hermes one-shot session, as `hermes chat -q` does: the harness sets
     Hermes' marker `HERMES_SINGLE_QUERY_SESSION=1`. Hermes then does not offer `skill_manage` (`skills_list` and
-    `skill_view` stay), uses its one-shot wording for the skills section of the system prompt, and labels the session
-    `oneshot`. Each cell answers one message and exits, so this describes what the cells are. The marker is the same in
+    `skill_view` stay) and uses its one-shot wording for the skills section of the system prompt. The session source
+    stays `telegram`, because Hermes labels a one-shot session `oneshot` only on the CLI platform. Each cell answers one
+    message and exits, so this describes what the cells are. The marker is the same in
     every arm. Only ON lists a skill (the plugin's own), so only ON's system text has a skills section and shows that
     wording: the one an installed skill gets in a one-shot session.
   - The golden warm requires exactly `skills_list` and `skill_view`, so a host that ignored the marker fails before
