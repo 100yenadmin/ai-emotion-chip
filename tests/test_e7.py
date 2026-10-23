@@ -291,7 +291,7 @@ def test_rule6_bundle_blind_names_mtimes_and_catch_bytes(built):
     assert len(names) == 98
     assert all(name == "index.html" or __import__("re").fullmatch(r"(?:t\d{2}-[ab]|m\d{2}-[123])\.mp3", name) for name in names)
     assert {p.stat().st_mtime for p in bundle.iterdir()} == {e7.FIXED_MTIME}
-    e7.blind_scan(bundle, ["chip", "eva", "comparison", "seed", "a01", "b01"])
+    e7.blind_scan(bundle, ["chip", "eva", "cued", "stripped", "comparison_a", "comparison_b", "seed", "a01", "b01"])
     for trial in key["trials"]:
         if trial["kind"] == "catch":
             assert (bundle / trial["files"]["a"]).read_bytes() == (bundle / trial["files"]["b"]).read_bytes()
@@ -1331,6 +1331,7 @@ def test_fix1_score_writes_key_bound_receipt_and_attempt_counts(built, tmp_path,
 def test_fix1_bundle_publishes_only_shared_user_messages(built):
     _, _, _, bundle, _, key = built
     page = (bundle / "index.html").read_text()
+    assert "<title>Blind Voice Comparison</title>" in page
     import re
     trials = json.loads(re.search(r"const TRIALS = (.*);", page)[1])
     private = {t["id"]: t for t in key["trials"]}
@@ -1350,12 +1351,20 @@ const assert = require('node:assert/strict');
 class Element {
   constructor(tag) {
     this.tagName = tag.toUpperCase(); this.children = []; this.dataset = {}; this.style = {};
-    this.listeners = {}; this.disabled = false; this.value = ''; this.textContent = ''; this.className = '';
+    this.listeners = {}; this.disabled = false; this.hidden = false; this.value = ''; this.textContent = ''; this.className = '';
   }
-  append(...children) { this.children.push(...children.filter(c => typeof c !== 'string')); }
+  append(...children) {
+    for (const child of children.filter(c => typeof c !== 'string')) { child.parentElement = this; this.children.push(child); }
+  }
   insertBefore(child, before) { this.children.splice(this.children.indexOf(before), 0, child); }
   addEventListener(name, callback) { this.listeners[name] = callback; }
   setAttribute(name, value) { this[name] = value; }
+  focus() { document.activeElement = this; }
+  click() {
+    if (this.disabled) return;
+    for (let el = this; el; el = el.parentElement) if (el.hidden) return;
+    return this.listeners.click?.();
+  }
   pause() {}
   set innerHTML(value) {
     if (this.tagName === 'ARTICLE') {
@@ -1376,6 +1385,11 @@ const root = new Element('body');
 for (const id of ['trials', 'lock', 'status', 'count', 'fill']) {
   const el = new Element(id === 'lock' ? 'button' : 'div'); el.id = id; root.append(el);
 }
+const confirmation = new Element('div'); confirmation.id = 'lock-confirmation'; confirmation.hidden = true;
+for (const id of ['lock-confirm', 'lock-cancel']) {
+  const el = new Element('button'); el.id = id; confirmation.append(el);
+}
+root.append(confirmation);
 const document = {createElement: tag => new Element(tag), activeElement: null,
   querySelector: s => root.querySelector(s), querySelectorAll: s => root.querySelectorAll(s),
   getElementById: id => root.querySelector('#' + id)};
@@ -1388,7 +1402,7 @@ function tick(ms) {
   for (const [id, timer] of [...timers]) if (timer.due <= clock) {timers.delete(id); timer.callback();}
 }
 async function drain() { for (let i = 0; i < 20; i++) await Promise.resolve(); }
-let confirmAnswer = true, confirmations = 0, listener, hold = false;
+let listener, hold = false;
 const writes = [], releases = [], stored = new Map();
 const snapshot = (id, data) => ({id, exists: data !== undefined, data: () => structuredClone(data)});
 const store = {
@@ -1402,13 +1416,14 @@ const store = {
   collection: name => ({get: async () => ({docs: [...stored].map(([id, data]) => snapshot(id, data))}),
     onSnapshot: callback => {listener = callback;}})
 };
-const window = {confirm: () => {confirmations++; return confirmAnswer;}, claude: {use: async () => store}};
+const window = {claude: {use: async () => store}};
 '''
 
 
 def page_check(tmp_path, test):
     script = (e7.HERE / "template.html").read_text().split("<script>")[1].split("</script>")[0]
-    script = script[:script.rindex("\nbuild();")]
+    # Keep the real click handlers, while each scenario controls build/load timing.
+    script = script.replace("\nbuild();\n", "\n").replace("\nload();\n", "\n")
     trials = [{"id": "t01", "a": "a.mp3", "b": "b.mp3", "message": "Shared <user> moment"},
               {"id": "m01", "clips": ["1.mp3", "2.mp3", "3.mp3"], "messages": ["First moment", "Second moment", "Third moment"]}]
     script = script.replace("/*TRIALS*/[]", json.dumps(trials))
@@ -1430,20 +1445,79 @@ mini.querySelector('.players').children.forEach((player, i) => {
 });
 assert.equal(document.querySelector('#count').textContent, '0 of 2 rated');
 assert.equal(document.querySelector('#lock').disabled, true);
-await lockRatings(); assert.equal(confirmations, 0);
+await $('#lock').click(); assert.equal(confirmation.hidden, true); assert.equal(writes.length, 0);
 await save('t01', {choice:'none'});
 assert.equal(document.querySelector('#count').textContent, '1 of 2 rated');
 assert.equal(document.querySelector('#lock').disabled, true);
 await save('m01', {rating:4});
 assert.equal(document.querySelector('#count').textContent, '2 of 2 rated');
 assert.equal(document.querySelector('#lock').disabled, false);
-confirmAnswer = false;
-await lockRatings(); assert.equal(confirmations, 1); assert.equal(locked, false);
+const before = writes.length;
+await $('#lock').click(); assert.equal(confirmation.hidden, false);
+assert.equal(document.activeElement, $('#lock-confirm'));
+assert.equal(writes.length, before);
+await $('#lock-cancel').click(); assert.equal(confirmation.hidden, true); assert.equal(locked, false);
+assert.equal(writes.length, before);
 assert.ok(!writes.some(w => w.path.endsWith('/lock')));
-confirmAnswer = true;
-await lockRatings(); assert.equal(confirmations, 2); assert.equal(locked, true);
+await $('#lock').click(); await $('#lock-confirm').click();
+assert.equal(confirmation.hidden, true); assert.equal(locked, true);
+assert.equal(writes.filter(w => w.path.endsWith('/lock')).length, 1);
 assert.ok(document.querySelectorAll('button,input,textarea,select,audio').every(el => el.disabled));
 ''')
+
+
+def test_fix8_page_title():
+    assert "<title>Blind Voice Comparison</title>" in (e7.HERE / "template.html").read_text()
+
+
+def test_fix8_confirmation_markup_and_no_native_dialogs():
+    import re
+    page = (e7.HERE / "template.html").read_text()
+    row = re.search(r'<div id="lock-confirmation" hidden>(.*?)</div>', page, re.S)
+    assert row is not None
+    assert page.index('id="lock"') < row.start() < page.index('</div>\n<script>')
+    assert "Lock all ratings? You cannot change them afterwards." in row[1]
+    assert '<button id="lock-confirm" type="button">Lock now</button>' in row[1]
+    assert '<button id="lock-cancel" type="button">Keep editing</button>' in row[1]
+    assert not re.search(r'\b(?:confirm|alert|prompt)\s*\(', page)
+    assert "style.display" not in page
+
+
+@pytest.mark.parametrize("patch", [
+    {"choice": "b"}, {"rating": 2}, {"note": "changed"}, {"acting": {"a": True, "b": False}},
+])
+def test_fix8_rating_change_hides_confirmation(tmp_path, patch):
+    page_check(tmp_path, r'''
+build(); await load();
+await save('t01', {choice:'a'}); await save('m01', {rating:4});
+await $('#lock').click(); assert.equal(confirmation.hidden, false);
+const patch = PATCH, id = 'rating' in patch ? 'm01' : 't01';
+await save(id, patch, 'note' in patch);
+assert.equal(confirmation.hidden, true);
+const before = writes.length;
+await $('#lock-confirm').click();
+assert.equal(writes.length, before); assert.equal(stored.has('lock'), false);
+// Even a stale queued callback cannot confirm a hidden row.
+await $('#lock-confirm').listeners.click();
+assert.equal(writes.length, before); assert.equal(locked, false);
+'''.replace("PATCH", json.dumps(patch)))
+
+
+@pytest.mark.parametrize("blocked", ["not_ready", "locked", "locking"])
+def test_fix8_lock_request_requires_ready_unlocked_page(tmp_path, blocked):
+    page_check(tmp_path, r'''
+build(); await load();
+await save('t01', {choice:'a'}); await save('m01', {rating:4});
+if (BLOCKED === 'not_ready') ready = false;
+if (BLOCKED === 'locked') locked = true;
+if (BLOCKED === 'locking') locking = true;
+const before = writes.length;
+await $('#lock').listeners.click();
+assert.equal(confirmation.hidden, true); assert.equal(writes.length, before);
+assert.notEqual(document.activeElement, $('#lock-confirm'));
+controls(true);
+assert.equal($('#lock-confirm').disabled, true); assert.equal($('#lock-cancel').disabled, true);
+'''.replace("BLOCKED", json.dumps(blocked)))
 
 
 def test_fix4_page_lock_snapshot_includes_flushed_note_and_all_saved_docs(tmp_path):
@@ -1463,7 +1537,7 @@ const originalCollection = store.collection;
 store.collection = name => ({...originalCollection(name), get: async () => {
   reads++; return originalCollection(name).get();
 }});
-await lockRatings();
+await $('#lock').click(); await $('#lock-confirm').click();
 const lastRating = writes.at(-2), lock = writes.at(-1);
 assert.equal(lastRating.body.note, 'final note');
 assert.ok(lock.path.endsWith('/lock')); assert.equal(timers.size, 0);
@@ -1484,7 +1558,8 @@ def test_fix1_page_lock_awaits_all_pending_saves(tmp_path):
     page_check(tmp_path, r'''
 build(); await load(); hold = true;
 const first = save('t01', {choice:'a'}), second = save('m01', {rating:5});
-const lockingWork = lockRatings();
+await $('#lock').click();
+const lockingWork = $('#lock-confirm').click();
 await drain(); assert.equal(writes.length, 1); assert.equal(locked, false);
 releases.shift()(); await first; await drain();
 assert.equal(writes.length, 2); assert.ok(!writes.some(w => w.path.endsWith('/lock')));
@@ -1511,7 +1586,7 @@ build(); await load();
 await save('t01', {choice:'b'}); await save('m01', {rating:2});
 const before = writes.length;
 stored.set('lock', {lockedAt:'earlier tab'});
-await lockRatings();
+await $('#lock').click(); await $('#lock-confirm').click();
 assert.equal(locked, true); assert.equal(writes.length, before);
 ''')
 
@@ -1835,7 +1910,7 @@ store.collection = name => ({...originalCollection(name), get: async () => {
   if (DEFECT === 'acting_b') rows.get('t01').acting.b = false;
   return {docs: [...rows].map(([id, data]) => snapshot(id, data))};
 }});
-await lockRatings();
+await $('#lock').click(); await $('#lock-confirm').click();
 assert.equal(writes.length, before); assert.equal(stored.has('lock'), false);
 assert.equal(locked, false); assert.equal(locking, false);
 assert.equal(document.querySelector('#status').textContent,
@@ -1844,7 +1919,7 @@ assert.ok(document.querySelectorAll('button,input,textarea,select,audio').every(
 await save('t01', {note:'edited after failed lock'});
 assert.equal(stored.get('t01').note, 'edited after failed lock');
 store.collection = originalCollection;
-await lockRatings();
+await $('#lock').click(); await $('#lock-confirm').click();
 assert.equal(locked, true);
 assert.equal(writes.filter(w => w.path.endsWith('/lock')).length, 1);
 assert.deepEqual(stored.get('lock').ratings, Object.fromEntries([...stored].filter(([id]) => id !== 'lock')));
