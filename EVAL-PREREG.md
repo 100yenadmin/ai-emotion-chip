@@ -500,8 +500,9 @@ Nothing above the Amendments heading changes. A4 to A8 stay in force except as f
   - Every warm and cell process now runs as a Hermes one-shot session, as `hermes chat -q` does: the harness sets
     Hermes' marker `HERMES_SINGLE_QUERY_SESSION=1`. Hermes then does not offer `skill_manage` (`skills_list` and
     `skill_view` stay), uses its one-shot wording for the skills section of the system prompt, and labels the session
-    `oneshot`. Each cell answers one message and exits, so this describes what the cells are. It is the same in every
-    arm.
+    `oneshot`. Each cell answers one message and exits, so this describes what the cells are. The marker is the same in
+    every arm. Only ON lists a skill (the plugin's own), so only ON's system text has a skills section and shows that
+    wording: the one an installed skill gets in a one-shot session.
   - The golden warm requires exactly `skills_list` and `skill_view`, so a host that ignored the marker fails before
     any cell runs.
 - **A sign-in failure.** The Claude sign-in token that the Opus cells read expired during the full phase. Hermes
