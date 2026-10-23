@@ -1,4 +1,5 @@
 """A4 offline contracts: no installed Hermes, relay, credentials, or model processes."""
+import base64
 from copy import deepcopy
 import hashlib
 import importlib.util
@@ -286,6 +287,49 @@ def test_parent_refresh_and_isolated_home(tmp_path):
         "access_token": "fake-access", "refresh_token": "harness-owned-no-refresh"}
     with pytest.raises(ValueError, match="isolated"):
         manager.provision(tmp_path / "profiles" / "home")
+
+
+def fake_login(path, exp):
+    claims = base64.urlsafe_b64encode(json.dumps({"exp": exp}).encode()).decode().rstrip("=")
+    path.write_text(json.dumps({"providers": {"openai-codex": {"tokens": {
+        "access_token": f"head.{claims}.sig", "refresh_token": "owner-refresh"}}}}))
+    return path
+
+
+def test_borrowed_login_is_read_only_and_never_refreshed(tmp_path):
+    source = fake_login(tmp_path / "auth.json", 4000)
+    access = json.loads(source.read_text())["providers"]["openai-codex"]["tokens"]["access_token"]
+    before = (source.read_bytes(), source.stat().st_mtime_ns)
+    load, refresh = text.borrowed_pair(source)
+    assert load()["expires_at"] == 4000
+    home = tmp_path / "home"
+    home.mkdir()
+    text.TokenPair(load, refresh, clock=lambda: 0).provision(home)
+    assert json.loads((home / "auth.json").read_text())["providers"]["openai-codex"]["tokens"] == {
+        "access_token": access, "refresh_token": "harness-owned-no-refresh"}
+    late = tmp_path / "late"
+    late.mkdir()
+    with pytest.raises(RuntimeError, match="^STOP: credential or sign-in need$"):
+        text.TokenPair(load, refresh, clock=lambda: 3500).provision(late)
+    assert not (late / "auth.json").exists()
+    assert (source.read_bytes(), source.stat().st_mtime_ns) == before
+
+
+def test_main_borrows_a_named_login(tmp_path, monkeypatch, bench_temp_root):
+    argv = fake_main_runtime(tmp_path, monkeypatch)
+    source = fake_login(tmp_path / "auth.json", 4000)
+    monkeypatch.setattr(text, "load_paths", lambda path: {
+        "host": tmp_path / "host", "harness_auth_home": tmp_path / "parent", "codex_auth_source": source})
+    seen = []
+    def run_model(self, model, route_record):
+        seen.append(self.tokens.load()["access_token"])
+        assert self.provenance["codex_auth"] == "borrowed-read-only"
+        with pytest.raises(RuntimeError, match="STOP"):
+            self.tokens.refresh({})
+        return {}
+    monkeypatch.setattr(text.Harness, "run_model", run_model)
+    text.main(argv)
+    assert seen == [json.loads(source.read_text())["providers"]["openai-codex"]["tokens"]["access_token"]] * len(items.MODELS)
 
 
 def test_judge_model_pools_and_claude_environment(tmp_path):

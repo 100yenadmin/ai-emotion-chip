@@ -4,6 +4,7 @@ Run the parent with the pinned Hermes Python (its auth library needs that enviro
     <host>/.venv/bin/python -m bench.hermes.text --paths PATHS --scratch SCRATCH --out OUT
 """
 import argparse
+import base64
 import hashlib
 import json
 import os
@@ -41,7 +42,8 @@ def file_sha256(path):
 
 def load_paths(source):
     paths = read_json(Path(source).expanduser())
-    keys = (set(host.PATH_KEYS) - {"host_label"}) | {"eleven_key_file", "claude_command", "harness_auth_home"}
+    keys = (set(host.PATH_KEYS) - {"host_label"}) | {"eleven_key_file", "claude_command", "harness_auth_home",
+                                                     "codex_auth_source"}
     paths = {k: Path(v).expanduser() if k in keys and v else v for k, v in paths.items()}
     paths["canaries"] = [str(Path(c).expanduser()) if str(c).startswith("~") else str(c)
                          for c in paths.get("canaries", []) if str(c).strip()]
@@ -89,6 +91,20 @@ def cell_order(pilot=False):
         rng.shuffle(arms)
         rows.extend({"set": s, "split": "heldout", "item": item, "run": r, "condition": c} for c in arms)
     return rows
+
+
+def with_expiry(pair):
+    payload = pair["access_token"].split(".")[1]
+    return {**pair, "expires_at": json.loads(base64.urlsafe_b64decode(payload + "=" * (-len(payload) % 4)))["exp"]}
+
+
+def borrowed_pair(source):
+    """Another Hermes home's Codex login, read only: never written and never refreshed, so its owner keeps it."""
+    def load():
+        return with_expiry(read_json(source)["providers"]["openai-codex"]["tokens"])
+    def refresh(pair):
+        raise RuntimeError("STOP: credential or sign-in need")
+    return load, refresh
 
 
 def safe_home(home):
@@ -412,17 +428,16 @@ def main(argv=None):
     if load_config().get("auth", {}).get("adopt_external_logins") is not False:
         raise RuntimeError("harness parent must disable external login adoption")
     def load_pair():
-        import base64
-        pair = _read_codex_tokens()["tokens"]
-        payload = pair["access_token"].split(".")[1]
-        expiry = json.loads(base64.urlsafe_b64decode(payload + "=" * (-len(payload) % 4)))["exp"]
-        return {**pair, "expires_at": expiry}
+        return with_expiry(_read_codex_tokens()["tokens"])
     def refresh(pair):
         resolve_codex_runtime_credentials(refresh_skew_seconds=900)
         return load_pair()
+    if paths.get("codex_auth_source"):
+        load_pair, refresh = borrowed_pair(paths["codex_auth_source"])
     runner = Harness(args.scratch, args.out, paths, read_json(args.a4b) if args.a4b else {},
                      TokenPair(load_pair, refresh), gen.keychain_token)
     runner.prepare()
+    runner.provenance["codex_auth"] = "borrowed-read-only" if paths.get("codex_auth_source") else "harness-owned"
     records, model_failures = {}, {}
     for model in MODELS:
         try:

@@ -411,3 +411,15 @@ scope-A3 data exists. Nothing above the Amendments heading changes. A4 stays in 
   is the route's model, and the tool names and schemas are the same across arms.
 - **Unchanged.** Checks 1, 3, 4 and 5, the canary scan, the rerun rules, the cell order, isolation and the A4b identity
   (a new Claude Code version or source pin needs a new route record).
+
+### A6 (2026-10-23): the gpt-6.1-sol sign-in may be a borrowed login, read only
+
+Reason: A4 asks for a Codex sign-in owned by the harness. That needs an interactive login, and none was available for
+this run. An existing Hermes profile on the bench machine has a working Codex login. This is recorded before any
+scope-A3 data exist. Nothing above the Amendments heading changes.
+
+- The harness may read that profile's Codex access token from its `auth.json` instead.
+- It never writes or refreshes that login. It provisions the token fresh into each cell, with no refresh token, as A4
+  does. No other part of that profile reaches the cells.
+- When the token is too close to expiry, the run stops, as A4's credential stop does.
+- The manifest records which mode the run used: `harness-owned` or `borrowed-read-only`.
