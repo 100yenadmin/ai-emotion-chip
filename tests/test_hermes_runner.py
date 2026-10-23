@@ -404,6 +404,22 @@ def test_eleven_key_reaches_only_the_child_env_and_is_scrubbed(tmp_path, monkeyp
     assert run.scrub("x sk_eleven_secret y", ["fishkey", "sk_eleven_secret", None]) == "x [redacted] y"
 
 
+def test_text_cells_run_as_hermes_one_shot_sessions(tmp_path, monkeypatch):
+    seen = []
+
+    def fake_run(cmd, **kwargs):
+        seen.append(kwargs["env"])
+        return type("P", (), {"returncode": 1, "stdout": "", "stderr": ""})()
+    monkeypatch.setattr(run.subprocess, "run", fake_run)
+    item = tmp_path / "item"
+    item.mkdir()
+    host = run.Host(tmp_path, "fishkey", {"host": tmp_path, "canaries": []})
+    for args in ({"mode": "warm", "text": True}, {"mode": "turn", "text": True}, {"mode": "turn"}):
+        host.call(item, args)
+    # A9: the text harness's warm and turn cells are Hermes one-shot sessions; the M1 runner's are not.
+    assert [env.get("HERMES_SINGLE_QUERY_SESSION") for env in seen] == ["1", "1", None]
+
+
 def test_credential_failures_are_recognised():
     assert run.credential_failure({"final_response": "upstream said: OAuth access token has been revoked."})
     assert run.credential_failure({"tts_results": [{"success": False, "error": "ElevenLabs HTTP 401: invalid"}]})

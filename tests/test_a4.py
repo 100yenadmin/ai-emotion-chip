@@ -1117,14 +1117,16 @@ def test_harness_warm_host_args_and_checks(tmp_path, monkeypatch, model):
             assert args["item_dir"] == str(item)
             assert kwargs == {"token": None, "timeout": 600}
             calls.append(arm)
+            names = sorted(text.SKILL_TOOLS) + {"tools": ["terminal"], "write-tool": ["skill_manage"]}.get(scenario["kind"], [])
+            relay = [n for n in relay_tools_fixture()["sent_tools"]
+                     if scenario["kind"] == "write-tool" or not n.endswith("__skill_manage")]
             return {"canaries": {"synthetic": scenario["kind"] == "canary"},
-                    "tools": ["skill_manage", "skill_view", "skills_list"] + (["terminal"] if scenario["kind"] == "tools" else []),
+                    "tools": names,
                     **({} if scenario["kind"] == "sent-missing" else {"sent_tools": {
-                        "sent-short": ["one"], "sent-duplicate": ["one"] * 3,
-                        "sent-not-list": "one", "sent-not-name": ["one", "two", None],
-                        "sent-empty-name": ["one", "two", ""],
-                    }.get(scenario["kind"], relay_tools_fixture()["sent_tools"] if model == items.MODELS[0]
-                          else ["skill_manage", "skill_view", "skills_list"])}),
+                        "sent-short": ["one"], "sent-duplicate": ["one"] * 2,
+                        "sent-not-list": "one", "sent-not-name": ["one", None],
+                        "sent-empty-name": ["one", ""],
+                    }.get(scenario["kind"], relay if model == items.MODELS[0] else names)}),
                     "error": "synthetic" if scenario["kind"] == "error" else None,
                     "residue": {"sha256": arm if scenario["kind"] == "residue" else "same"}}
     monkeypatch.setattr(run, "Host", FakeHost)
@@ -1137,7 +1139,7 @@ def test_harness_warm_host_args_and_checks(tmp_path, monkeypatch, model):
     assert [(m, a) for _, m, a in homes] == [(model, a) for a in items.CONDITIONS]
     assert set(harness.golden) == {(model, a) for a in items.CONDITIONS}
     assert all(v["canaries"] == {"marker-1": False} for v in harness.golden.values())
-    for kind in ("error", "canary", "sessions", "usage", "residue", "tools", "sent-missing", "sent-short",
+    for kind in ("error", "canary", "sessions", "usage", "residue", "tools", "write-tool", "sent-missing", "sent-short",
                  "sent-duplicate", "sent-not-list", "sent-not-name", "sent-empty-name"):
         scenario["kind"] = kind
         with pytest.raises(RuntimeError, match="golden arm deltas" if kind == "residue" else "golden warm failed"):

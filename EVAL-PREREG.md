@@ -486,3 +486,29 @@ except as follows.
 - **Pins.** The relay source is a pinned copy, recorded by digest, so a change to its origin cannot reach a run.
   These are harness changes after a pilot, so A4's rule applies: a new route record, owner-approved A4b, clean
   reference and pilot.
+
+### A9 (2026-10-23): every cell is a Hermes one-shot session; scope-A3 run 2 stopped
+
+Reason: run 2 of scope A3 stopped in the Opus full phase, for the two reasons below. No scope-A3 reply has been scored.
+Nothing above the Amendments heading changes. A4 to A8 stay in force except as follows.
+
+- **A write that check 3 cannot reproduce.** One Opus cell (an E3 item, NATIVE, run 1) used Hermes' `skill_manage` on
+  both attempts: after the user's criticism, the model created a skill recording the lesson. Hermes offers that tool in
+  interactive sessions so the agent can learn for later sessions. Check 3 rejects a write, so that cell could never be
+  admitted, and under A3 a verdict of `pass` needs every cell. It was 1 of 365 Opus cells and none of the
+  `gpt-6.1-sol` cells that ran.
+  - Every warm and cell process now runs as a Hermes one-shot session, as `hermes chat -q` does: the harness sets
+    Hermes' marker `HERMES_SINGLE_QUERY_SESSION=1`. Hermes then does not offer `skill_manage` (`skills_list` and
+    `skill_view` stay), uses its one-shot wording for the skills section of the system prompt, and labels the session
+    `oneshot`. Each cell answers one message and exits, so this describes what the cells are. It is the same in every
+    arm.
+  - The golden warm requires exactly `skills_list` and `skill_view`, so a host that ignored the marker fails before
+    any cell runs.
+- **A sign-in failure.** The Claude sign-in token that the Opus cells read expired during the full phase. Hermes
+  reported the rejection, and the harness stopped Opus at that first credential failure, as A4 requires. Without Opus
+  the run could not give a verdict, so `gpt-6.1-sol` was stopped too. From now on a run starts only when the Claude
+  sign-in token has at least four hours left, enough for Opus's reference, pilot and full phases. This is an operating
+  rule, checked before launch, not code.
+- **Run 2 is stopped.** Its recorded attempts are kept in `evidence/`. None of its replies are scored.
+- **This is a harness change after a pilot**, so A4's rule applies. The next run starts from a new route record and
+  owner-approved A4b, then a clean reference and pilot, all recorded.
