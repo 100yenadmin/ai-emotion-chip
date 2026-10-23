@@ -304,7 +304,8 @@ class Harness:
         if not self.paths.get("canaries"):
             raise ValueError("text harness requires machine repository canaries")
         if any(word in str(self.run).lower() for word in LABEL_WORDS):
-            raise ValueError("the run directory must not name the plugin, the bench or a phase (A8)")
+            # The whole path, parents included, is in every cell's prompt, so the check covers all of it.
+            raise ValueError("the run directory's path must not name the plugin, the bench or a phase (A8)")
         for sub in ("cwd", "src", "tools", "golden", "cells"):
             (self.run / sub).mkdir(parents=True)
         (self.run / "sandbox.sb").write_text(host.SANDBOX)

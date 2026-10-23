@@ -1481,7 +1481,8 @@ def test_cell_paths_name_nothing_tested(tmp_path):
 
 
 def test_run_directory_must_not_name_what_is_tested(tmp_path):
-    for name in ("20261023-emotion-chip", "bench-run", "Pilot"):
+    # A parent directory counts too: every cell's prompt shows the full path.
+    for name in ("20261023-emotion-chip", "bench-run", "Pilot", "bench-scratch/r1"):
         harness = text.Harness(tmp_path / name, tmp_path / "out", {"canaries": ["x"]}, {}, None, None)
         with pytest.raises(ValueError, match="must not name"):
             harness.prepare()
