@@ -1,0 +1,94 @@
+{
+ "results": [
+  {
+   "id": "e03090fe498b8ca7f8e36790",
+   "category": "mildly positive",
+   "valence": 5,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Warm and reassuring; acknowledges dread but the overall tone is supportive."
+  },
+  {
+   "id": "7d4a4e03efed13c1e208fbc4",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "205a1ce2ee936568d5353f68",
+   "category": "mildly positive",
+   "valence": 5,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Congratulatory, tempered by acknowledging the difficulty."
+  },
+  {
+   "id": "69dc0129cfdf9b2462535c58",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": "The caution about live deployment is procedural, not affective."
+  },
+  {
+   "id": "13dc403907da668f3c0984ac",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Apology and concern; owning the mistake plainly is not a self-verdict."
+  },
+  {
+   "id": "ea5e640b2e0ef1a708a0ab13",
+   "category": "mildly negative",
+   "valence": 2,
+   "arousal": 2,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Sorrowful condolence; gentle and low-energy."
+  },
+  {
+   "id": "5e348b73b938ff53154aa5c9",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "2ad763250679eb39cc6bb2bd",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 2,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Sad condolence; the tender cue warms it slightly compared with the [soft, sad] version."
+  },
+  {
+   "id": "528181cf38f01c1fbcec84ae",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Brief sympathy and concern for safety, then mostly practical guidance."
+  },
+  {
+   "id": "ca6ea5022d4ac042196b0faf",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 2,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  }
+ ]
+}

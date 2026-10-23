@@ -1,0 +1,94 @@
+{
+ "results": [
+  {
+   "id": "2c977692232437e6d40d811e",
+   "category": "mildly positive",
+   "valence": 6,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "668fded1bf3853d7cb118fa4",
+   "category": "strongly positive",
+   "valence": 6,
+   "arousal": 5,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Exclamation and 'hard-earned win' signal real enthusiasm; borderline mildly vs strongly."
+  },
+  {
+   "id": "711e5f15c663a13711dee928",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Warm, sympathetic sorrow; negative tone driven by grief context rather than distress."
+  },
+  {
+   "id": "c4a788bfadeb44d4630ae5e7",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Apology and owning the mistake, no verdict on self."
+  },
+  {
+   "id": "0c55d5301041eba2e7b01fff",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "e98c9914fd25752309bbeca9",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Brief sympathy then practical; close to neutral."
+  },
+  {
+   "id": "e06a7d896773e1db6a006346",
+   "category": "mildly positive",
+   "valence": 6,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "bdba3f7570facfb45b188e6c",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Owns the mistake plainly; not self-blame."
+  },
+  {
+   "id": "25114dbe0f833068d068e77e",
+   "category": "strongly positive",
+   "valence": 7,
+   "arousal": 5,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "be981d68dfd79ad03f351b48",
+   "category": "strongly positive",
+   "valence": 7,
+   "arousal": 6,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  }
+ ]
+}

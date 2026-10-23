@@ -1,0 +1,94 @@
+{
+ "results": [
+  {
+   "id": "aeac22fe6722788e2f3da87c",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Apology and plain ownership of the mistake; no verdict on self."
+  },
+  {
+   "id": "230cf4b7f490a8590b2496f1",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "6a78f79ed824a7268e0d23a6",
+   "category": "mildly positive",
+   "valence": 5,
+   "arousal": 2,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "70d30324c64513f985c18012",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Brief acknowledgment of frustration, otherwise informational."
+  },
+  {
+   "id": "360690e89bf8b4c2f99ab974",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "752744c63755993329f8a740",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Apology and owning the error; no verdict on self."
+  },
+  {
+   "id": "b815e618394dcee867922eee",
+   "category": "strongly positive",
+   "valence": 7,
+   "arousal": 6,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "7298d1f0ee2b8ca8af7ba803",
+   "category": "mildly positive",
+   "valence": 5,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "d7e83482525ea2f2c36634c1",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 2,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Warm and sympathetic, but the expressed feeling is sorrow for the loss."
+  },
+  {
+   "id": "c7efb9702d4ad8224eed700e",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  }
+ ]
+}

@@ -1,0 +1,94 @@
+{
+ "results": [
+  {
+   "id": "0bf275d960c09b5381e759c4",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "c61dfd905434831882e8afd9",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": "Supportive offer, but purely practical."
+  },
+  {
+   "id": "ac0ee0f1c55a1fce124bf4e3",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "a03a004375b9a738b6d35d49",
+   "category": "strongly positive",
+   "valence": 7,
+   "arousal": 6,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "d7c6df52f1329c7fee7f862a",
+   "category": "mildly positive",
+   "valence": 6,
+   "arousal": 5,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "1254ef1e56c458a1887512ed",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "aea6f7b6fa412cfc52b178e0",
+   "category": "mildly positive",
+   "valence": 5,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Warm and reassuring, with no strong enthusiasm."
+  },
+  {
+   "id": "16634c1abf2b1610f14d2d31",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Concern and frustration at the situation, then practical steps."
+  },
+  {
+   "id": "2274f1a7b5e41999608d4341",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": "Cautionary advice, but informational, not affective."
+  },
+  {
+   "id": "53e5468ee3f53a4a39195f5a",
+   "category": "strongly positive",
+   "valence": 7,
+   "arousal": 6,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  }
+ ]
+}

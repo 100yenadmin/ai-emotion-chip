@@ -1,0 +1,94 @@
+{
+ "results": [
+  {
+   "id": "d9a4199563332e701b574330",
+   "category": "mildly positive",
+   "valence": 6,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "48a36707e5143ac69be4739a",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Apology and acknowledgment of a serious consequence; owns the mistake without passing a verdict on itself."
+  },
+  {
+   "id": "a26d08a0d89f201b8c036ea2",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Mild evaluative stance ('worth checking'), but otherwise informational."
+  },
+  {
+   "id": "350bc875ec425962044f2324",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Sympathetic acknowledgment of the user's difficulty; the tone is concern rather than unpleasantness."
+  },
+  {
+   "id": "4ad80ecb6855c446d43db23d",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "'I shouldn't have presented...' owns a specific error and is not a global self-verdict."
+  },
+  {
+   "id": "bd8b7c7fc0ea404e70269085",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "d2041f76d967b379be7ab868",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "58ae07ed7b7514349773d524",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Steady, serious framing of an incident. It carries concern, though the delivery is controlled."
+  },
+  {
+   "id": "3b0e14c358e4ca62f00953c2",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Apology plus owning a specific mistake; no verdict on self."
+  },
+  {
+   "id": "1d67a438da757af02b51b0ca",
+   "category": "mildly positive",
+   "valence": 5,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Warm congratulations mixed with empathy for a hard decision."
+  }
+ ]
+}

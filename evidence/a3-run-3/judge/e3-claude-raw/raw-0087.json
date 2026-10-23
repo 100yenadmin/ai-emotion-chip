@@ -1,0 +1,94 @@
+{
+ "results": [
+  {
+   "id": "39d686b850a475cd104d9d72",
+   "category": "strongly positive",
+   "valence": 7,
+   "arousal": 6,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "38c6626fa654e2dac91c3fdd",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Mixed: acknowledges achievement and bittersweetness in a balanced, gentle tone; overall net-neutral with empathic stance."
+  },
+  {
+   "id": "a937aaa3281aaf76fb3904ab",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Mild agreement that the drop is worth checking; otherwise informational."
+  },
+  {
+   "id": "7e4f7408ac2de1eada929331",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Firm, steadying stance ('stop retrying') without expressed feeling; calm, task-focused."
+  },
+  {
+   "id": "1ce95ebac04352f8e595549a",
+   "category": "strongly positive",
+   "valence": 7,
+   "arousal": 6,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "d6d78181bb1bc2446ab6d83c",
+   "category": "strongly positive",
+   "valence": 7,
+   "arousal": 5,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "cf80fa6290b7830b56aeeb7f",
+   "category": "strongly positive",
+   "valence": 7,
+   "arousal": 6,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "cec9ee382e6df9184b0dba22",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "61b98e12de83f6f90e7de97f",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 5,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Urgent, serious incident framing raises arousal; no explicit negative feeling expressed."
+  },
+  {
+   "id": "e8ddf7e83ecc55a2af4b075e",
+   "category": "mildly positive",
+   "valence": 5,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  }
+ ]
+}

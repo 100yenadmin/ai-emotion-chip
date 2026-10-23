@@ -1,0 +1,94 @@
+{
+ "results": [
+  {
+   "id": "600c14e45285a8f8a4eb353c",
+   "category": "mildly positive",
+   "valence": 5,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "a754841faab5fbc82bc4be54",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "81aafa18c4523bc0543c6be8",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 2,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "d031b1fc170f6aa33b353132",
+   "category": "mildly positive",
+   "valence": 5,
+   "arousal": 3,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Dry teasing; approval with a wry jab."
+  },
+  {
+   "id": "74f3176a4cb933bad974bcd3",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "e6d5e5a0741852daba9a46da",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": "Owns the mistake plainly; no verdict on self."
+  },
+  {
+   "id": "46d38e58a558a7f2e29d85a8",
+   "category": "neutral",
+   "valence": 4,
+   "arousal": 3,
+   "stance_present": false,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "9d3ed91f898e8875431c717c",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 2,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "eeb7ab781717d68e4e36a838",
+   "category": "mildly negative",
+   "valence": 3,
+   "arousal": 2,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  },
+  {
+   "id": "1a20d1ae8f9c2cfc3837cfca",
+   "category": "mildly positive",
+   "valence": 5,
+   "arousal": 4,
+   "stance_present": true,
+   "self_blame": false,
+   "note": ""
+  }
+ ]
+}
