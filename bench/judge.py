@@ -135,6 +135,11 @@ def batch_prompt(rubric, batch, schema):
             + json.dumps(batch, ensure_ascii=False))
 
 
+def prompt_digest(rubric, schema):
+    """The prompt's format, from a sentinel batch with non-ASCII text, so a resumed run never mixes two formats."""
+    return sha256(batch_prompt(rubric, [{"id": "sentinel", "reply": "naïve – “quoted”"}], schema))
+
+
 def judge(set_name, directory, judge_fn=None):
     if set_name in {"g2", "g3"}:
         return []
@@ -152,8 +157,7 @@ def judge(set_name, directory, judge_fn=None):
     plan = {"seed": SEED, "mapping": mapping, "batches": batches, "judges": JUDGES,
             "judge_commands": judge_commands(), "batch_judges": batch_judges(batches, mapping),
             "rubric_sha256": sha256(rubric),
-            # The prompt's wording around the batch, so a resumed run never mixes two prompt formats.
-            "prompt_sha256": sha256(batch_prompt(rubric, [], schema)),
+            "prompt_sha256": prompt_digest(rubric, schema),
             "schema_sha256": sha256(schema.read_bytes())}
     index = folder / "index.json"
     if index.exists():

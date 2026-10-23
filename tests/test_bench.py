@@ -568,3 +568,11 @@ def test_judge_refuses_to_resume_under_a_changed_prompt(tmp_path):
     items.atomic_json(index, plan)
     with pytest.raises(ValueError, match="judge inputs changed"):
         judge.judge("g1", tmp_path, fake_judge)
+
+
+def test_prompt_digest_covers_how_entries_are_rendered(monkeypatch):
+    rubric, schema = "rubric", judge.BENCH / "schemas" / "e3.json"
+    before = judge.prompt_digest(rubric, schema)
+    original = judge.json.dumps
+    monkeypatch.setattr(judge.json, "dumps", lambda value, **kw: original(value, **{**kw, "ensure_ascii": True}))
+    assert judge.prompt_digest(rubric, schema) != before
