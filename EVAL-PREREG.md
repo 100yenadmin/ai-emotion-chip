@@ -515,3 +515,28 @@ Nothing above the Amendments heading changes. A4 to A8 stay in force except as f
 - **Run 2 is stopped.** Its recorded attempts are kept in `evidence/`. None of its replies are scored.
 - **This is a harness change after a pilot**, so A4's rule applies. The next run starts from a new route record and
   owner-approved A4b, then a clean reference and pilot, all recorded.
+
+### A10 (2026-10-23): one judging deviation in scope-A3 run 3, and its fix
+
+Reason: run 3 of scope A3 finished generating, then its E3 judging stopped, for a reason below that does not touch any
+label or score. This records the deviation, which was found and handled before the report was built. Nothing above
+the Amendments heading changes, and no bar moves. A4 to A9 stay in force except as follows.
+
+- **What happened.** The bench sent every judge one batch prompt, and that prompt asked for "an empty note unless the
+  call is close". G1's answer schema has a `note` field. E3's does not.
+  - `codex exec` is held to the set's schema by `--output-schema`, so its E3 answers carried no note.
+  - `claude -p` has no schema flag, as A4 says. It followed the prompt and added a `note` to every E3 reply. The
+    bench's schema check rejected its first E3 batch, and E3 judging stopped. That answer was not saved.
+- **How run 3 was finished.** The remaining 72 E3 batches (`gpt-6.1-sol` replies judged by `claude-opus-5-5`) were
+  run by a driver outside the repository. It used the bench's own judge call, isolation and validation, and the
+  bench's prompts, checked byte for byte. Before validating, it dropped the `note` field and nothing else. The raw
+  answers, notes included, are published with run 3. The bench's own judge loop then validated all 144 E3 batches
+  again. The first Claude-judged batch was asked twice, because its first answer was lost; its second answer is
+  used.
+- **Why this is not an amendment made before the report.** The report checks the hash of this file against the hash
+  each generation manifest recorded. Amending this file first would have made run 3's report unverifiable, so the
+  deviation is recorded here, after the report, and in run 3's evidence.
+- **The fix.** From now on the batch prompt asks for a note only when the set's schema has one, so both judges are
+  asked for exactly the fields their answers are checked against. Answers are still validated unchanged against the
+  schema. The judge plan also records a digest of the prompt's wording, so a resumed judging run refuses to mix two
+  prompt formats.
