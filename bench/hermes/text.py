@@ -4,6 +4,7 @@ Run the parent with the pinned Hermes Python (its auth library needs that enviro
     <host>/.venv/bin/python -m bench.hermes.text --paths PATHS --scratch SCRATCH --out OUT
 """
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -19,8 +20,23 @@ from .. import gen
 from ..items import BENCH, CONDITIONS, MODELS, RUNS, SETS, atomic_json, heldout_hashes, load_items, read_json, run_directory
 
 SEED = 20261023
+SKILL_TOOLS = frozenset({"skill_manage", "skill_view", "skills_list"})
+HARNESS_ERRORS = frozenset({
+    "credential lifetime is too short", "pinned provider copy differs",
+    "Claude Code changed; a new route record is required", "pinned Claude Code binary changed",
+    "golden warm failed", "golden arm deltas differ from published inputs",
+    "STOP: credential or sign-in need", "harness parent must disable external login adoption",
+})
 HARNESS = ("Your final reply is spoken aloud as a voice message. There is no text_to_speech call in this "
            "conversation: write the reply exactly as it should be spoken.")
+
+
+def file_sha256(path):
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def load_paths(source):
@@ -244,7 +260,7 @@ class Harness:
         version = subprocess.run([command, "--version"], capture_output=True, text=True, check=True).stdout.split()[0]
         if version != self.paths["claude_code_version"]:
             raise RuntimeError("Claude Code changed; a new route record is required")
-        self.provenance["claude_binary_sha256"] = probe.digest(Path(command).read_bytes().hex())
+        self.provenance["claude_binary_sha256"] = file_sha256(command)
         self.paths["claude_command"] = command
 
     def home(self, item, model, arm, clone=None):
@@ -268,7 +284,7 @@ class Harness:
         args = {"mode": "turn", "text": True, "arm": arm, "item_dir": str(item), "cwd": str(self.run / "cwd"),
             "claude_command": self.paths.get("claude_command"),
             "provider_path": str(self.run / "src" / host.PROVIDER), "a4b": self.records.get(model, {}), **extra}
-        if self.paths.get("claude_command") and probe.digest(Path(self.paths["claude_command"]).read_bytes().hex()) != self.provenance["claude_binary_sha256"]:
+        if self.paths.get("claude_command") and file_sha256(self.paths["claude_command"]) != self.provenance["claude_binary_sha256"]:
             raise RuntimeError("pinned Claude Code binary changed")
         return self.host.call(item, args, token=self.relay_token() if model == MODELS[0] else None, timeout=600)
 
@@ -278,7 +294,9 @@ class Harness:
             self.home(item, model, arm)
             result = self.call(item, model, arm, mode="warm", sections=sections(model, arm))
             db = host.db_summary(item / "home/state.db")
-            if result.get("error") or db["sessions"] or db["usage_rows"] or any(result.get("canaries", {}).values()):
+            if (result.get("error") or db["sessions"] or db["usage_rows"]
+                    or any(result.get("canaries", {}).values())
+                    or sorted(result.get("tools", [])) != sorted(SKILL_TOOLS)):
                 raise RuntimeError("golden warm failed")
             result["canaries"] = {f"marker-{i}": hit for i, hit in enumerate(result["canaries"].values(), 1)}
             self.golden[model, arm] = result
@@ -296,6 +314,7 @@ class Harness:
         rows = host.read_jsonl(item / "probe.jsonl")
         schemas = [r["tool_schemas"] for r in result.get("captures", [])]
         checks = validity(result, self.golden[model, arm], rows, host.memories_empty(item / "home"))
+        checks[2] = checks[2] and all(set(s) == set(self.golden[model, arm]["tools"]) for s in schemas)
         if checks[2] and schemas:
             reference = self.provenance.setdefault("tool_schemas", {}).setdefault(model, schemas[0])
             checks[2] = all(s == reference for s in schemas)
@@ -362,8 +381,15 @@ def main(argv=None):
     runner = Harness(args.scratch, args.out, paths, read_json(args.a4b) if args.a4b else {},
                      TokenPair(load_pair, refresh), gen.keychain_token)
     runner.prepare()
-    records = {model: runner.run_model(model, args.route_record) for model in MODELS}
+    records, model_failures = {}, {}
+    for model in MODELS:
+        try:
+            records[model] = runner.run_model(model, args.route_record)
+        except Exception as exc:
+            message = str(exc) if type(exc) is RuntimeError and str(exc) in HARNESS_ERRORS else None
+            model_failures[model] = {"error": type(exc).__name__, "message": message}
     extras = {"route_identities": runner.provenance, "a4b": runner.records, "phases": records,
+              "model_failures": model_failures,
               "order": cell_order(), "pilot_order": cell_order(True), "seed": SEED,
               "golden": {f"{m}/{c}": v for (m, c), v in runner.golden.items()}}
     # Public A4b is supplied separately by the owner, with the required fixed placeholders.

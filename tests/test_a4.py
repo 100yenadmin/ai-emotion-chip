@@ -1,5 +1,6 @@
 """A4 offline contracts: no installed Hermes, relay, credentials, or model processes."""
 from copy import deepcopy
+import hashlib
 import importlib.util
 import inspect
 import json
@@ -407,6 +408,7 @@ def test_generated_guidance_uses_hermes_section_limit(tmp_path, monkeypatch):
     monkeypatch.setattr(text.subprocess, "run", lambda *a, **k: SimpleNamespace(stdout="2.1.306 (Claude Code)"))
     harness = text.Harness(tmp_path / "scratch", tmp_path / "out", paths, {}, None, None)
     harness.prepare()
+    assert harness.provenance["claude_binary_sha256"] == hashlib.sha256(command.read_bytes()).hexdigest()
     plugin = harness.run / "src/bench-guidance/__init__.py"
     public = text.sections(items.MODELS[0], "NATIVE")
     plugin.with_name("sections.json").write_text(json.dumps(public))
@@ -644,7 +646,8 @@ def test_skill_tree_drift_fails_check_three(tmp_path, monkeypatch):
 def test_schema_reference_survives_empty_first_attempt(tmp_path, monkeypatch):
     model = items.MODELS[0]
     harness = text.Harness(tmp_path, tmp_path / "out", {}, {}, None, None)
-    harness.golden[model, "OFF"] = {"skill_tree": "tree", "system_sha256": "S", "route": {"model": model}}
+    harness.golden[model, "OFF"] = {"skill_tree": "tree", "system_sha256": "S", "route": {"model": model},
+                                  "tools": ["skill_view"]}
     monkeypatch.setattr(harness, "home", lambda *args: None)
     monkeypatch.setattr(run, "read_jsonl", lambda *args: [])
     monkeypatch.setattr(run, "memories_empty", lambda *args: True)
@@ -925,7 +928,8 @@ def test_reference_equals_recorded_handler_message(monkeypatch, marked):
 def test_schema_reference_requires_other_check_two_conditions(tmp_path, monkeypatch, bad_field):
     model = items.MODELS[0]
     harness = text.Harness(tmp_path, tmp_path / "out", {}, {}, None, None)
-    harness.golden[model, "OFF"] = {"skill_tree": "tree", "system_sha256": "S", "route": {"model": model}}
+    harness.golden[model, "OFF"] = {"skill_tree": "tree", "system_sha256": "S", "route": {"model": model},
+                                  "tools": ["skill_view"]}
     for name, fake in (("read_jsonl", lambda *a: []), ("memories_empty", lambda *a: True),
                        ("first_call_tokens", lambda *a: 100)):
         monkeypatch.setattr(run, name, fake)
@@ -972,6 +976,7 @@ def test_harness_warm_host_args_and_checks(tmp_path, monkeypatch, model):
             assert kwargs == {"token": None, "timeout": 600}
             calls.append(arm)
             return {"canaries": {"synthetic": scenario["kind"] == "canary"},
+                    "tools": ["skill_manage", "skill_view", "skills_list"] + (["terminal"] if scenario["kind"] == "tools" else []),
                     "error": "synthetic" if scenario["kind"] == "error" else None,
                     "residue": {"sha256": arm if scenario["kind"] == "residue" else "same"}}
     monkeypatch.setattr(run, "Host", FakeHost)
@@ -984,7 +989,7 @@ def test_harness_warm_host_args_and_checks(tmp_path, monkeypatch, model):
     assert [(m, a) for _, m, a in homes] == [(model, a) for a in items.CONDITIONS]
     assert set(harness.golden) == {(model, a) for a in items.CONDITIONS}
     assert all(v["canaries"] == {"marker-1": False} for v in harness.golden.values())
-    for kind in ("error", "canary", "sessions", "usage", "residue"):
+    for kind in ("error", "canary", "sessions", "usage", "residue", "tools"):
         scenario["kind"] = kind
         with pytest.raises(RuntimeError, match="golden arm deltas" if kind == "residue" else "golden warm failed"):
             harness.warm(model)
@@ -1005,7 +1010,7 @@ def test_text_paths_expand_tilde(tmp_path, monkeypatch):
     assert paths["host_label"] == raw["host_label"] and paths["claude_code_version"] == "2.1.synthetic"
 
 
-def test_main_missing_hermes_import_explains_python(tmp_path, monkeypatch):
+def test_main_missing_hermes_import_explains_python(tmp_path, monkeypatch, bench_temp_root):
     monkeypatch.setenv("HOME", str(tmp_path))
     config = tmp_path / "paths.json"
     config.write_text(json.dumps({"host": "~/pinned-host", "harness_auth_home": "~/parent-home"}))
@@ -1084,3 +1089,125 @@ def test_non_dict_tool_arguments_have_no_reference(monkeypatch):
     for name in ("skills_list", "skill_view"):
         for arguments in ("[]", "null", "1", '"text"'):
             assert turn.tool_reference({"name": name, "arguments": arguments}, "read", agent) is None
+
+
+@pytest.mark.parametrize("referenced", [False, True])
+@pytest.mark.parametrize("extra_call", [0, 1])
+def test_capture_tool_names_match_golden_before_reference(tmp_path, monkeypatch, referenced, extra_call):
+    model = items.MODELS[0]
+    harness = text.Harness(tmp_path, tmp_path / "out", {}, {}, None, None)
+    names = ["skill_manage", "skill_view", "skills_list"]
+    schemas = {name: "schema-" + name for name in names}
+    harness.golden[model, "OFF"] = {"skill_tree": "tree", "system_sha256": "S",
+                                   "route": {"model": model}, "tools": names}
+    for name, fake in (("read_jsonl", lambda *a: []), ("memories_empty", lambda *a: True),
+                       ("first_call_tokens", lambda *a: 100)):
+        monkeypatch.setattr(run, name, fake)
+    monkeypatch.setattr(harness, "home", lambda *a: None)
+    captures = [{"api_call_count": n, "system": {"sha256": "S"}, "model": model,
+                 "checks": [], "canaries": {}, "history_matches": True, "tool_schemas": dict(schemas)}
+                for n in (1, 2)]
+    monkeypatch.setattr(harness, "call", lambda *a, **kw: {
+        "captures": deepcopy(captures), "skill_tree": "tree", "api_calls": 2,
+        "completed": True, "final_response": "reply"})
+    row = {**phase_rows(1)[0], "item": {"id": "0", "user_message": "hello"}}
+    if referenced:
+        assert harness.execute("reference", row, 1)["checks"][2]
+        assert harness.provenance["tool_schemas"][model] == schemas
+    captures[extra_call]["tool_schemas"]["terminal"] = "unexpected-schema"
+    assert harness.execute("reference", row, 2)["checks"][2] is False
+    if referenced:
+        assert harness.provenance["tool_schemas"][model] == schemas
+    else:
+        assert "tool_schemas" not in harness.provenance
+
+
+def fake_main_runtime(tmp_path, monkeypatch):
+    auth, config = ModuleType("hermes_cli.auth"), ModuleType("hermes_cli.config")
+    def unused(*args, **kwargs):
+        pytest.fail("credential access is forbidden")
+    auth._read_codex_tokens = auth.resolve_codex_runtime_credentials = unused
+    config.load_config = lambda: {"auth": {"adopt_external_logins": False}}
+    for module in (auth, config):
+        monkeypatch.setitem(sys.modules, module.__name__, module)
+    monkeypatch.setattr(sys, "path", sys.path.copy())
+    monkeypatch.setattr(text, "load_paths", lambda path: {
+        "host": tmp_path / "host", "harness_auth_home": tmp_path / "parent"})
+    monkeypatch.setattr(text.Harness, "prepare", lambda self: None)
+    return ["--paths", str(tmp_path / "unused.json"), "--scratch", str(tmp_path / "scratch"),
+            "--out", str(tmp_path / "out")]
+
+
+@pytest.mark.parametrize("error,message", [
+    *[(RuntimeError(value), value) for value in (
+        "STOP: credential or sign-in need", "golden warm failed",
+        "golden arm deltas differ from published inputs", "pinned provider copy differs",
+        "pinned Claude Code binary changed", "Claude Code changed; a new route record is required",
+        "credential lifetime is too short", "harness parent must disable external login adoption")],
+    (ValueError("synthetic private token and path"), None),
+    (RuntimeError("STOP: synthetic third-party private detail"), None),
+])
+def test_main_model_exception_isolation(tmp_path, monkeypatch, bench_temp_root, error, message):
+    argv = fake_main_runtime(tmp_path, monkeypatch)
+    seen = []
+    def run_model(self, model, route_record):
+        seen.append(model)
+        assert route_record is False
+        if model == items.MODELS[0]:
+            raise error
+        row = {**phase_rows(1)[0], "model": model, "split": "heldout", "item": items.load_items("g1")[0]}
+        value = {**attempt(), "row": row, "admitted": True, "attempt": 1}
+        text.publish_attempt(self.out, "full", value)
+        return {"full": {"attempts": [value]}}
+    monkeypatch.setattr(text.Harness, "run_model", run_model)
+    text.main(argv)
+    assert seen == list(items.MODELS)
+    for s in items.SETS:
+        manifest = items.read_json(tmp_path / "out/manifests" / f"{s}.json")
+        assert manifest["models"] == [items.MODELS[1]]
+        assert set(manifest["phases"]) == {items.MODELS[1]}
+        assert manifest["model_failures"] == {items.MODELS[0]: {
+            "error": type(error).__name__, "message": message}}
+        assert len(manifest["validity_table"]) == 1
+    replies = judge.load_replies(tmp_path / "out", "g1")
+    assert len(replies) == 1 and replies[0]["model"] == items.MODELS[1]
+    assert len(list((tmp_path / "out/attempts").rglob("*.json"))) == 1
+
+
+@pytest.mark.parametrize("error", [KeyboardInterrupt(), SystemExit(17)])
+def test_main_non_exception_propagates(tmp_path, monkeypatch, bench_temp_root, error):
+    argv = fake_main_runtime(tmp_path, monkeypatch)
+    seen = []
+    def run_model(self, model, route_record):
+        seen.append(model)
+        raise error
+    monkeypatch.setattr(text.Harness, "run_model", run_model)
+    with pytest.raises(type(error)):
+        text.main(argv)
+    assert seen == [items.MODELS[0]]
+    assert not (tmp_path / "out/manifests").exists()
+
+
+def test_file_sha256_streams_file_bytes(tmp_path):
+    content = bytes(range(256)) * 8193
+    path = tmp_path / "synthetic-binary"
+    path.write_bytes(content)
+    assert text.file_sha256(path) == hashlib.sha256(content).hexdigest()
+
+
+def test_call_pins_binary_bytes(tmp_path, monkeypatch):
+    path = tmp_path / "synthetic-binary"
+    path.write_bytes(b"fake binary; never executed")
+    harness = text.Harness(tmp_path, tmp_path / "out", {"claude_command": path}, {}, None, lambda: None)
+    harness.provenance["claude_binary_sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+    calls = []
+    def call(item, args, **kwargs):
+        calls.append(args)
+        return {"fake": "result"}
+    monkeypatch.setattr(harness.host, "call", call)
+    assert harness.call(tmp_path, items.MODELS[0], "OFF") == {"fake": "result"}
+    assert len(calls) == 1
+    path.write_bytes(b"changed fake binary; never executed")
+    with pytest.raises(RuntimeError, match="pinned Claude Code binary changed"):
+        harness.call(tmp_path, items.MODELS[0], "OFF")
+    assert len(calls) == 1
