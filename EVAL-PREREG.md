@@ -580,10 +580,12 @@ amendment, before it starts. Nothing above the Amendments heading changes, and t
   "No difference" is a tie. Each mini-session is rated 1 to 5 on "sounds like the same conversation". Every trial must
   be rated before the page allows the lock. Each clip of a pair also has an optional "sounds like acting" box; it is not
   required before the lock, and the report counts the ticked boxes per arm over the 40 real pairs.
-- **What the listener hears.** Every clip is loudness-matched by a static gain and re-encoded to one format, with no
-  metadata, so level and format are not tells. Clip names are opaque, sides and order are random, and the key's sha256
-  is posted on issue #10 before listening. Ratings are locked in the page before the key is read. The lock records every
-  rating, and the score is computed from that record.
+- **What the listener hears.** Each clip is synthesized in the format the agent's call asks for (MP3, or Opus when it
+  names an `.ogg` file); the session evidence gives each arm's count per source format. Every clip is then
+  loudness-matched by a static gain and re-encoded to one format, with no metadata, so level and format are not tells.
+  Clip names are opaque, sides and order are random, and the key's sha256 is posted on issue #10 before listening.
+  Ratings are locked in the page before the key is read. The lock records every rating, and the score is computed from
+  that record.
 - **First usable clip counts.** A cell that yields a clip is never regenerated. A clip counts only if it decodes with a
   measurable loudness. A cell that yields none (the turn failed, the agent did not speak, synthesis failed or gave a
   clip that does not decode, or an integrity check failed) is recorded with its reason. An item with such a cell may be
