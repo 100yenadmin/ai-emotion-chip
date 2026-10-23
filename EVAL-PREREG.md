@@ -472,9 +472,10 @@ except as follows.
   Hermes' short "unchanged" result instead of the file, and no setting turns this off. That stub is what the tool
   returns, so check 3's reference now produces it. It does so by calling Hermes' own dedup functions on a private task
   id, which never touches the cell's own record. Before this, a repeated view, most likely in ON, failed check 3.
-  Hermes runs the `skill_view` calls of one batch at once. Two views in one batch that could dedup each other (Hermes'
-  functions are tried in both orders) can come back either way, so such a cell has no single expected result. Check 3
-  fails it, and it is rerun as any invalid cell is.
+  Hermes runs the `skill_view` calls of one batch at once. Two views in one batch, both served in full for the first
+  time, that could dedup each other (Hermes' functions are tried in both orders) can come back either way, so such a
+  cell has no single expected result. Check 3 fails it, and it is rerun as any invalid cell is. Repeats of views from
+  an earlier batch always get the stub, so they are accepted.
 - **The stop count.** A4 stops a model after a second check 1–3 failure. Some Hermes recovery paths cannot be turned
   off: retries after an empty reply, the `openai-codex` continuation after an incomplete response, and Hermes' reply to
   a call of a tool that is not offered. Each is rare, arm-independent and triggered by the model. Over 684 cells per
