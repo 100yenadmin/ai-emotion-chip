@@ -463,6 +463,7 @@ def real_cell(session, item, arm, messages, seed, paths, attempt):
     upstream = run.read_jsonl(folder / "upstream.jsonl")
     required = set(run.FIXED_CANARIES) | set(paths["canaries"])
     if (not pre or not upstream
+            or any(r.get("invalid") for r in pre)
             or any(r.get("event") != "upstream" or r.get("model") != run.MODEL for r in upstream)
             or any(not isinstance(r.get("canaries"), dict) or not required.issubset(r["canaries"])
                    or any(r["canaries"].values()) for r in pre + upstream)):
@@ -537,6 +538,10 @@ def generate(tag, session, *, dry_run=False, paths=None, retry=None, reason=None
     reserve = reserve or bool(manifest.get("rerun_of"))
     if (manifest["tag"], manifest["commit"], manifest["dry_run"]) != (tag, commit, dry_run):
         raise ValueError("session generation identity changed")
+    sag_sha256 = sha(paths["sag_binary"])
+    if "sag_sha256" in manifest and manifest["sag_sha256"] != sag_sha256:
+        raise ValueError("sag binary changed")
+    manifest["sag_sha256"] = sag_sha256
     manifest["inputs_sha256"] = snapshot(session, paths, manifest.get("inputs_sha256"))
     # Validate wrapper even in dry-run; an irreproducible baseline stops before any cell.
     seeded_wrapper((session / "inputs/sag-original.sh").read_text(), paths["sag_binary"], paths["ava_voice_id"])
@@ -818,7 +823,15 @@ def build(session, bundle, key_path, *, rerun_of=None, now=None):
         source_key = read(source_key_path)
         session.mkdir(parents=True, exist_ok=True)
         if not (session / "manifest.json").exists():
-            shutil.copytree(parent / "inputs", session / "inputs")
+            for name in ("inputs", "inputs.partial"):
+                interrupted = session / name
+                if interrupted.exists():
+                    index = 1
+                    while (session / f"interrupted-snapshot-{index}").exists():
+                        index += 1
+                    interrupted.rename(session / f"interrupted-snapshot-{index}")
+            shutil.copytree(parent / "inputs", session / "inputs.partial")
+            (session / "inputs.partial").rename(session / "inputs")
             manifest = {k: v for k, v in source.items() if k not in {"cells", "key_sha256", "bundle", "key_path",
                         "bundle_path", "locked_at", "scored_at", "ratings_sha256", "score", "shas"}}
             manifest.update(cells={}, rerun_of=str(parent), source_attempt_counts=source["attempt_counts"])

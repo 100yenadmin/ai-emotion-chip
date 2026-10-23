@@ -78,6 +78,7 @@ def fixture_paths(root):
     values["eva_skill_dir"].mkdir()
     (values["eva_skill_dir"] / "SKILL.md").write_text("---\nname: speech-authorship\n---\nFixture guidance.\n")
     binary = root / "sag"
+    binary.write_bytes(b"offline sag fixture\n")
     values["eva_sag_wrapper"].write_text(WRAPPER.format(binary=binary))
     values.update(sag_binary=binary, ava_voice_id="fixture-ava", chip_repo=e7.ROOT, canaries=["private-marker"],
                   eleven_key_file=root / "unread-key-file")
@@ -2222,3 +2223,112 @@ def test_fix7_snapshot_preserves_interrupted_copy_before_retry(tmp_path, monkeyp
     interrupted = folder / "interrupted-snapshot-2"
     assert [p.name for p in interrupted.iterdir()] == ["SOUL.md"]
     assert (interrupted / "SOUL.md").read_bytes() == paths["eva_soul"].read_bytes()
+
+
+def test_fix9_real_cell_rejects_invalid_request_evidence(real_case, monkeypatch):
+    _, invoke, _, _ = real_case
+    monkeypatch.setattr(probe, "NEGATIVE_CANARIES", (*run.FIXED_CANARIES, "fixture"))
+    row = probe.request_row({"api_call_count": 1, "system_prompt": ""})
+    assert row["invalid"] == "missing or empty system prompt"
+    assert row["system_sha256"] is None
+    assert not any(row["canaries"].values())
+    result = invoke({"completed": True, "sent_to_voice": [{"clip": "good.mp3"}]}, probe_rows=[row])
+    assert result["status"] == "integrity"
+
+
+@pytest.mark.parametrize("dry_run", [False, True])
+def test_fix9_first_generate_records_sag_hash(tmp_path, monkeypatch, dry_run):
+    paths = fixture_paths(tmp_path / "source")
+    folder = tmp_path / "session"
+    monkeypatch.setattr(e7, "frozen_tag", lambda *a: "fixture-commit")
+    monkeypatch.setattr(e7, "jobs", lambda reserve: iter([]))
+    monkeypatch.setattr(run, "archive", lambda repo, ref, dest: dest.mkdir(parents=True))
+    def prepare(session, *a, **k):
+        (session / "src/emotion-chip").mkdir(parents=True)
+        return {}
+    monkeypatch.setattr(run, "prepare", prepare)
+    monkeypatch.setattr(e7, "check_credentials", lambda *a: None)
+    manifest = e7.generate("fixture-tag", folder, paths=paths, dry_run=dry_run)
+    assert manifest["sag_sha256"] == e7.sha(paths["sag_binary"])
+    assert e7.read(folder / "manifest.json")["sag_sha256"] == manifest["sag_sha256"]
+
+
+@pytest.mark.parametrize("dry_run", [False, True])
+def test_fix9_changed_sag_refused_before_attempt(tmp_path, monkeypatch, dry_run):
+    paths = fixture_paths(tmp_path / "source")
+    folder = tmp_path / "session"
+    monkeypatch.setattr(e7, "frozen_tag", lambda *a: "fixture-commit")
+    monkeypatch.setattr(e7, "jobs", lambda reserve: iter([("b01", "chip", ["fixture"])]))
+    monkeypatch.setattr(run, "archive", lambda repo, ref, dest: dest.mkdir(parents=True))
+    def prepare(session, *a, **k):
+        (session / "src/emotion-chip").mkdir(parents=True)
+        return {}
+    monkeypatch.setattr(run, "prepare", prepare)
+    monkeypatch.setattr(e7, "check_credentials", lambda *a: None)
+    attempted = []
+    def cell(*a):
+        attempted.append(True)
+        return {"status": "unvoiced", "clips": []}
+    monkeypatch.setattr(e7, "real_cell", cell)
+    monkeypatch.setattr(e7, "dry_cell", cell)
+    e7.generate("fixture-tag", folder, paths=paths, dry_run=dry_run)
+    before = (folder / "manifest.json").read_bytes()
+    paths["sag_binary"].write_bytes(b"replaced sag binary\n")
+    attempted.clear()
+    with pytest.raises(ValueError, match="sag binary changed"):
+        e7.generate("fixture-tag", folder, paths=paths, dry_run=dry_run,
+                    retry="b01", reason="fixture retry")
+    assert attempted == []
+    assert (folder / "manifest.json").read_bytes() == before
+
+
+def test_fix9_rerun_inherits_sag_hash_and_refuses_changed_binary(fix6_rerun, monkeypatch):
+    parent, session, bundle, key_path, _, _ = fix6_rerun
+    paths = e7.load_paths()
+    binary = paths["sag_binary"]
+    original = binary.read_bytes()
+    source = e7.read(parent / "manifest.json")
+    # Seed the commitment explicitly so the baseline reaches the rerun refusal check.
+    source["sag_sha256"] = e7.sha(binary)
+    e7.write(parent / "manifest.json", source)
+    attempted = []
+    monkeypatch.setattr(e7, "dry_cell", lambda *a: attempted.append(True) or {"status": "unvoiced", "clips": []})
+    try:
+        binary.write_bytes(b"replaced sag binary\n")
+        with pytest.raises(ValueError, match="sag binary changed"):
+            e7.build(session, bundle, key_path, rerun_of=parent)
+        manifest = e7.read(session / "manifest.json")
+        assert manifest["sag_sha256"] == source["sag_sha256"]
+        assert manifest["cells"] == {} and attempted == []
+    finally:
+        binary.write_bytes(original)
+
+
+@pytest.mark.parametrize("leftovers", [("inputs",), ("inputs.partial",), ("inputs", "inputs.partial")])
+def test_fix9_rerun_recovers_interrupted_input_copy(fix6_rerun, monkeypatch, leftovers):
+    parent, session, bundle, key_path, _, _ = fix6_rerun
+    session.mkdir()
+    previous = session / "interrupted-snapshot-1"
+    previous.mkdir()
+    (previous / "keep").write_text("older interruption")
+    for name in leftovers:
+        (session / name).mkdir()
+        (session / name / "keep").write_text(name)
+    e7.write(parent / "rerun.json", {"session": str(session)})
+    copytree, copies = shutil.copytree, []
+    def copy(source, dest, *a, **k):
+        if Path(source) == parent / "inputs":
+            assert dest == session / "inputs.partial"
+            assert not (session / "inputs").exists()
+            copies.append(dest)
+        return copytree(source, dest, *a, **k)
+    monkeypatch.setattr(shutil, "copytree", copy)
+    key = e7.build(session, bundle, key_path, rerun_of=parent)
+    assert key["rerun_of"] == str(parent)
+    assert copies == [session / "inputs.partial"]
+    assert e7.input_hashes(session / "inputs") == e7.input_hashes(parent / "inputs")
+    assert not (session / "inputs.partial").exists()
+    assert (previous / "keep").read_text() == "older interruption"
+    preserved = [(session / f"interrupted-snapshot-{i}" / "keep").read_text()
+                 for i in range(2, len(leftovers) + 2)]
+    assert set(preserved) == set(leftovers)
