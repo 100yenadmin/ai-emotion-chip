@@ -12,8 +12,7 @@ that the stop, and what the run saw before it, can be checked.
   - the pilot's 24 cells, all admitted on their first attempt;
   - 363 of the full phase's 684 cells, in 364 attempts (one cell has a rerun). A phase records its attempts only when
     it ends, so these are recorded as aborted and none is admitted or scored. 362 cells passed checks 1, 2, 3 and 5 on
-    their first attempt. Check 4 (prompt
-    tokens) is computed only when a phase ends, so it is absent.
+    their first attempt. Check 4 (prompt tokens) is computed only when a phase ends, so it is absent.
 - `gpt-6.1-sol`:
   - the clean reference, admitted;
   - the pilot's 24 cells, all admitted on their first attempt;
