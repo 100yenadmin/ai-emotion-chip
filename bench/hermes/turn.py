@@ -13,6 +13,7 @@ import os
 import re
 import shutil
 import sys
+import uuid
 from pathlib import Path
 
 # In the run dir probe.py sits beside this file; in the repo it is bench_probe/probe.py.
@@ -228,8 +229,9 @@ def skill_tree(home=None):
     return component(files)["sha256"]
 
 
-def tool_reference(function, call_id, agent):
-    """Normal read result, without skill_view's usage bump or repeat-view stub."""
+def tool_reference(function, call_id, agent, views=None):
+    """Normal read result, without skill_view's usage bump. With ``views`` (a private task id), a repeat view of an
+    unchanged skill file gets Hermes' own repeat-view stub (A8), replayed on that id so the cell's tracker is never read."""
     from tools import skills_tool
     from agent.tool_executor import _budget_for_agent, get_active_env
     from tools.tool_result_storage import maybe_persist_tool_result
@@ -247,14 +249,36 @@ def tool_reference(function, call_id, agent):
     if name == "skills_list":
         result = skills_tool.skills_list(category=arguments.get("category"), task_id=agent._current_task_id)
     else:
-        result = skills_tool.skill_view(arguments.get("name", ""), file_path=arguments.get("file_path"),
-                                        task_id=agent._current_task_id)
+        view, file_path = arguments.get("name", ""), arguments.get("file_path")
+        result = None
+        if views:
+            from tools import skills_tool_dedup
+            result = skills_tool_dedup._check_skill_view_dedup(views, view, file_path)
+        if result is None:
+            result = skills_tool.skill_view(view, file_path=file_path, task_id=agent._current_task_id)
+            if views:
+                # As tools/skills_tool.py:_skill_view_with_bump records a served view.
+                try:
+                    parsed = json.loads(result)
+                except (ValueError, TypeError):
+                    parsed = None
+                if isinstance(parsed, dict) and parsed.get("success"):
+                    skills_tool_dedup._record_skill_view(views, view, file_path, parsed)
     result = maybe_persist_tool_result(result, name, call_id,
         env=get_active_env(agent._current_task_id), config=_budget_for_agent(agent))
     return make_tool_result_message(name, agent._tool_result_content_for_active_model(name, result), call_id)
 
 
 def tool_results_match(messages, agent):
+    from tools import skills_tool_dedup
+    views = f"bench-oracle-{uuid.uuid4().hex}"
+    try:
+        return _tool_results_match(messages, agent, views)
+    finally:
+        skills_tool_dedup.reset_skill_view_dedup(views)
+
+
+def _tool_results_match(messages, agent, views):
     from agent.tool_executor import _budget_for_agent, get_active_env
     from tools.tool_result_storage import enforce_turn_budget
     calls, expected, actual, changed = {}, [], [], False
@@ -272,7 +296,8 @@ def tool_results_match(messages, agent):
         elif message.get("role") == "tool":
             if changed:
                 return False
-            reference = tool_reference(calls.get(message.get("tool_call_id"), {}), message.get("tool_call_id"), agent)
+            reference = tool_reference(calls.get(message.get("tool_call_id"), {}), message.get("tool_call_id"), agent,
+                                       views)
             if reference is None:
                 return False
             expected.append(reference)

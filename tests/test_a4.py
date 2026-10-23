@@ -673,13 +673,20 @@ def read_runtime(monkeypatch):
         assert category is None and task_id == "synthetic"
         return fixture["skills_list"]
     skills.skill_view, skills.skills_list = skill_view, skills_list
-    tools.skills_tool = skills
     executor._budget_for_agent = lambda agent: "budget"
     executor.get_active_env = lambda task: "cell-env"
     storage.maybe_persist_tool_result = lambda result, name, call, **kwargs: result
     storage.enforce_turn_budget = lambda rows, **kwargs: rows
     dispatch.make_tool_result_message = lambda name, result, call: {"content": result}
-    for module in (skills, executor, storage, dispatch, tools):
+    # Hermes' dedup matches name forms itself; the cells call the real module. This fake keys on the exact name.
+    dedup, served = ModuleType("tools.skills_tool_dedup"), {}
+    repeat = json.loads((Path(__file__).parent / "fixtures/a8-skill-view-repeat.json").read_text())["stub"]
+    dedup._record_skill_view = lambda task, name, path, payload: served.setdefault(task, set()).add((name, path))
+    dedup._check_skill_view_dedup = lambda task, name, path: repeat if (name, path) in served.get(task, ()) else None
+    dedup.reset_skill_view_dedup = lambda task=None: served.clear() if task is None else served.pop(task, None)
+    dedup.served = served
+    tools.skills_tool, tools.skills_tool_dedup = skills, dedup
+    for module in (skills, executor, storage, dispatch, tools, dedup):
         monkeypatch.setitem(sys.modules, module.__name__, module)
     return fixture
 
@@ -1479,3 +1486,24 @@ def test_run_directory_must_not_name_what_is_tested(tmp_path):
         with pytest.raises(ValueError, match="must not name"):
             harness.prepare()
         assert not (tmp_path / name).exists()
+
+
+def test_repeat_skill_view_expects_hermes_stub(monkeypatch):
+    turn, _, _, agent = capture_runtime(monkeypatch)
+    fixture = read_runtime(monkeypatch)
+    skills, dedup = sys.modules["tools.skills_tool"], sys.modules["tools.skills_tool_dedup"]
+    recorded = json.loads((Path(__file__).parent / "fixtures/a8-skill-view-repeat.json").read_text())
+    skills.skill_view = lambda name, file_path=None, task_id=None, preprocess=True: fixture["skill_view"]
+    def view(call):
+        return {"role": "assistant", "tool_calls": [{"id": call, "function": {
+            "name": "skill_view", "arguments": json.dumps({"name": recorded["name"]})}}]}
+    def history(second):
+        return [{"role": "user", "content": "hello"}, view("a"),
+                {"role": "tool", "tool_call_id": "a", "content": fixture["skill_view"]}, view("b"),
+                {"role": "tool", "tool_call_id": "b", "content": second}]
+    # The cell's own tracker already holds the first view; the reference must not read or clear it.
+    dedup.served[agent._current_task_id] = {(recorded["name"], None)}
+    assert turn.tool_results_match(history(recorded["stub"]), agent)
+    assert turn.tool_results_match(history(fixture["skill_view"]), agent) is False
+    assert dedup.served == {agent._current_task_id: {(recorded["name"], None)}}
+    assert turn.tool_reference(view("c")["tool_calls"][0]["function"], "c", agent)["content"] == fixture["skill_view"]

@@ -1,0 +1,8 @@
+{
+ "source": "Hermes v0.22.2 tools/skills_tool_dedup.py, called directly: _record_skill_view then _check_skill_view_dedup for the same qualified skill name; synthetic skill file",
+ "source_sha256": {
+  "tools/skills_tool_dedup.py": "6cdaafc903bd62f0e8aeef54ab5fc3ae7ec1932652c42bc6685acf0715ba2b90"
+ },
+ "name": "emotion-chip:emotion-chip-voice",
+ "stub": "{\"success\": true, \"status\": \"unchanged\", \"name\": \"emotion-chip:emotion-chip-voice\", \"file\": \"SKILL.md\", \"dedup\": true, \"content_returned\": false, \"message\": \"Skill content unchanged since it was loaded earlier in this conversation — refer to the earlier skill_view result; it is still current and complete. (Re-issued after context compression, this returns the full content again.)\"}"
+}
