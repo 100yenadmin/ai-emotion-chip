@@ -101,10 +101,12 @@ def score(ratings, key, manifest):
 
 
 def score_files(ratings_path, key_path, manifest_path):
+    ratings = read(ratings_path)
+    if isinstance(ratings.get("docs"), dict) and "lock" not in ratings["docs"]:
+        return {"status": "incomplete"}
     manifest, key = read(manifest_path), read(key_path)
     if sha(key_path) != manifest.get("key_sha256"):
         raise ValueError("key commitment mismatch")
-    ratings = read(ratings_path)
     result = score(ratings, key, manifest)
     if "lock" in ratings["docs"]:
         lock = ratings["docs"]["lock"]["lockedAt"]

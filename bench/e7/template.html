@@ -210,6 +210,15 @@ async function lockRatings() {
     if (observeLock(await db.doc(STORE + "/lock").get())) return;
     const snapshot = await db.collection(STORE).get();
     const ratings = Object.fromEntries(snapshot.docs.filter(doc => doc.id !== "lock").map(doc => [doc.id, doc.data()]));
+    const current = TRIALS.every(t => {
+      const saved = ratings[t.id], local = state[t.id], value = t.clips ? "rating" : "choice";
+      return saved && saved[value] === local[value] && saved.note === local.note &&
+        saved.acting?.a === local.acting.a && saved.acting?.b === local.acting.b;
+    });
+    if (!current) {
+      $("#status").textContent = "Could not lock: your latest ratings are still saving. Try again in a moment.";
+      return;
+    }
     await db.doc(STORE + "/lock").set({lockedAt: new Date().toISOString(), ratings});
     locked = true; $("#status").textContent = "Ratings locked";
   } catch (e) { $("#status").textContent = "Could not lock. Reload and check your ratings."; }

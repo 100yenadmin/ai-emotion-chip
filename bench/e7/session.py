@@ -575,7 +575,8 @@ def generate(tag, session, *, dry_run=False, paths=None, retry=None, reason=None
             raise ValueError("retry requires a recorded failure without a usable clip")
         if any(a[-1]["status"] == "credential" for a in eligible):
             raise ValueError("credential failures cannot be retried")
-        used = max(sum("retry_reason" in attempt for attempt in a) for a in prior)
+        used = max(sum("retry_reason" in attempt and attempt["status"] != "credential" for attempt in a)
+                   for a in prior)
         if used >= 2:
             raise ValueError("at most 2 retries per item")
     for item, arm, messages in jobs(reserve):

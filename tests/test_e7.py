@@ -1680,6 +1680,61 @@ def test_fix2_score_receipt_includes_locked_ratings_digest(tmp_path, monkeypatch
     assert e7.read(e7.score_receipt_path(key))["ratings_sha256"] == e7.read(manifest)["ratings_sha256"] == e7.sha(ratings)
 
 
+def test_fix5_unlocked_score_does_not_read_key_or_write_anything(tmp_path, monkeypatch):
+    ratings, key, manifest = [tmp_path / name for name in ("ratings.json", "missing-key.json", "manifest.json")]
+    e7.write(ratings, {"docs": {}})
+    e7.write(manifest, {"key_sha256": "unread commitment"})
+    before = {p: p.read_bytes() for p in tmp_path.iterdir()}
+    reads = []
+    original_read = scoring.read
+    def read(path):
+        reads.append(path)
+        assert path == ratings
+        return original_read(path)
+    monkeypatch.setattr(scoring, "read", read)
+    monkeypatch.setattr(scoring, "sha", lambda *a: pytest.fail("unlocked score hashed a file"))
+    monkeypatch.setattr(scoring, "write", lambda *a: pytest.fail("unlocked score wrote a file"))
+    assert scoring.score_files(ratings, key, manifest) == {"status": "incomplete"}
+    assert reads == [ratings]
+    assert {p: p.read_bytes() for p in tmp_path.iterdir()} == before
+    assert not e7.score_receipt_path(key).exists()
+
+
+@pytest.mark.parametrize("defect", ["missing_pair", "missing_mini", "note", "choice", "rating", "acting_a", "acting_b"])
+def test_fix5_page_rejects_stale_lock_copy_and_can_lock_after_saving(tmp_path, defect):
+    page_check(tmp_path, r'''
+build(); await load();
+await save('t01', {choice:'a', acting:{a:true, b:true}, note:'latest pair note'});
+await save('m01', {rating:4, note:'latest mini note'});
+const before = writes.length;
+const originalCollection = store.collection;
+store.collection = name => ({...originalCollection(name), get: async () => {
+  const rows = new Map([...stored].map(([id, doc]) => [id, structuredClone(doc)]));
+  if (DEFECT === 'missing_pair') rows.delete('t01');
+  if (DEFECT === 'missing_mini') rows.delete('m01');
+  if (DEFECT === 'note') rows.get('t01').note = 'older note';
+  if (DEFECT === 'choice') rows.get('t01').choice = 'b';
+  if (DEFECT === 'rating') rows.get('m01').rating = 2;
+  if (DEFECT === 'acting_a') rows.get('t01').acting.a = false;
+  if (DEFECT === 'acting_b') rows.get('t01').acting.b = false;
+  return {docs: [...rows].map(([id, data]) => snapshot(id, data))};
+}});
+await lockRatings();
+assert.equal(writes.length, before); assert.equal(stored.has('lock'), false);
+assert.equal(locked, false); assert.equal(locking, false);
+assert.equal(document.querySelector('#status').textContent,
+  'Could not lock: your latest ratings are still saving. Try again in a moment.');
+assert.ok(document.querySelectorAll('button,input,textarea,select,audio').every(el => !el.disabled));
+await save('t01', {note:'edited after failed lock'});
+assert.equal(stored.get('t01').note, 'edited after failed lock');
+store.collection = originalCollection;
+await lockRatings();
+assert.equal(locked, true);
+assert.equal(writes.filter(w => w.path.endsWith('/lock')).length, 1);
+assert.deepEqual(stored.get('lock').ratings, Object.fromEntries([...stored].filter(([id]) => id !== 'lock')));
+'''.replace("DEFECT", json.dumps(defect)))
+
+
 def test_fix4_page_save_after_other_tab_lock_does_not_change_score(tmp_path, built, monkeypatch):
     saved = tmp_path / "late-rating.json"
     page_check(tmp_path, r'''
@@ -1821,22 +1876,29 @@ def test_fix3_credential_resumptions_do_not_consume_retry_budget(ledger, monkeyp
     assert manifest["attempt_counts"]["chip"]["unvoiced"] == 3
 
 
-def test_fix3_retry_that_hits_credentials_still_consumes_retry_budget(ledger, monkeypatch):
+def test_fix5_retry_that_hits_credentials_does_not_consume_retry_budget(ledger, monkeypatch):
     folder, generate = ledger
-    monkeypatch.setattr(e7, "dry_cell", lambda *a: {"status": "unvoiced", "clips": []})
+    monkeypatch.setattr(e7, "dry_cell", lambda *a: {"status": "turn_error", "clips": []})
     generate()
     monkeypatch.setattr(e7, "dry_cell", lambda *a: {"status": "credential", "clips": []})
     with pytest.raises(RuntimeError, match="credential"):
-        generate(retry="b01", reason="first retry")
-    monkeypatch.setattr(e7, "dry_cell", lambda *a: {"status": "unvoiced", "clips": []})
+        generate(retry="b01", reason="credential retry")
+    with pytest.raises(ValueError, match="credential failures cannot be retried"):
+        generate(retry="b01", reason="must use plain replay")
+    before_replay = e7.read(folder / "manifest.json")["cells"]["b01:chip"]
+    monkeypatch.setattr(e7, "dry_cell", lambda *a: {"status": "turn_error", "clips": []})
     generate()
+    generate(retry="b01", reason="first retry")
     generate(retry="b01", reason="second retry")
     with pytest.raises(ValueError, match="at most 2 retries"):
         generate(retry="b01", reason="third retry")
     attempts = e7.read(folder / "manifest.json")["cells"]["b01:chip"]
-    assert [a["status"] for a in attempts] == ["unvoiced", "credential", "unvoiced", "unvoiced"]
+    assert attempts[:2] == before_replay
+    assert [a["status"] for a in attempts] == ["turn_error", "credential", "turn_error", "turn_error", "turn_error"]
     assert attempts[2]["after_credential"] is True
-    assert [a["retry_reason"] for a in attempts if "retry_reason" in a] == ["first retry", "second retry"]
+    assert "retry_reason" not in attempts[2]
+    assert [a["retry_reason"] for a in attempts if "retry_reason" in a] == [
+        "credential retry", "first retry", "second retry"]
 
 
 def test_fix3_load_paths_expands_canaries_for_real_path_scan(tmp_path, monkeypatch):
