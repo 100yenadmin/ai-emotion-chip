@@ -564,13 +564,18 @@ amendment, before it starts. Nothing above the Amendments heading changes, and t
   her speech-authorship skill, with no chip plugin. It is synthesized by the same `sag` command and flags she uses. Her
   `voice.md` is always in context here, while in use she reads it when needed. This can only make her baseline stronger.
   The chip arm has no `voice.md`.
+- **eva's inputs are frozen per session.** Her `SOUL.md`, `voice.md`, speech-authorship skill and `sag` wrapper are
+  copied into the session once and recorded by sha256. Every later generate run refuses to start if the live files
+  differ from the copies, the build refuses if the copies changed, and a rerun uses only the copies. The `sag` program's
+  own sha256 is recorded with the session's evidence.
 - **Seeds.** One ElevenLabs seed per pair, fixed in the tag and derived from the item id, is sent with both clips of the
   pair. ElevenLabs treats a seed as best effort.
 - **What the listener sees.** Each trial shows the user's message, without the voice-message suffix. It is the same for
   both sides, and nothing else about the arms is shown.
 - **What the listener is asked.** For each pair: which clip "sounds more natural for the moment", or "No difference".
   "No difference" is a tie. Each mini-session is rated 1 to 5 on "sounds like the same conversation". Every trial must
-  be rated before the page allows the lock.
+  be rated before the page allows the lock. Each clip of a pair also has an optional "sounds like acting" box; it is not
+  required before the lock, and the report counts the ticked boxes per arm over the 40 real pairs.
 - **What the listener hears.** Every clip is loudness-matched by a static gain and re-encoded to one format, with no
   metadata, so level and format are not tells. Clip names are opaque, sides and order are random, and the key's sha256
   is posted on issue #10 before listening. Ratings are locked in the page before the key is read. The lock records every
@@ -579,8 +584,12 @@ amendment, before it starts. Nothing above the Amendments heading changes, and t
   measurable loudness. A cell that yields none (the turn failed, the agent did not speak, synthesis failed or gave a
   clip that does not decode, or an integrity check failed) is recorded with its reason. An item with such a cell may be
   retried at most twice; each retry replays every failed cell of that item. Every attempt is kept, and the report gives
-  each arm's count per reason. A credential failure stops the run. It produces no usable audio and says nothing about
-  either arm, so once the credential is fixed, the next run plays that cell again; this does not count as a retry.
+  each arm's count per reason. A turn with a credential failure yields no usable clip, even if an earlier call in it
+  produced audio. A credential failure stops the run. It produces no usable audio and says nothing about either arm, so
+  once the credential is fixed, the next run plays that cell again; this does not count as a retry.
+- **Retries exhausted.** If a cell still has no usable clip after its two retries, no listening bundle is built. The
+  item is never dropped or replaced, and E7 for ElevenLabs is reported as incomplete, with every attempt and its reason;
+  it is never counted as a pass. Any further ElevenLabs E7 session needs a new amendment made before it starts.
 - **Several spoken calls.** If the agent speaks more than once in a turn, comparison b and the mini-sessions play the
   calls in order, as a user would hear them. Calls that produced no audio are dropped. Comparison a needs exactly one
   call that produced audio.
