@@ -298,6 +298,7 @@ def fake_login(path, exp):
 
 def test_borrowed_login_is_read_only_and_never_refreshed(tmp_path):
     source = fake_login(tmp_path / "auth.json", 4000)
+    access = json.loads(source.read_text())["providers"]["openai-codex"]["tokens"]["access_token"]
     before = (source.read_bytes(), source.stat().st_mtime_ns)
     load, refresh = text.borrowed_pair(source)
     assert load()["expires_at"] == 4000
@@ -305,7 +306,7 @@ def test_borrowed_login_is_read_only_and_never_refreshed(tmp_path):
     home.mkdir()
     text.TokenPair(load, refresh, clock=lambda: 0).provision(home)
     assert json.loads((home / "auth.json").read_text())["providers"]["openai-codex"]["tokens"] == {
-        "access_token": load()["access_token"], "refresh_token": "harness-owned-no-refresh"}
+        "access_token": access, "refresh_token": "harness-owned-no-refresh"}
     late = tmp_path / "late"
     late.mkdir()
     with pytest.raises(RuntimeError, match="^STOP: credential or sign-in need$"):
@@ -321,13 +322,13 @@ def test_main_borrows_a_named_login(tmp_path, monkeypatch, bench_temp_root):
         "host": tmp_path / "host", "harness_auth_home": tmp_path / "parent", "codex_auth_source": source})
     seen = []
     def run_model(self, model, route_record):
-        seen.append(self.tokens.load()["expires_at"])
+        seen.append(self.tokens.load()["access_token"])
         with pytest.raises(RuntimeError, match="STOP"):
             self.tokens.refresh({})
         return {}
     monkeypatch.setattr(text.Harness, "run_model", run_model)
     text.main(argv)
-    assert seen == [4000] * len(items.MODELS)
+    assert seen == [json.loads(source.read_text())["providers"]["openai-codex"]["tokens"]["access_token"]] * len(items.MODELS)
 
 
 def test_judge_model_pools_and_claude_environment(tmp_path):
