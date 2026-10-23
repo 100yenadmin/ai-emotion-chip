@@ -4,6 +4,7 @@ import hashlib
 import importlib.util
 import inspect
 import json
+import os
 from pathlib import Path
 import random
 import re
@@ -245,7 +246,7 @@ def test_validity_checks_fail_closed(check):
     if check == 1:
         capture["canaries"]["marker-1"] = True
     elif check == 2:
-        capture["checks"] = ["messages"]
+        capture["system"] = {"sha256": "other"}
     elif check == 3:
         capture["history_matches"] = False
     else:
@@ -313,6 +314,30 @@ def test_public_a4b_placeholders():
     public = text.public_a4b(record)
     assert public["model"]["blocks"][0]["text"] == "billing: field=<billing-value>; other=<billing-value>"
     assert public["model"]["blocks"][1]["text"] == "<account-email>"
+
+
+def test_public_a4b_working_directory():
+    instance = json.loads((Path(__file__).parent / "fixtures/a5-e1-block.json").read_text())
+    real = instance["instance"].replace("/bench-runs/run-1", "/Users/synthetic/scratch/run-1")
+    record = {"model": {"blocks": [{"kind": "E1", "placement": "trailing-system", "text": real},
+                                  {"kind": "S2", "placement": "system-prefix",
+                                   "text": "x: cc=1; Primary working directory: /synthetic/cwd"}]}}
+    public = text.public_a4b(record)["model"]["blocks"]
+    assert public[0]["text"] == real.replace(real.split("Primary working directory: ")[1].split("\n")[0], "<cwd>")
+    assert " - Primary working directory: <cwd>\n - Is a git repository: false" in public[0]["text"]
+    assert "/Users/synthetic" not in json.dumps(public)
+    assert public[1]["text"] == "x: cc=<billing-value>; Primary working directory: <cwd>"
+
+
+def test_check_two_records_request_differences_without_failing():
+    capture = {"api_call_count": 1, "system": {"sha256": "gold"}, "checks": ["messages"],
+               "canaries": {"marker-1": False}, "history_matches": True, "model": items.MODELS[0]}
+    result = {"skill_tree": "tree", "api_calls": 1, "captures": [capture], "completed": True, "final_response": "reply"}
+    golden = {"skill_tree": "tree", "system_sha256": "gold", "route": {"model": items.MODELS[0]}}
+    assert text.validity(result, golden, [], True)[2] is True
+    assert capture["checks"] == ["messages"]
+    capture["model"] = "other"
+    assert text.validity(result, golden, [], True)[2] is False
 
 
 def test_report_honors_backend_dialect_and_missing_breakdown(tmp_path, monkeypatch):
@@ -1273,3 +1298,87 @@ def test_call_pins_binary_bytes(tmp_path, monkeypatch):
     with pytest.raises(RuntimeError, match="pinned Claude Code binary changed"):
         harness.call(tmp_path, items.MODELS[0], "OFF")
     assert len(calls) == 1
+
+
+def route_request(arm, item, date="2026-10-23"):
+    instance = json.loads((Path(__file__).parent / "fixtures/a5-e1-block.json").read_text())
+    env = instance["instance"].replace("/bench-runs/run-1/cells/reference/claude-opus-5-5/g1/OFF/g1-h01/1-1",
+                                       str(item)).replace("2026-10-23", date)
+    return {"model": items.MODELS[0], "metadata": {"user_id": f"synthetic-session-{arm}"},
+            "system": [{"type": "text", "text": "x-anthropic-billing-header: cc_version=9.9.9; cc_entrypoint=sdk;"},
+                       {"type": "text", "text": "You are a Claude agent, built on Anthropic's Claude Agent SDK."},
+                       {"type": "text", "text": f"S for {arm}\nhome {item}/home\nConversation started: {date}",
+                        "cache_control": {"type": "ephemeral"}}],
+            "messages": [{"role": "user", "content": [{"type": "text", "text": "Say hello."},
+                                                      {"type": "text", "text": "R1 synthetic reminder"}]},
+                         {"role": "system", "content": env}]}
+
+
+@pytest.mark.parametrize("case", ["same", "extra-block", "unknown-s", "two-s"])
+def test_route_record_runs_every_arm(tmp_path, monkeypatch, case):
+    model = items.MODELS[0]
+    harness = text.Harness(tmp_path, tmp_path / "out", {}, {}, None, lambda: None)
+    monkeypatch.setattr(harness, "warm", lambda m: harness.golden.update({(m, a): {
+        "system_sha256": probe.digest(f"S for {a}\nhome <ITEM>/home"), "route": {"model": m}, "skill_tree": "tree",
+        "sent_tools": []} for a in items.CONDITIONS}))
+    monkeypatch.setattr(harness, "home", lambda *a: None)
+    for name, fake in (("read_jsonl", lambda *a: []), ("memories_empty", lambda *a: True),
+                       ("first_call_tokens", lambda *a: 100)):
+        monkeypatch.setattr(run, name, fake)
+    seen = []
+    class FakeHost:
+        def call(self, item, args, **kwargs):
+            arm = args["arm"]
+            seen.append(arm)
+            assert args["item_dir"] == str(item) and args["prompt"] == "Say hello."
+            request = route_request(arm, item, "2026-10-24" if arm == "ON" else "2026-10-23")
+            if case == "extra-block" and arm == "NATIVE":
+                request["messages"].append({"role": "system", "content": "extra"})
+            if case == "unknown-s" and arm == "ON":
+                request["system"][2]["text"] = "changed " + request["system"][2]["text"]
+            if case == "two-s" and arm == "OFF":
+                request["system"].append(request["system"][2])
+            fd = os.open(args["route_record_path"], os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+            with os.fdopen(fd, "w") as handle:
+                handle.write(probe.canonical(request))
+            return {"captures": [], "api_calls": 1, "completed": True, "final_response": "Hello."}
+    harness.host = FakeHost()
+    result = harness.run_model(model, route_record=True)
+    assert seen == list(items.CONDITIONS)
+    assert sorted(p.name for p in tmp_path.glob("*.private.json")) == sorted(
+        f"{model}-{a}-request.private.json" for a in items.CONDITIONS)
+    assert set(result) == {"route_record", "route_arm_invariant", "additions_sha256"}
+    assert result["route_record"] == "PRIVATE owner inspection required"
+    assert result["route_arm_invariant"] is (case == "same")
+    hashes = result["additions_sha256"]
+    assert set(hashes) == set(items.CONDITIONS)
+    missing = {"unknown-s": "ON", "two-s": "OFF"}.get(case)
+    assert all((v is None) if a == missing else re.fullmatch("[0-9a-f]{64}", v) for a, v in hashes.items())
+    dumped = json.dumps(result)
+    assert all(word not in dumped for word in ("Say hello", "Environment", "billing", str(tmp_path)))
+
+
+def test_route_additions_scrub_item_and_date(tmp_path):
+    first, second = tmp_path / "OFF", tmp_path / "ON"
+    sha = lambda arm: probe.digest(f"S for {arm}\nhome <ITEM>/home")
+    a = text.route_additions(route_request("OFF", first), first, sha("OFF"))
+    b = text.route_additions(route_request("ON", second, "2027-01-02"), second, sha("ON"))
+    assert a == b and "<ITEM>/tmp/claude-directsdk-cwd-501" in a and "Today's date is <date>." in a
+    assert "S for" not in a and str(tmp_path) not in a
+    codex = {"instructions": "S for OFF\nhome x/home", "input": [], "prompt_cache_key": "k-1",
+             "extra_headers": {"session_id": "s-1"}}
+    assert text.route_additions(codex, "x", sha("OFF")) == '{"input":[]}'
+    assert text.route_additions(route_request("OFF", first), first, sha("ON")) is None
+
+
+def test_route_record_keeps_first_api_call(tmp_path, monkeypatch):
+    turn, loop, Transport, agent = capture_runtime(monkeypatch)
+    path = tmp_path / "private.json"
+    turn.install_text_capture({"item_dir": str(tmp_path), "prompt": "hello", "route_record_path": str(path)}, agent)
+    for call, marker in ((1, "first-a"), (1, "first-b"), (2, "second")):
+        loop.build_api_request(agent, api_messages=[{"role": "system", "content": "S"}, {"role": "user", "content": "hello"}],
+                               api_call_count=call, messages=[], tools_for_api=[])
+        Transport().preflight_kwargs({"model": agent.model, "instructions": "S", "marker": marker,
+                                      "input": [{"role": "user", "content": "hello"}]})
+    assert json.loads(path.read_text())["marker"] == "first-b"
+    assert path.stat().st_mode & 0o777 == 0o600
