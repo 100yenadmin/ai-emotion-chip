@@ -70,6 +70,8 @@ def hermes_config(model, arm, claude_dir):
     cfg.pop("stt")
     cfg["model"] = {"provider": host.PROVIDER if model == MODELS[0] else "openai-codex", "default": model}
     cfg["fallback_providers"] = []
+    # A7: Hermes adds its toolchain line only if a 10 s background probe finishes first, so it varied between cells.
+    cfg["agent"]["environment_probe"] = False
     cfg["tts"] = {"provider": "emotion-chip", "model": "eleven_v4"}
     entries = {"emotion-chip": {"settings": {"backend": "eleven", "eleven_model": "eleven_v4",
                "signals": "off", "guide_mode": "generate" if arm == "ON" else "defer"}}}

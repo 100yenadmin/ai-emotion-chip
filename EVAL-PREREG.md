@@ -423,3 +423,21 @@ scope-A3 data exist. Nothing above the Amendments heading changes.
   does. No other part of that profile reaches the cells.
 - When the token is too close to expiry, the run stops, as A4's credential stop does.
 - The manifest records which mode the run used: `harness-owned` or `borrowed-read-only`.
+
+### A7 (2026-10-23): Hermes' toolchain probe is off; scope-A3 run 1 stopped at its pilot
+
+Reason: in the pilot of the first scope-A3 run, one Opus cell (an E3 item, NATIVE) failed check 2. Its system text
+had one line the arm's expected `S` does not have: Hermes' Python toolchain line. Hermes adds that line only when a
+background probe finishes within 10 seconds of the prompt build (`tools/env_probe.py`; config
+`agent.environment_probe`). Under the bench sandbox the probe usually misses that window, so the line appears in some
+cells and not in others, in any arm. The cell's rerun was valid. But a second check 1–3 failure stops a model under
+A4, so at the pilot's rate the full run would very likely have stopped both models. This is recorded before any
+scope-A3 reply has been scored. Nothing above the Amendments heading changes.
+
+- `agent.environment_probe` is `false` in every cell and golden home. It is a setting identical across arms, so A4's
+  "every setting other than the guidance is identical across arms" still holds.
+- **Run 1 is stopped as an infrastructure failure.** It stopped during the Opus full phase, before that phase recorded
+  or published any reply. Its clean reference, its pilot attempts (24 admitted, one rerun) and its failure log are kept
+  in `evidence/`. None of its replies are scored.
+- **This is a harness change after the pilot**, so A4's rule applies. The next run starts from a new route record and
+  owner-approved A4b, then a clean reference and pilot, all recorded.
