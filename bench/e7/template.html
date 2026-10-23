@@ -168,7 +168,7 @@ function build() {
         label.append(input, side.toUpperCase() + " sounds like acting"); card.append(label);
       }
     }
-    const note = document.createElement("textarea"); note.placeholder = "Optional note";
+    const note = document.createElement("textarea"); note.placeholder = "Optional note"; note.maxLength = 2000;
     note.addEventListener("input", () => save(t.id, {note: note.value}, true)); card.append(note);
     $("#trials").append(card);
   }
@@ -208,7 +208,9 @@ async function lockRatings() {
     notes.clear();
     await Promise.all([...pending]);
     if (observeLock(await db.doc(STORE + "/lock").get())) return;
-    await db.doc(STORE + "/lock").set({lockedAt: new Date().toISOString()});
+    const snapshot = await db.collection(STORE).get();
+    const ratings = Object.fromEntries(snapshot.docs.filter(doc => doc.id !== "lock").map(doc => [doc.id, doc.data()]));
+    await db.doc(STORE + "/lock").set({lockedAt: new Date().toISOString(), ratings});
     locked = true; $("#status").textContent = "Ratings locked";
   } catch (e) { $("#status").textContent = "Could not lock. Reload and check your ratings."; }
   finally { locking = false; controls(locked || !ready); }

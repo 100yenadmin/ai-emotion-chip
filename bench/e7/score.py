@@ -29,11 +29,16 @@ def score(ratings, key, manifest):
         raise ValueError("expected a docs object")
     if "lock" not in docs:
         return {"status": "incomplete"}
-    locked = timestamp(docs["lock"].get("lockedAt"))
+    lock = docs["lock"]
+    if not isinstance(lock, dict) or not isinstance(lock.get("ratings"), dict):
+        raise ValueError("lock requires a ratings object")
+    timestamp(lock.get("lockedAt"))
+    live_docs, docs = docs, lock["ratings"]
     trials = key["trials"]
     ids = [t["id"] for t in trials]
-    if len(ids) != len(set(ids)) or set(docs) - set(ids) - {"lock"}:
+    if len(ids) != len(set(ids)) or set(docs) - set(ids):
         raise ValueError("duplicate or unknown trial")
+    changed_after_lock = sum(live_docs[trial] != docs.get(trial) for trial in ids if trial in live_docs)
     data = prompts()
     for comparison in ("comparison_a", "comparison_b"):
         items = [t["item"] for t in trials if t["kind"] == "real" and t["comparison"] == comparison]
@@ -50,10 +55,9 @@ def score(ratings, key, manifest):
         if doc is None:
             incomplete = True
             continue
-        if doc.get("trial") != trial["id"]:
+        if not isinstance(doc, dict) or doc.get("trial") != trial["id"]:
             raise ValueError("trial doc identity mismatch")
-        if timestamp(doc.get("updatedAt")) > locked:
-            raise ValueError("rating was changed after lock")
+        timestamp(doc.get("updatedAt"))
         if not isinstance(doc.get("note"), str) or not isinstance(doc.get("acting"), dict) or any(
                 type(doc["acting"].get(side)) is not bool for side in ("a", "b")):
             raise ValueError("invalid rating document")
@@ -66,7 +70,7 @@ def score(ratings, key, manifest):
     if catches > 1:
         return {"status": "void", "catch_preferences": catches}
     if incomplete:
-        return {"status": "incomplete"}
+        return {"status": "incomplete", "changed_after_lock": changed_after_lock}
     comparisons = {}
     for comparison in ("comparison_a", "comparison_b"):
         rows = [t for t in trials if t["comparison"] == comparison and t["kind"] == "real"]
@@ -84,8 +88,11 @@ def score(ratings, key, manifest):
     mini = [docs[t["id"]]["rating"] for t in trials if t["kind"] == "mini"]
     result = {"status": "pass" if passed else "fail", "comparisons": comparisons,
               "attempt_counts": attempt_counts(manifest),
+              "changed_after_lock": changed_after_lock,
               "catch_preferences": catches, "notes": sum(bool(docs[t["id"]]["note"].strip()) for t in trials),
               "mini_ratings": mini, "mini_median": statistics.median(mini)}
+    if key.get("rerun_of"):
+        result["source_attempt_counts"] = manifest["source_attempt_counts"]
     if passed and not key.get("dry_run"):
         result["claim_class"] = "owner_accepted(n=1)"
     if key.get("dry_run"):

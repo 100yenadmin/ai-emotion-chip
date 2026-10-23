@@ -1,5 +1,6 @@
 """Offline E7 integrity rules 1–11: fakes for Hermes; real ffmpeg on synthetic tones only."""
 from datetime import datetime, timezone
+from copy import deepcopy
 from io import BytesIO
 import json
 from pathlib import Path
@@ -100,7 +101,7 @@ def built(generated):
 
 def ratings_for(key, wins=15, catches=0):
     counts = {"comparison_a": 0, "comparison_b": 0}
-    docs = {"lock": {"lockedAt": "2026-10-22T12:00:00Z"}}
+    docs = {}
     for trial in key["trials"]:
         choice = "none"
         if trial["kind"] == "real":
@@ -117,6 +118,7 @@ def ratings_for(key, wins=15, catches=0):
         if trial["kind"] == "mini":
             doc["rating"] = 4
         docs[trial["id"]] = doc
+    docs["lock"] = {"lockedAt": "2026-10-22T12:00:00Z", "ratings": deepcopy(docs)}
     return {"docs": docs}
 
 
@@ -325,16 +327,56 @@ def test_rule8_commitments_and_key_placement(built, tmp_path):
         e7.build(folder, tmp_path / "b", tmp_path / "b/key.json")
 
 
-def test_rule9_lock_required_and_late_update_rejected(built):
+def test_rule9_lock_required_and_snapshot_required(built):
     _, _, folder, _, _, key = built
     manifest = e7.read(folder / "manifest.json")
     ratings = ratings_for(key)
     del ratings["docs"]["lock"]
     assert scoring.score(ratings, key, manifest) == {"status": "incomplete"}
     ratings = ratings_for(key)
-    ratings["docs"][key["trials"][0]["id"]]["updatedAt"] = "2026-10-22T12:01:00Z"
-    with pytest.raises(ValueError, match="after lock"):
+    ratings["docs"]["lock"].pop("ratings")
+    with pytest.raises(ValueError, match="ratings"):
         scoring.score(ratings, key, manifest)
+
+
+def test_fix4_score_uses_only_locked_ratings_and_accepts_clock_skew(built, monkeypatch):
+    _, _, folder, _, _, key = built
+    manifest = e7.read(folder / "manifest.json")
+    monkeypatch.setattr(scoring.report, "prereg_check", lambda: {"matches": True})
+    ratings = ratings_for(key)
+    baseline = scoring.score(ratings, key, manifest)
+    assert baseline["changed_after_lock"] == 0
+    trial = key["trials"][0]["id"]
+    ratings["docs"][trial].update(choice="invalid", trial="wrong", note="rewritten",
+                                 updatedAt="2026-10-22T12:01:00Z")
+    ratings["docs"]["unrelated"] = {"trial": "unknown"}
+    assert scoring.score(ratings, key, manifest) == dict(baseline, changed_after_lock=1)
+    ratings["docs"]["lock"]["ratings"][trial]["updatedAt"] = "2026-10-22T13:00:00Z"
+    assert scoring.score(ratings, key, manifest) == dict(baseline, changed_after_lock=1)
+    # The snapshot remains scorable without any live trial documents.
+    assert scoring.score({"docs": {"lock": ratings["docs"]["lock"]}}, key, manifest)["status"] == "pass"
+
+
+@pytest.mark.parametrize("defect", ["missing", "not_object", "unknown_trial", "identity", "invalid", "timestamp"])
+def test_fix4_locked_ratings_keep_validation(built, defect):
+    _, _, folder, _, _, key = built
+    ratings = ratings_for(key)
+    locked = ratings["docs"]["lock"]["ratings"]
+    trial = key["trials"][0]["id"]
+    if defect == "missing":
+        ratings["docs"]["lock"].pop("ratings")
+    elif defect == "not_object":
+        ratings["docs"]["lock"]["ratings"] = []
+    elif defect == "unknown_trial":
+        locked["unknown"] = deepcopy(locked[trial])
+    elif defect == "identity":
+        locked[trial]["trial"] = "other"
+    elif defect == "invalid":
+        locked[trial]["acting"]["a"] = "yes"
+    else:
+        locked[trial]["updatedAt"] = "not a timestamp"
+    with pytest.raises(ValueError):
+        scoring.score(ratings, key, e7.read(folder / "manifest.json"))
 
 
 def test_rule10_thresholds_void_and_prereg(built, monkeypatch):
@@ -351,7 +393,7 @@ def test_rule10_thresholds_void_and_prereg(built, monkeypatch):
     assert scoring.score(ratings_for(key, wins=14), key, manifest)["status"] == "fail"
     assert scoring.score(ratings_for(key, catches=2), key, manifest) == {"status": "void", "catch_preferences": 2}
     ratings = ratings_for(key)
-    del ratings["docs"][key["trials"][0]["id"]]
+    del ratings["docs"]["lock"]["ratings"][key["trials"][0]["id"]]
     assert scoring.score(ratings, key, manifest)["status"] == "incomplete"
     monkeypatch.setattr(scoring.report, "prereg_check", lambda: {"matches": False})
     with pytest.raises(ValueError, match="preregistration"):
@@ -411,11 +453,14 @@ def test_warm_frozen_soul_voice_and_arm_config(tmp_path, monkeypatch):
             e7.warm_proof(args, driver)
 
 
-def test_rule11_rerun_gate_and_byte_identical_real_pairs(built, tmp_path, monkeypatch):
+def test_rule11_rerun_gate_and_byte_identical_real_pairs_and_source_counts(built, tmp_path, monkeypatch):
     _, paths, folder, bundle, key_path, first_key = built
     parent = tmp_path / "first"
     shutil.copytree(folder, parent)
     manifest = e7.read(parent / "manifest.json")
+    manifest["cells"]["a01:chip"].insert(0, {"status": "synthesis_failed", "clips": []})
+    manifest["attempt_counts"] = e7.attempt_counts(manifest)
+    e7.write(parent / "manifest.json", manifest)
     new = tmp_path / "rerun"
     with pytest.raises(ValueError, match="lock"):
         e7.rerun_admission(parent, new)
@@ -435,6 +480,13 @@ def test_rule11_rerun_gate_and_byte_identical_real_pairs(built, tmp_path, monkey
     key = e7.build(new, new_bundle, new_key, rerun_of=parent,
                    now=datetime(2026, 10, 23, 0, tzinfo=timezone.utc))
     assert key["collection"] != first_key["collection"]
+    rerun_manifest = e7.read(new / "manifest.json")
+    assert rerun_manifest["source_attempt_counts"] == manifest["attempt_counts"]
+    monkeypatch.setattr(scoring.report, "prereg_check", lambda: {"matches": True})
+    result = scoring.score(ratings_for(key), key, rerun_manifest)
+    assert result["source_attempt_counts"] == manifest["attempt_counts"]
+    assert result["attempt_counts"] == rerun_manifest["attempt_counts"]
+    assert sum(c["completed"] for c in result["attempt_counts"].values()) == 4
     original = {t["item"]: t for t in first_key["trials"]}
     assert {t["item"] for t in key["trials"] if t["kind"] == "catch"} == set(e7.prompts()["catch_reserve"])
     for trial in key["trials"]:
@@ -593,7 +645,7 @@ def test_rule10_both_comparisons_and_all_auxiliary_ratings_required(built, monke
     monkeypatch.setattr(scoring.report, "prereg_check", lambda: {"matches": True})
     ratings = ratings_for(key, wins=20)
     for trial in [t for t in key["trials"] if t["comparison"] == "comparison_b"][14:]:
-        ratings["docs"][trial["id"]]["choice"] = "none"
+        ratings["docs"]["lock"]["ratings"][trial["id"]]["choice"] = "none"
     result = scoring.score(ratings, key, manifest)
     assert result["status"] == "fail"
     assert result["comparisons"]["comparison_a"]["chip_preferred"] == 20
@@ -601,11 +653,11 @@ def test_rule10_both_comparisons_and_all_auxiliary_ratings_required(built, monke
     for kind in ("catch", "mini"):
         ratings = ratings_for(key)
         trial = next(t for t in key["trials"] if t["kind"] == kind)
-        del ratings["docs"][trial["id"]]
+        del ratings["docs"]["lock"]["ratings"][trial["id"]]
         assert scoring.score(ratings, key, manifest)["status"] == "incomplete"
     ratings = ratings_for(key)
     trial = next(t for t in key["trials"] if t["comparison"] == "comparison_b")
-    ratings["docs"][trial["id"]]["acting"]["a"] = True
+    ratings["docs"]["lock"]["ratings"][trial["id"]]["acting"]["a"] = True
     result = scoring.score(ratings, key, manifest)
     assert result["comparisons"]["comparison_b"]["acting"][trial["sides"]["a"]] == 1
     assert result["notes"] == 47
@@ -613,7 +665,7 @@ def test_rule10_both_comparisons_and_all_auxiliary_ratings_required(built, monke
 
 @pytest.fixture
 def ledger(tmp_path, monkeypatch):
-    """A single-cell generation, with no ffmpeg, archive or host access."""
+    """A single-cell generation, with fake archive and host access."""
     paths = fixture_paths(tmp_path / "source")
     folder = tmp_path / "session"
     monkeypatch.setattr(e7, "frozen_tag", lambda *a: "fixture-commit")
@@ -622,6 +674,107 @@ def ledger(tmp_path, monkeypatch):
     def generate(**kwargs):
         return e7.generate("fixture-tag", folder, dry_run=True, paths=paths, **kwargs)
     return folder, generate
+
+
+@pytest.mark.parametrize("dry_run", [False, True])
+@pytest.mark.parametrize("bad", ["garbage", "truncated", "silent", "nonfinite"])
+def test_fix4_undecodable_clip_is_retryable_and_good_clips_complete(ledger, monkeypatch, dry_run, bad):
+    folder, dry_generate = ledger
+    paths = fixture_paths(folder.parent / "real-source")
+    monkeypatch.setattr(e7, "jobs", lambda reserve: iter([("a01", "chip", ["fixture"])]))
+    monkeypatch.setattr(e7, "check_credentials", lambda *a: None)
+    def prepare(session, *a, **k):
+        (session / "src/emotion-chip").mkdir(parents=True)
+        return {"emotion_chip": "fixture-commit"}
+    monkeypatch.setattr(run, "prepare", prepare)
+    good = folder.parent / "good.mp3"
+    e7.tone(good)
+    returned = []
+    def cell(session, *a):
+        cued, stripped = session / "cued.mp3", session / "stripped.mp3"
+        shutil.copyfile(good, cued)
+        if bad == "garbage":
+            stripped.write_bytes(b"not an MP3")
+        elif bad == "truncated":
+            stripped.write_bytes(good.read_bytes()[:32])
+        elif bad == "silent":
+            subprocess.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "anullsrc=r=44100:cl=mono",
+                            "-t", "1", str(stripped)], capture_output=True, check=True)
+        else:
+            shutil.copyfile(good, stripped)
+        returned.extend([cued, stripped])
+        return {"status": "completed", "clips": [cued.name, stripped.name]}
+    monkeypatch.setattr(e7, "dry_cell" if dry_run else "real_cell", cell)
+    original_measure = e7.measure
+    measured = []
+    def measure(clip):
+        measured.append(Path(clip).name)
+        if bad == "nonfinite" and Path(clip).name == "stripped.mp3":
+            return {"lufs": float("nan"), "peak": -1.0, "command": []}
+        return original_measure(clip)
+    monkeypatch.setattr(e7, "measure", measure)
+    def generate(**kwargs):
+        return dry_generate(**kwargs) if dry_run else e7.generate("fixture-tag", folder, paths=paths, **kwargs)
+    manifest = generate()
+    attempt = manifest["cells"]["a01:chip"][0]
+    assert attempt["status"] == "synthesis_failed"
+    assert attempt["reason"] == "clip did not decode"
+    assert attempt["clips"] == []
+    assert attempt["rejected_clips"] == [p.name for p in returned]
+    assert attempt["rejected_clip_sha256"] == [e7.sha(p) for p in returned]
+    assert all(p.exists() for p in returned)
+    assert measured == ["cued.mp3", "stripped.mp3"]
+    monkeypatch.setattr(e7, "dry_cell" if dry_run else "real_cell",
+                        lambda *a: {"status": "completed", "clips": ["cued.mp3"]})
+    manifest = generate(retry="a01", reason="decoder failure resolved")
+    assert [a["status"] for a in manifest["cells"]["a01:chip"]] == ["synthesis_failed", "completed"]
+    assert manifest["cells"]["a01:chip"][0] == attempt
+    assert manifest["attempt_counts"]["chip"]["synthesis_failed"] == 1
+    assert manifest["attempt_counts"]["chip"]["completed"] == 1
+
+
+@pytest.mark.parametrize("dry_run", [False, True])
+def test_fix4_interrupted_preparation_is_archived_and_redone(ledger, monkeypatch, dry_run):
+    folder, dry_generate = ledger
+    paths = fixture_paths(folder.parent / "real-source")
+    def archive(repo, ref, dest):
+        dest.mkdir(parents=True)
+        (dest / "complete.txt").write_text(ref)
+    monkeypatch.setattr(run, "archive", archive)
+    clean = folder.parent / "clean-archive"
+    archive(paths["chip_repo"], "fixture-commit", clean)
+    (folder / "src/emotion-chip").mkdir(parents=True)
+    (folder / "src/emotion-chip/partial.txt").write_text("interrupted copy")
+    for name in ("cwd", "tools", "golden"):
+        (folder / name).mkdir()
+        (folder / name / "partial.txt").write_text("keep")
+    for name in ("sandbox.sb", "secrets.env"):
+        (folder / name).write_text("offline fixture")
+    (folder / "interrupted-prepare-1").mkdir()
+    (folder / "interrupted-prepare-1/keep.txt").write_text("older interruption")
+    monkeypatch.setattr(e7, "jobs", lambda reserve: iter([]))
+    monkeypatch.setattr(e7, "check_credentials", lambda *a: None)
+    def prepare(session, *a, **k):
+        assert not any((session / name).exists() for name in ("src", "cwd", "tools", "golden", "sandbox.sb", "secrets.env"))
+        archive(paths["chip_repo"], "fixture-commit", session / "src/emotion-chip")
+        return {"emotion_chip": "fixture-commit"}
+    monkeypatch.setattr(run, "prepare", prepare)
+    def generate():
+        return dry_generate() if dry_run else e7.generate("fixture-tag", folder, paths=paths)
+    manifest = generate()
+    assert manifest["plugin_tree"] == run.tree_sha256(clean)
+    assert manifest["shas"] == ({} if dry_run else {"emotion_chip": "fixture-commit"})
+    assert e7.read(folder / "prepared.json") == manifest["shas"]
+    moved = folder / "interrupted-prepare-2"
+    assert (moved / "src/emotion-chip/partial.txt").read_text() == "interrupted copy"
+    assert {p.name for p in moved.iterdir()} == {"src", "cwd", "tools", "golden", "sandbox.sb", "secrets.env"}
+    assert (folder / "interrupted-prepare-1/keep.txt").read_text() == "older interruption"
+    # The receipt, rather than the src directory, admits reuse and restores its shas.
+    manifest["shas"] = {"wrong": "not the prepared receipt"}
+    e7.write(folder / "manifest.json", manifest)
+    monkeypatch.setattr(run, "prepare", lambda *a, **k: pytest.fail("prepared tree rebuilt"))
+    monkeypatch.setattr(run, "archive", lambda *a: pytest.fail("prepared tree re-archived"))
+    assert generate()["shas"] == e7.read(folder / "prepared.json")
 
 
 @pytest.mark.parametrize("exception", [ValueError, RuntimeError, OSError, KeyboardInterrupt, SystemExit])
@@ -708,12 +861,13 @@ def test_fix1_first_usable_attempt_counts_and_is_never_replaced(ledger, monkeypa
     folder, generate = ledger
     monkeypatch.setattr(e7, "dry_cell", lambda *a: {"status": "synthesis_failed", "clips": []})
     generate()
-    (folder / "fixture.mp3").write_bytes(b"first usable clip")
+    e7.tone(folder / "fixture.mp3")
+    original = (folder / "fixture.mp3").read_bytes()
     good = {"status": "completed", "clips": ["fixture.mp3"]}
     monkeypatch.setattr(e7, "dry_cell", lambda *a: good)
     manifest = generate(retry="b01", reason="synthesis recovered")
     row, clips = e7.completed(manifest, "b01", "chip", folder)
-    assert row["status"] == "completed" and clips[0].read_bytes() == b"first usable clip"
+    assert row["status"] == "completed" and clips[0].read_bytes() == original
     monkeypatch.setattr(e7, "dry_cell", lambda *a: pytest.fail("usable attempt replaced"))
     generate()
     with pytest.raises(ValueError, match="recorded failure"):
@@ -1121,12 +1275,12 @@ function tick(ms) {
 async function drain() { for (let i = 0; i < 20; i++) await Promise.resolve(); }
 let confirmAnswer = true, confirmations = 0, listener, hold = false;
 const writes = [], releases = [], stored = new Map();
-const snapshot = (id, data) => ({id, exists: data !== undefined, data: () => data});
+const snapshot = (id, data) => ({id, exists: data !== undefined, data: () => structuredClone(data)});
 const store = {
   doc: path => ({get: async () => snapshot(path.split('/').at(-1), stored.get(path.split('/').at(-1))),
     set: body => {
-      writes.push({path, body});
-      const finish = () => stored.set(path.split('/').at(-1), body);
+      writes.push({path, body: structuredClone(body)});
+      const finish = () => stored.set(path.split('/').at(-1), structuredClone(body));
       if (hold && !path.endsWith('/lock')) return new Promise(resolve => releases.push(() => {finish(); resolve();}));
       finish(); return Promise.resolve();
     }}),
@@ -1177,20 +1331,35 @@ assert.ok(document.querySelectorAll('button,input,textarea,select,audio').every(
 ''')
 
 
-def test_fix1_page_note_debounce_and_lock_flush(tmp_path):
+def test_fix4_page_lock_snapshot_includes_flushed_note_and_all_saved_docs(tmp_path):
     page_check(tmp_path, r'''
 build(); await load();
 const note = document.getElementById('trial-t01').querySelector('textarea');
+assert.equal(note.maxLength, 2000);
 note.value = 'first'; note.listeners.input();
 tick(400); note.value = 'latest'; note.listeners.input();
 tick(799); await drain(); assert.equal(writes.length, 0);
 tick(1); await drain(); assert.equal(writes.length, 1); assert.equal(writes[0].body.note, 'latest');
 await save('t01', {choice:'a'}); await save('m01', {rating:3});
 note.value = 'final note'; note.listeners.input();
+stored.set('other-saved-doc', {note: 'from another tab'});
+let reads = 0;
+const originalCollection = store.collection;
+store.collection = name => ({...originalCollection(name), get: async () => {
+  reads++; return originalCollection(name).get();
+}});
 await lockRatings();
 const lastRating = writes.at(-2), lock = writes.at(-1);
 assert.equal(lastRating.body.note, 'final note');
 assert.ok(lock.path.endsWith('/lock')); assert.equal(timers.size, 0);
+assert.equal(reads, 1);
+assert.equal(writes.filter(w => w.path.endsWith('/lock')).length, 1);
+assert.deepEqual(Object.keys(lock.body).sort(), ['lockedAt', 'ratings']);
+assert.deepEqual(lock.body.ratings, Object.fromEntries([...stored].filter(([id]) => id !== 'lock')));
+assert.equal(lock.body.ratings.t01.note, 'final note');
+assert.equal(lock.body.ratings.m01.rating, 3);
+stored.set('t01', {...stored.get('t01'), note: 'late change'});
+assert.equal(lock.body.ratings.t01.note, 'final note');
 tick(800); await drain(); assert.equal(writes.at(-1), lock);
 ''')
 
@@ -1505,13 +1674,13 @@ def test_fix2_score_receipt_includes_locked_ratings_digest(tmp_path, monkeypatch
     manifest, key, ratings = [tmp_path / name for name in ("manifest.json", "key.json", "ratings.json")]
     e7.write(key, {})
     e7.write(manifest, {"key_sha256": e7.sha(key)})
-    e7.write(ratings, {"docs": {"lock": {"lockedAt": "2026-10-22T12:00:00Z"}}})
+    e7.write(ratings, {"docs": {"lock": {"lockedAt": "2026-10-22T12:00:00Z", "ratings": {}}}})
     monkeypatch.setattr(scoring, "score", lambda *a: {"status": "void"})
     scoring.score_files(ratings, key, manifest)
     assert e7.read(e7.score_receipt_path(key))["ratings_sha256"] == e7.read(manifest)["ratings_sha256"] == e7.sha(ratings)
 
 
-def test_fix2_page_save_after_other_tab_lock_is_rejected_by_scorer(tmp_path, built):
+def test_fix4_page_save_after_other_tab_lock_does_not_change_score(tmp_path, built, monkeypatch):
     saved = tmp_path / "late-rating.json"
     page_check(tmp_path, r'''
 build(); await load();
@@ -1528,17 +1697,19 @@ store.doc = path => {
 };
 const saving = save('t01', {choice: 'a'});
 await drain();
-stored.set('lock', {lockedAt: '2026-10-22T12:00:00Z'});
+stored.set('lock', {lockedAt: '2026-10-22T12:00:00Z', ratings: {}});
 now = '2026-10-22T12:01:00Z'; finishRead(); await saving;
 require('node:fs').writeFileSync(SAVED, JSON.stringify(stored.get('t01')));
 '''.replace("SAVED", json.dumps(str(saved))))
     _, _, source, _, _, key = built
     ratings = ratings_for(key)
+    monkeypatch.setattr(scoring.report, "prereg_check", lambda: {"matches": True})
+    baseline = scoring.score(ratings, key, e7.read(source / "manifest.json"))
     doc = e7.read(saved)
     trial = next(t["id"] for t in key["trials"] if t["kind"] == "real")
     ratings["docs"][trial] = dict(doc, trial=trial)
-    with pytest.raises(ValueError, match="after lock"):
-        scoring.score(ratings, key, e7.read(source / "manifest.json"))
+    result = scoring.score(ratings, key, e7.read(source / "manifest.json"))
+    assert result == dict(baseline, changed_after_lock=1)
 
 
 @pytest.mark.parametrize("defect", ["missing_file", "empty_file"])
@@ -1588,7 +1759,7 @@ def test_fix3_plain_generate_resumes_only_credential_cells_after_preflight(ledge
         clips = []
         if status == "completed":
             clip = session / f"{item}-{arm}.mp3"
-            clip.write_bytes(b"offline fixture audio")
+            e7.tone(clip)
             clips.append(clip.name)
         return {"status": status, "clips": clips}
     monkeypatch.setattr(e7, "real_cell", cell)

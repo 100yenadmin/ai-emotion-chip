@@ -532,10 +532,25 @@ def generate(tag, session, *, dry_run=False, paths=None, retry=None, reason=None
     manifest["inputs_sha256"] = snapshot(session, paths, manifest.get("inputs_sha256"))
     # Validate wrapper even in dry-run; an irreproducible baseline stops before any cell.
     seeded_wrapper((session / "inputs/sag-original.sh").read_text(), paths["sag_binary"], paths["ava_voice_id"])
-    if not dry_run and not (session / "src").exists():
-        manifest["shas"] = run.prepare(session, "", paths, ref=commit)
-    elif dry_run and not (session / "src").exists():
-        run.archive(paths["chip_repo"], commit, session / "src/emotion-chip")
+    prepared = session / "prepared.json"
+    if not prepared.exists():
+        partial = [session / name for name in ("src", "cwd", "tools", "golden", "sandbox.sb", "secrets.env")
+                   if (session / name).exists()]
+        if partial:
+            index = 1
+            while (session / f"interrupted-prepare-{index}").exists():
+                index += 1
+            interrupted = session / f"interrupted-prepare-{index}"
+            interrupted.mkdir()
+            for path in partial:
+                path.rename(interrupted / path.name)
+        if dry_run:
+            run.archive(paths["chip_repo"], commit, session / "src/emotion-chip")
+            shas = {}
+        else:
+            shas = run.prepare(session, "", paths, ref=commit)
+        write(prepared, shas)
+    manifest["shas"] = read(prepared)
     plugin_tree = run.tree_sha256(session / "src/emotion-chip")
     if manifest.get("plugin_tree") and manifest["plugin_tree"] != plugin_tree:
         raise ValueError("archived plugin tree changed")
@@ -584,6 +599,18 @@ def generate(tag, session, *, dry_run=False, paths=None, retry=None, reason=None
                 session, item, arm, messages, manifest["seeds"][item], paths, len(attempts))
             digests = [sha(session / p) for p in result["clips"]]
             attempt.update(result, clip_sha256=digests)
+            if result["status"] == "completed":
+                decoded = True
+                for clip in result["clips"]:
+                    try:
+                        measurement = measure(session / clip)
+                        if not all(math.isfinite(measurement[k]) for k in ("lufs", "peak")):
+                            decoded = False
+                    except Exception:
+                        decoded = False
+                if not decoded:
+                    attempt.update(status="synthesis_failed", reason="clip did not decode", clips=[], clip_sha256=[],
+                                   rejected_clips=result["clips"], rejected_clip_sha256=digests)
             if result["status"] != "completed":
                 attempt.setdefault("reason", result["status"])
         except BaseException as exc:
@@ -783,7 +810,7 @@ def build(session, bundle, key_path, *, rerun_of=None, now=None):
             shutil.copytree(parent / "inputs", session / "inputs")
             manifest = {k: v for k, v in source.items() if k not in {"cells", "key_sha256", "bundle", "key_path",
                         "bundle_path", "locked_at", "ratings_sha256", "score", "shas"}}
-            manifest.update(cells={}, rerun_of=str(parent))
+            manifest.update(cells={}, rerun_of=str(parent), source_attempt_counts=source["attempt_counts"])
             write(session / "manifest.json", manifest, exclusive=True)
         # No live persona read on reruns: the same four snapshots are the only sources.
         paths = load_paths()
