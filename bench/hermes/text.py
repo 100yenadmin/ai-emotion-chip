@@ -437,6 +437,7 @@ def main(argv=None):
     runner = Harness(args.scratch, args.out, paths, read_json(args.a4b) if args.a4b else {},
                      TokenPair(load_pair, refresh), gen.keychain_token)
     runner.prepare()
+    runner.provenance["codex_auth"] = "borrowed-read-only" if paths.get("codex_auth_source") else "harness-owned"
     records, model_failures = {}, {}
     for model in MODELS:
         try:

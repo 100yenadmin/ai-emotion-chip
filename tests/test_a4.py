@@ -323,6 +323,7 @@ def test_main_borrows_a_named_login(tmp_path, monkeypatch, bench_temp_root):
     seen = []
     def run_model(self, model, route_record):
         seen.append(self.tokens.load()["access_token"])
+        assert self.provenance["codex_auth"] == "borrowed-read-only"
         with pytest.raises(RuntimeError, match="STOP"):
             self.tokens.refresh({})
         return {}
