@@ -106,5 +106,6 @@ def score_files(ratings_path, key_path, manifest_path):
             raise ValueError("locked ratings changed")
         manifest.update(locked_at=lock, ratings_sha256=sha(ratings_path), score=result)
         write(manifest_path, manifest)
-    write(score_receipt_path(key_path), {"key_sha256": sha(key_path), "status": result["status"]})
+    write(score_receipt_path(key_path), {"key_sha256": sha(key_path), "ratings_sha256": sha(ratings_path),
+                                       "status": result["status"]})
     return result

@@ -742,7 +742,9 @@ def real_case(tmp_path, monkeypatch):
         (item / "out").mkdir(parents=True)
         return "frozen-soul"
     monkeypatch.setattr(e7, "build_home", build_home)
-    monkeypatch.setattr(run, "read_jsonl", lambda p: [{"canaries": {"fixture": False}}])
+    monkeypatch.setattr(run, "read_jsonl", lambda p: [{
+        "event": "upstream" if p.name == "upstream.jsonl" else "pre_api_request",
+        "model": run.MODEL, "canaries": dict.fromkeys((*run.FIXED_CANARIES, "fixture"), False)}])
     def concat(sources, dest):
         joined.append([p.read_bytes() for p in sources])
         dest.write_bytes(b"|".join(p.read_bytes() for p in sources))
@@ -766,11 +768,12 @@ def real_case(tmp_path, monkeypatch):
                     return {"clips": [str(p) for p in clips], "cued_differs": True}
                 rows = proof.get("sent_to_voice", []) + [r for t in proof.get("turns", []) for r in t.get("sent_to_voice", [])]
                 for row in rows:
-                    if row.get("clip"):
-                        (cell / "out" / row["clip"]).write_bytes(row["clip"].encode())
+                    if row.get("clip") and not row.get("missing_file"):
+                        (cell / "out" / row["clip"]).write_bytes(b"" if row.get("empty_file") else row["clip"].encode())
                 return proof
         monkeypatch.setattr(e7, "E7Host", Host)
-        return e7.real_cell(folder, item, arm, messages or ["fixture"], 42, {"ava_voice_id": "fixture"}, serial[0])
+        return e7.real_cell(folder, item, arm, messages or ["fixture"], 42,
+                            {"ava_voice_id": "fixture", "canaries": ["fixture"]}, serial[0])
     return folder, invoke, calls, joined
 
 
@@ -1005,10 +1008,12 @@ def test_fix1_rerun_requires_void_score_receipt_bound_to_key(built, tmp_path, mo
     key_path = tmp_path / "key.json"
     shutil.copyfile(source_key, key_path)
     manifest = e7.read(source / "manifest.json")
-    manifest.update(key_path=str(key_path), locked_at="2026-10-22T12:00:00Z")
+    manifest.update(key_path=str(key_path), locked_at="2026-10-22T12:00:00Z",
+                    ratings_sha256="fixture-ratings", score={"status": "void"})
     e7.write(parent / "manifest.json", manifest)
     if status is not None:
-        e7.write(e7.score_receipt_path(key_path), {"status": status, "key_sha256": e7.sha(key_path)})
+        e7.write(e7.score_receipt_path(key_path), {"status": status, "key_sha256": e7.sha(key_path),
+                                                "ratings_sha256": manifest["ratings_sha256"]})
     now = datetime(2026, 10, 23, 1, tzinfo=timezone.utc)
     if status != "void":
         monkeypatch.setattr(e7, "load_paths", lambda: pytest.fail("rerun got beyond receipt gate"))
@@ -1017,10 +1022,12 @@ def test_fix1_rerun_requires_void_score_receipt_bound_to_key(built, tmp_path, mo
         assert not (parent / "rerun.json").exists()
     else:
         assert e7.rerun_admission(parent, tmp_path / "new", now)["locked_at"] == manifest["locked_at"]
-        e7.write(e7.score_receipt_path(key_path), {"status": "void", "key_sha256": "wrong"})
+        e7.write(e7.score_receipt_path(key_path), {"status": "void", "key_sha256": "wrong",
+                                                "ratings_sha256": manifest["ratings_sha256"]})
         with pytest.raises(ValueError, match="commitment"):
             e7.rerun_admission(parent, tmp_path / "new", now)
-        e7.write(e7.score_receipt_path(key_path), {"status": "void", "key_sha256": manifest["key_sha256"]})
+        e7.write(e7.score_receipt_path(key_path), {"status": "void", "key_sha256": manifest["key_sha256"],
+                                                "ratings_sha256": manifest["ratings_sha256"]})
         key_path.write_text("tampered")
         with pytest.raises(ValueError, match="commitment"):
             e7.rerun_admission(parent, tmp_path / "new", now)
@@ -1039,12 +1046,14 @@ def test_fix1_score_writes_key_bound_receipt_and_attempt_counts(built, tmp_path,
     result = scoring.score_files(ratings_path, key_path, manifest_path)
     assert result["attempt_counts"]["chip"]["turn_error"] == 1
     assert result["attempt_counts"]["eva"]["synthesis_failed"] == 1
-    assert e7.read(e7.score_receipt_path(key_path)) == {"status": "pass", "key_sha256": e7.sha(key_path)}
+    assert e7.read(e7.score_receipt_path(key_path)) == {"status": "pass", "key_sha256": e7.sha(key_path),
+                                                     "ratings_sha256": e7.sha(ratings_path)}
     # A fresh, void score has no comparison numbers, including in its adjacent receipt.
     e7.write(manifest_path, manifest)
     e7.write(ratings_path, ratings_for(key, catches=2))
     assert scoring.score_files(ratings_path, key_path, manifest_path) == {"status": "void", "catch_preferences": 2}
-    assert e7.read(e7.score_receipt_path(key_path)) == {"status": "void", "key_sha256": e7.sha(key_path)}
+    assert e7.read(e7.score_receipt_path(key_path)) == {"status": "void", "key_sha256": e7.sha(key_path),
+                                                     "ratings_sha256": e7.sha(ratings_path)}
 
 
 def test_fix1_bundle_publishes_only_shared_user_messages(built):
@@ -1259,3 +1268,295 @@ def test_fix1_cli_forwards_reason_based_retry(monkeypatch, capsys):
     assert calls == [(("fixture-tag", "fixture-session"),
                       {"dry_run": True, "retry": "b01", "reason": "cause resolved"})]
     assert capsys.readouterr().out.strip() == "generation recorded"
+
+
+@pytest.mark.parametrize("unavailable", [None, "claude", "eleven"])
+def test_fix2_generate_preflights_credentials_before_any_attempt(ledger, monkeypatch, capsys, unavailable):
+    from bench import gen
+    folder, _ = ledger
+    paths = fixture_paths(folder.parent / "live-source")
+    events = []
+    def token():
+        events.append("claude")
+        if unavailable == "claude":
+            raise RuntimeError("withheld fixture payload")
+        return "offline-fixture"
+    monkeypatch.setattr(gen, "keychain_token", token)
+    def key(*args):
+        events.append("eleven")
+        if unavailable == "eleven":
+            raise SystemExit("withheld fixture payload")
+        return "offline-fixture"
+    monkeypatch.setattr(run, "key_value", key)
+    def prepare(session, *a, **k):
+        (session / "src/emotion-chip").mkdir(parents=True)
+        return {}
+    monkeypatch.setattr(run, "prepare", prepare)
+    class Host:
+        def __init__(self, *a):
+            pass
+        def call(self, item, args, **kwargs):
+            assert args["mode"] == "e7-credentials"
+            return e7.child(dict(args, inputs=str(folder), item_dir=str(item), key_file="unused"), SimpleNamespace())
+    monkeypatch.setattr(e7, "E7Host", Host)
+    monkeypatch.setattr(e7, "jobs", lambda reserve: iter([("b01", "chip", ["one"]), ("b02", "eva", ["two"])]))
+    def cell(session, item, *a):
+        events.append(item)
+        return {"status": "unvoiced", "clips": []}
+    monkeypatch.setattr(e7, "real_cell", cell)
+    if unavailable:
+        with pytest.raises(RuntimeError, match="credential") as exc:
+            e7.generate("fixture-tag", folder, paths=paths)
+        assert "withheld" not in str(exc.value)
+        assert not (folder / "manifest.json").exists() or not e7.read(folder / "manifest.json")["cells"]
+        assert not any(event.startswith("b0") for event in events)
+    else:
+        e7.generate("fixture-tag", folder, paths=paths)
+        assert events == ["claude", "eleven", "b01", "b02"]
+    assert capsys.readouterr() == ("", "")
+
+
+def test_fix2_real_cell_keychain_failure_is_credential(real_case, monkeypatch):
+    from bench import gen
+    def unavailable():
+        raise RuntimeError("withheld fixture payload")
+    monkeypatch.setattr(gen, "keychain_token", unavailable)
+    _, invoke, calls, _ = real_case
+    result = invoke({"completed": True})
+    assert result["status"] == "credential" and result["clips"] == [] and calls == []
+    assert "withheld" not in json.dumps(result)
+
+
+def test_fix2_child_missing_key_returns_credential_proof(tmp_path, monkeypatch, capsys):
+    key_file = tmp_path / "fixture-keys"
+    key_file.write_text("UNRELATED=fixture\n")
+    monkeypatch.delenv("ELEVENLABS_API_KEY", raising=False)
+    proof = e7.child({"mode": "e7-warm", "inputs": str(tmp_path), "item_dir": str(tmp_path),
+                      "key_file": str(key_file)}, SimpleNamespace())
+    assert proof["credential_failure"] is True and proof["completed"] is False
+    assert "ELEVENLABS_API_KEY" not in __import__("os").environ
+    assert capsys.readouterr() == ("", "")
+
+
+@pytest.mark.parametrize("error", ["missing API key", "sag: 401", "Unauthorized", "unauthorised", "quota_exceeded"])
+@pytest.mark.parametrize("arm", ["chip", "eva"])
+@pytest.mark.parametrize("where", ["warm", "turn", "tool"])
+def test_fix2_credential_errors_on_both_arms(real_case, arm, where, error):
+    _, invoke, _, _ = real_case
+    warm = {"error": error} if where == "warm" else None
+    proof = {"error": error} if where == "turn" else {
+        "completed": True, "turns": [{"tts_results": [{"error": error}]}]}
+    assert invoke(proof, arm=arm, warm=warm)["status"] == "credential"
+
+
+@pytest.mark.parametrize("arm", ["chip", "eva"])
+def test_fix2_child_failed_sag_tool_result_is_credential(tmp_path, monkeypatch, arm):
+    monkeypatch.setattr(run, "key_value", lambda *a: "offline-fixture")
+    monkeypatch.setitem(sys.modules, "hermes_cli", SimpleNamespace())
+    monkeypatch.setitem(sys.modules, "hermes_cli.oneshot", SimpleNamespace(_close_agent=lambda *a: None))
+    monkeypatch.setattr(e7, "install_capture", lambda *a: ([], [], []))
+    result = {"completed": True, "messages": [{"role": "tool", "name": "text_to_speech",
+              "content": '{"error":"sag: 401 Unauthorized"}'}]}
+    calls = []
+    def conversation(*a, **k):
+        calls.append(a)
+        return result
+    driver = SimpleNamespace(build_agent=lambda cwd: (SimpleNamespace(run_conversation=conversation), None, {}),
+        wrap_upstream=lambda item: [], tts_calls=turn.tts_calls, stop_natives=lambda: None)
+    proof = e7.child({"mode": "e7-turn", "inputs": str(tmp_path), "key_file": "unused",
+                      "item_dir": str(tmp_path), "cwd": str(tmp_path), "arm": arm, "prompts": ["one", "two", "three"]}, driver)
+    assert proof["credential_failure"] is True
+    assert len(calls) == len(proof["turns"]) == 1
+
+
+@pytest.mark.parametrize("stream", ["probe.jsonl", "upstream.jsonl"])
+@pytest.mark.parametrize("defect", ["no-map", "not-dict", "empty", "missing-fixed", "missing-configured", "hit"])
+def test_fix2_evidence_canaries_fail_closed(real_case, monkeypatch, stream, defect):
+    _, invoke, _, _ = real_case
+    original = run.read_jsonl
+    def rows(path):
+        result = original(path)
+        if path.name == stream:
+            row = result[0]
+            if defect == "no-map":
+                row.pop("canaries")
+            elif defect == "not-dict":
+                row["canaries"] = []
+            elif defect == "empty":
+                row["canaries"] = {}
+            elif defect.startswith("missing"):
+                row["canaries"].pop("fixture" if defect == "missing-configured" else run.FIXED_CANARIES[0])
+            else:
+                row["canaries"]["fixture"] = True
+        return result
+    monkeypatch.setattr(run, "read_jsonl", rows)
+    assert invoke({"completed": True, "sent_to_voice": [{"clip": "good.mp3"}]})["status"] == "integrity"
+
+
+@pytest.mark.parametrize("defect", ["upstream_error", "wrong-model", "missing-model"])
+def test_fix2_upstream_errors_and_model_fail_closed(real_case, monkeypatch, defect):
+    _, invoke, _, _ = real_case
+    original = run.read_jsonl
+    def rows(path):
+        result = original(path)
+        if path.name == "upstream.jsonl":
+            if defect == "upstream_error":
+                result.append(dict(result[0], event="upstream_error"))
+            elif defect == "missing-model":
+                result[0].pop("model")
+            else:
+                result[0]["model"] = "wrong-model"
+        return result
+    monkeypatch.setattr(run, "read_jsonl", rows)
+    assert invoke({"completed": True, "sent_to_voice": [{"clip": "good.mp3"}]})["status"] == "integrity"
+
+
+@pytest.mark.parametrize("exclusive", [False, True])
+def test_fix2_write_serialization_failure_never_publishes_partial_json(tmp_path, monkeypatch, exclusive):
+    path = tmp_path / "manifest.json"
+    if not exclusive:
+        e7.write(path, {"original": True})
+    def interrupted(value, handle, **kwargs):
+        handle.write('{"partial":')
+        raise OSError("interrupted serialization")
+    monkeypatch.setattr(e7.json, "dump", interrupted)
+    with pytest.raises(OSError):
+        e7.write(path, {"replacement": True}, exclusive=exclusive)
+    assert not path.exists() if exclusive else e7.read(path) == {"original": True}
+
+
+@pytest.mark.parametrize("exclusive", [False, True])
+def test_fix2_write_publishes_via_same_directory_atomic_operation(tmp_path, monkeypatch, exclusive):
+    import os
+    path = tmp_path / "manifest.json"
+    calls = []
+    operation = "link" if exclusive else "replace"
+    original = getattr(os, operation)
+    def publish(source, target):
+        source, target = Path(source), Path(target)
+        assert source.parent == target.parent and source != target
+        assert e7.read(source) == {"complete": True}
+        calls.append(operation)
+        return original(source, target)
+    monkeypatch.setattr(os, operation, publish)
+    e7.write(path, {"complete": True}, exclusive=exclusive)
+    assert calls == [operation] and e7.read(path) == {"complete": True}
+    if exclusive:
+        monkeypatch.setattr(os, operation, original)
+        with pytest.raises(FileExistsError):
+            e7.write(path, {"replacement": True}, exclusive=True)
+        assert e7.read(path) == {"complete": True}
+
+
+def test_fix2_retry_interrupted_before_attempt_does_not_spend_budget(ledger, monkeypatch):
+    folder, generate = ledger
+    monkeypatch.setattr(e7, "dry_cell", lambda *a: {"status": "unvoiced", "clips": []})
+    generate()
+    def interrupted_jobs(reserve):
+        raise KeyboardInterrupt
+    with monkeypatch.context() as patch:
+        patch.setattr(e7, "jobs", interrupted_jobs)
+        for _ in range(2):
+            with pytest.raises(KeyboardInterrupt):
+                generate(retry="b01", reason="interrupted before attempt")
+    assert len(e7.read(folder / "manifest.json")["cells"]["b01:chip"]) == 1
+    for _ in range(2):
+        generate(retry="b01", reason="real retry")
+    with pytest.raises(ValueError, match="at most 2"):
+        generate(retry="b01", reason="third real retry")
+
+
+@pytest.mark.parametrize("defect", [None, "manifest-status", "missing-manifest-status", "ratings", "missing-ratings", "key"])
+def test_fix2_rerun_requires_void_receipt_matching_locked_ratings(tmp_path, defect):
+    parent = tmp_path / "parent"
+    parent.mkdir()
+    key = parent / "key.json"
+    e7.write(key, {})
+    manifest = {"key_path": str(key), "key_sha256": e7.sha(key), "ratings_sha256": "locked-ratings",
+                "locked_at": "2026-10-22T12:00:00Z", "score": {"status": "void"}}
+    receipt = {"status": "void", "key_sha256": e7.sha(key), "ratings_sha256": "locked-ratings"}
+    if defect == "manifest-status":
+        manifest["score"]["status"] = "pass"
+    elif defect == "missing-manifest-status":
+        manifest.pop("score")
+    elif defect == "ratings":
+        receipt["ratings_sha256"] = "different-ratings"
+    elif defect == "missing-ratings":
+        receipt.pop("ratings_sha256")
+    elif defect == "key":
+        receipt["key_sha256"] = "different-key"
+    e7.write(parent / "manifest.json", manifest)
+    e7.write(e7.score_receipt_path(key), receipt)
+    now = datetime(2026, 10, 23, 1, tzinfo=timezone.utc)
+    if defect:
+        with pytest.raises(ValueError):
+            e7.rerun_admission(parent, tmp_path / "new", now)
+        assert not (parent / "rerun.json").exists()
+    else:
+        assert e7.rerun_admission(parent, tmp_path / "new", now) == manifest
+
+
+def test_fix2_score_receipt_includes_locked_ratings_digest(tmp_path, monkeypatch):
+    manifest, key, ratings = [tmp_path / name for name in ("manifest.json", "key.json", "ratings.json")]
+    e7.write(key, {})
+    e7.write(manifest, {"key_sha256": e7.sha(key)})
+    e7.write(ratings, {"docs": {"lock": {"lockedAt": "2026-10-22T12:00:00Z"}}})
+    monkeypatch.setattr(scoring, "score", lambda *a: {"status": "void"})
+    scoring.score_files(ratings, key, manifest)
+    assert e7.read(e7.score_receipt_path(key))["ratings_sha256"] == e7.read(manifest)["ratings_sha256"] == e7.sha(ratings)
+
+
+def test_fix2_page_save_after_other_tab_lock_is_rejected_by_scorer(tmp_path, built):
+    saved = tmp_path / "late-rating.json"
+    page_check(tmp_path, r'''
+build(); await load();
+let now = '2026-10-22T11:59:00Z';
+const NativeDate = Date;
+globalThis.Date = class extends NativeDate { constructor(...args) { super(...(args.length ? args : [now])); } };
+const originalDoc = store.doc;
+let finishRead;
+store.doc = path => {
+  const ref = originalDoc(path);
+  return path.endsWith('/lock') ? {...ref, get: () => new Promise(resolve => {
+    finishRead = () => resolve(snapshot('lock', undefined));
+  })} : ref;
+};
+const saving = save('t01', {choice: 'a'});
+await drain();
+stored.set('lock', {lockedAt: '2026-10-22T12:00:00Z'});
+now = '2026-10-22T12:01:00Z'; finishRead(); await saving;
+require('node:fs').writeFileSync(SAVED, JSON.stringify(stored.get('t01')));
+'''.replace("SAVED", json.dumps(str(saved))))
+    _, _, source, _, _, key = built
+    ratings = ratings_for(key)
+    doc = e7.read(saved)
+    trial = next(t["id"] for t in key["trials"] if t["kind"] == "real")
+    ratings["docs"][trial] = dict(doc, trial=trial)
+    with pytest.raises(ValueError, match="after lock"):
+        scoring.score(ratings, key, e7.read(source / "manifest.json"))
+
+
+@pytest.mark.parametrize("defect", ["missing_file", "empty_file"])
+@pytest.mark.parametrize("also_good", [False, True])
+def test_fix2_real_cell_filters_missing_and_empty_clip_files(real_case, defect, also_good):
+    folder, invoke, _, joined = real_case
+    rows = [{"clip": "bad.mp3", defect: True}] + ([{"clip": "good.mp3"}] if also_good else [])
+    result = invoke({"completed": True, "sent_to_voice": rows}, arm="eva")
+    assert result["status"] == ("completed" if also_good else "synthesis_failed")
+    assert joined == []
+    if also_good:
+        assert (folder / result["clips"][0]).read_bytes() == b"good.mp3"
+    else:
+        assert result["clips"] == []
+
+
+def test_fix2_generation_cannot_resume_after_credential_failure(ledger, monkeypatch):
+    folder, generate = ledger
+    monkeypatch.setattr(e7, "dry_cell", lambda *a: {"status": "credential", "clips": []})
+    with pytest.raises(RuntimeError, match="credential"):
+        generate()
+    monkeypatch.setattr(e7, "jobs", lambda reserve: iter([("b02", "eva", ["fixture"])]))
+    monkeypatch.setattr(e7, "dry_cell", lambda *a: pytest.fail("continued after credential failure"))
+    with pytest.raises(RuntimeError, match="credential"):
+        generate()
+    assert set(e7.read(folder / "manifest.json")["cells"]) == {"b01:chip"}

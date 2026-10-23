@@ -179,10 +179,11 @@ function save(id, patch, debounce = false) {
 }
 function persist(id) {
   if (locked || !ready) return Promise.resolve();
-  const body = JSON.parse(JSON.stringify({...state[id], trial: id, updatedAt: new Date().toISOString()}));
+  const body = JSON.parse(JSON.stringify({...state[id], trial: id}));
   // Every save has an awaitable promise, including a save queued behind an earlier one.
   const work = queue.then(async () => {
     if (locked || observeLock(await db.doc(STORE + "/lock").get())) return;
+    body.updatedAt = new Date().toISOString();
     await db.doc(STORE + "/" + id).set(body);
   });
   queue = work.catch(() => {});

@@ -1,4 +1,4 @@
-"""Frozen E7 generation and blind bundling. No credentials are loaded by this parent process.
+"""Frozen E7 generation and blind bundling. ElevenLabs credentials stay inside the child.
 
 Only the sandboxed child modes below import Hermes or synthesize speech. Dry runs use a
 quiet 1 kHz tone and deterministic fixture replies; they cannot establish listening quality.
@@ -28,6 +28,8 @@ INPUTS = {"eva_soul": "SOUL.md", "eva_voice": "voice.md", "eva_skill_dir": "spee
           "eva_sag_wrapper": "sag-original.sh"}
 FIXED_MTIME = 946684800
 FAILURE_REASONS = ("turn_error", "credential", "unvoiced", "synthesis_failed", "integrity", "error")
+CREDENTIAL_FAILURE = re.compile(run.CREDENTIAL_FAILURE.pattern +
+                                r"|missing API key|\b401\b|unauthori[sz]ed|quota_exceeded", re.IGNORECASE)
 
 
 class IntegrityError(RuntimeError):
@@ -52,9 +54,43 @@ def read(path):
 
 def write(path, value, *, exclusive=False):
     path = Path(path)
-    with path.open("x" if exclusive else "w", encoding="utf-8") as handle:
-        json.dump(value, handle, indent=2, sort_keys=True)
-        handle.write("\n")
+    handle = tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
+                                         prefix="." + path.name + "-", delete=False)
+    temporary = Path(handle.name)
+    try:
+        with handle:
+            json.dump(value, handle, indent=2, sort_keys=True)
+            handle.write("\n")
+        if exclusive:
+            os.link(temporary, path)  # atomic create, never replace an existing commitment
+        else:
+            os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def credential_failure(proof):
+    texts = [proof.get("error"), proof.get("final_response")]
+    texts.extend(row.get("error") for row in proof.get("tts_results") or [])
+    return bool(proof.get("credential_failure") or any(CREDENTIAL_FAILURE.search(str(t or "")) for t in texts)
+                or any(credential_failure(turn) for turn in proof.get("turns") or []))
+
+
+def check_credentials(session, paths):
+    """Availability only, with no API calls; the ElevenLabs value stays inside the child."""
+    from bench.gen import keychain_token
+    try:
+        token = keychain_token()
+    except (Exception, SystemExit):
+        raise RuntimeError("Claude subscription credential unavailable") from None
+    folder = session / "credentials"
+    run.make_dirs(folder)
+    try:
+        proof = E7Host(session, "", paths).call(folder, {"mode": "e7-credentials", "item_dir": str(folder)}, token=token)
+    finally:
+        del token
+    if credential_failure(proof) or not proof.get("completed"):
+        raise RuntimeError("credential preflight failed")
 
 
 def prompts():
@@ -273,7 +309,7 @@ def conversations(agent, messages, observe):
         result = agent.run_conversation(message, **({"conversation_history": previous} if previous is not None else {}))
         turns.append(observe(index, result))
         previous = result.get("messages")
-        if not result.get("completed") or result.get("failed") or result.get("error"):
+        if turns[-1].get("credential_failure") or not result.get("completed") or result.get("failed") or result.get("error"):
             break
     return turns
 
@@ -292,8 +328,12 @@ def child(args, driver):
     os.environ["BENCH_PROBE_OUT"] = str(Path(args["item_dir"]) / "probe.jsonl")
     os.environ["BENCH_PROBE_ITEM"] = args["item_dir"]
     # The parent never receives the key, even in Host's constructor or log scrubber.
-    os.environ["ELEVENLABS_API_KEY"] = run.key_value(args["key_file"], "ELEVENLABS_API_KEY")
+    loading_key = True
     try:
+        os.environ["ELEVENLABS_API_KEY"] = run.key_value(args["key_file"], "ELEVENLABS_API_KEY")
+        loading_key = False
+        if args["mode"] == "e7-credentials":
+            return {"completed": True}
         if args["mode"] == "e7-warm":
             return warm_proof(args, driver)
         if args["mode"] == "e7-render":
@@ -330,11 +370,11 @@ def child(args, driver):
                     except (ValueError, TypeError):
                         continue
                     error = content.get("error") if isinstance(content, dict) else None
-                    match = run.CREDENTIAL_FAILURE.search(str(error or ""))
+                    match = CREDENTIAL_FAILURE.search(str(error or ""))
                     if match:
                         results.append({"error": match.group(0)})
             message_cursor[0] = len(history)
-            credential = bool(result.get("credential_failure") or run.credential_failure(dict(result, tts_results=results)))
+            credential = credential_failure(dict(result, tts_results=results))
             return {"sent_to_voice": rows, "tts_calls": calls, "tts_results": results,
                     "credential_failure": credential, "completed": bool(result.get("completed")),
                     "failed": bool(result.get("failed") or result.get("error"))}
@@ -346,11 +386,9 @@ def child(args, driver):
         return {"turns": turns, "scores": scores, "sent_to_voice": sent, "rewrites": rewrites,
                 "completed": len(turns) == len(args["prompts"]) and all(t["completed"] and not t["failed"] for t in turns),
                 "credential_failure": any(t["credential_failure"] for t in turns), "route": route, "relays": relays}
-    except Exception as exc:
+    except (Exception, SystemExit) as exc:
         # Never let SDK/provider exceptions print credential values or private text to the parent.
-        key = os.environ["ELEVENLABS_API_KEY"]
-        message = str(exc).replace(key, "[redacted]")
-        credential = bool(run.CREDENTIAL_FAILURE.search(message))
+        credential = loading_key or bool(CREDENTIAL_FAILURE.search(str(exc)))
         return {"completed": False, "error_type": type(exc).__name__, "credential_failure": credential,
                 "integrity": isinstance(exc, IntegrityError)}
     finally:
@@ -388,16 +426,15 @@ def real_cell(session, item, arm, messages, seed, paths, attempt):
     host = E7Host(session, "", paths)
     base = {"item_dir": str(folder), "cwd": str(session / "cwd"), "arm": arm, "soul_sha256": soul_sha}
     from bench.gen import keychain_token
-    token = keychain_token()
-    warm = host.call(folder, dict(base, mode="e7-warm"), token=token)
     def failure(reason, proof):
         return {"status": reason, "reason": reason, "clips": [], "proof": proof}
 
-    def credential(proof):
-        return proof.get("credential_failure") or run.credential_failure(proof) or any(
-            credential(t) for t in proof.get("turns", []))
-
-    if credential(warm):
+    try:
+        token = keychain_token()
+    except (Exception, SystemExit):
+        return failure("credential", {"credential_failure": True})
+    warm = host.call(folder, dict(base, mode="e7-warm"), token=token)
+    if credential_failure(warm):
         return failure("credential", {"warm": warm})
     if "error" in warm or "rc" in warm or not warm.get("soul_sha256"):
         return failure("turn_error", {"warm": warm})
@@ -405,7 +442,7 @@ def real_cell(session, item, arm, messages, seed, paths, attempt):
         return failure("integrity", {"warm": warm})
     proof = host.call(folder, dict(base, mode="e7-turn", prompts=messages), token=token)
     del token
-    if credential(proof):
+    if credential_failure(proof):
         return failure("credential", proof)
     if proof.get("integrity"):
         return failure("integrity", proof)
@@ -413,7 +450,11 @@ def real_cell(session, item, arm, messages, seed, paths, attempt):
         return failure("turn_error", proof)
     pre = run.read_jsonl(folder / "probe.jsonl")
     upstream = run.read_jsonl(folder / "upstream.jsonl")
-    if not pre or not upstream or any(any(r.get("canaries", {}).values()) for r in pre + upstream):
+    required = set(run.FIXED_CANARIES) | set(paths["canaries"])
+    if (not pre or not upstream
+            or any(r.get("event") != "upstream" or r.get("model") != run.MODEL for r in upstream)
+            or any(not isinstance(r.get("canaries"), dict) or not required.issubset(r["canaries"])
+                   or any(r["canaries"].values()) for r in pre + upstream)):
         return failure("integrity", proof)
     turns = proof.get("turns") or [proof]
     if len(turns) != len(messages):
@@ -446,7 +487,7 @@ def real_cell(session, item, arm, messages, seed, paths, attempt):
         rendered = host.call(folder, dict(base, mode="e7-render", score=score, recorded=row["text"],
                                          seed=seed, voice=paths["ava_voice_id"]))
         evidence = {"turn": proof, "render": rendered}
-        if credential(rendered):
+        if credential_failure(rendered):
             return failure("credential", evidence)
         if rendered.get("integrity"):
             return failure("integrity", evidence)
@@ -495,6 +536,8 @@ def generate(tag, session, *, dry_run=False, paths=None, retry=None, reason=None
     if manifest.get("plugin_tree") and manifest["plugin_tree"] != plugin_tree:
         raise ValueError("archived plugin tree changed")
     manifest["plugin_tree"] = plugin_tree
+    if not dry_run:
+        check_credentials(session, paths)
     # A killed process cannot finalize its own ledger entry. Recover it before retry admission.
     for attempts in manifest["cells"].values():
         for attempt in attempts:
@@ -502,6 +545,8 @@ def generate(tag, session, *, dry_run=False, paths=None, retry=None, reason=None
                 attempt.update(status="error", reason="InterruptedError: process ended before recording a result", clips=[])
     manifest["attempt_counts"] = attempt_counts(manifest)
     write(manifest_path, manifest)
+    if not retry and any(a["status"] == "credential" for attempts in manifest["cells"].values() for a in attempts):
+        raise RuntimeError("generation stopped after credential failure")
     if retry and (not reason or not reason.strip()):
         raise ValueError("--retry requires --reason")
     if retry:
@@ -511,12 +556,9 @@ def generate(tag, session, *, dry_run=False, paths=None, retry=None, reason=None
             raise ValueError("retry requires a recorded failure without a usable clip")
         if any(a[-1]["status"] == "credential" for a in eligible):
             raise ValueError("credential failures cannot be retried")
-        retry_counts = manifest.setdefault("retry_counts", {})
-        used = max(retry_counts.get(retry, 0), max(len(a) - 1 for a in prior))
+        used = max(len(a) - 1 for a in prior)
         if used >= 2:
             raise ValueError("at most 2 retries per item")
-        retry_counts[retry] = used + 1
-        write(manifest_path, manifest)
     for item, arm, messages in jobs(reserve):
         key = item + ":" + arm
         attempts = manifest["cells"].setdefault(key, [])
@@ -685,8 +727,10 @@ def rerun_admission(parent, session, now=None):
     if not score_path.exists():
         raise ValueError("rerun requires a void score receipt")
     scored = read(score_path)
-    if scored.get("status") != "void":
+    if scored.get("status") != "void" or source.get("score", {}).get("status") != "void":
         raise ValueError("rerun requires a void score receipt")
+    if not source.get("ratings_sha256") or scored.get("ratings_sha256") != source["ratings_sha256"]:
+        raise ValueError("score receipt ratings commitment changed")
     if scored.get("key_sha256") != source["key_sha256"] or sha(key_path) != source["key_sha256"]:
         raise ValueError("score receipt key commitment changed")
     locked = datetime.fromisoformat(source["locked_at"].replace("Z", "+00:00"))
