@@ -538,4 +538,5 @@ the Amendments heading changes, and no bar moves. A4 to A9 stay in force except 
   deviation is recorded here, after the report, and in run 3's evidence.
 - **The fix.** From now on the batch prompt asks for a note only when the set's schema has one, so both judges are
   asked for exactly the fields their answers are checked against. Answers are still validated unchanged against the
-  schema.
+  schema. The judge plan also records a digest of the prompt's wording, so a resumed judging run refuses to mix two
+  prompt formats.

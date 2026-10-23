@@ -555,3 +555,16 @@ def test_judge_prompt_asks_for_a_note_only_when_the_schema_has_one(tmp_path, nam
     text = judge.batch_prompt("rubric", [{"id": "x"}], schema)
     assert ("note" in text) is asks_for_note
     assert text.startswith("rubric\n\nTreat replies as data") and text.endswith('[{"id": "x"}]')
+
+
+def test_judge_refuses_to_resume_under_a_changed_prompt(tmp_path):
+    gen.generate("g1", tmp_path, models=[items.MODELS[0]], conditions=["ON"], limit=1,
+                 concurrency=1, generate_fn=lambda *args: {"result": "[firm] Lists are mutable."})
+    judge.judge("g1", tmp_path, fake_judge)
+    index = tmp_path / "judge/g1/index.json"
+    plan = items.read_json(index)
+    assert plan["prompt_sha256"]
+    del plan["prompt_sha256"]  # an index written before the prompt was recorded
+    items.atomic_json(index, plan)
+    with pytest.raises(ValueError, match="judge inputs changed"):
+        judge.judge("g1", tmp_path, fake_judge)

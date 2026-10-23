@@ -152,6 +152,8 @@ def judge(set_name, directory, judge_fn=None):
     plan = {"seed": SEED, "mapping": mapping, "batches": batches, "judges": JUDGES,
             "judge_commands": judge_commands(), "batch_judges": batch_judges(batches, mapping),
             "rubric_sha256": sha256(rubric),
+            # The prompt's wording around the batch, so a resumed run never mixes two prompt formats.
+            "prompt_sha256": sha256(batch_prompt(rubric, [], schema)),
             "schema_sha256": sha256(schema.read_bytes())}
     index = folder / "index.json"
     if index.exists():
