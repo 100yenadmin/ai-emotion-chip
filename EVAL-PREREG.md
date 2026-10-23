@@ -509,8 +509,9 @@ Nothing above the Amendments heading changes. A4 to A8 stay in force except as f
 - **A sign-in failure.** The Claude sign-in token that the Opus cells read expired during the full phase. Hermes
   reported the rejection, and the harness stopped Opus at that first credential failure, as A4 requires. Without Opus
   the run could not give a verdict, so `gpt-6.1-sol` was stopped too. From now on a run starts only when the Claude
-  sign-in token has at least four hours left, enough for Opus's reference, pilot and full phases. This is an operating
-  rule, checked before launch, not code.
+  sign-in token has at least four hours left. In run 2, Opus's warm, reference, pilot and first 364 full cells took 80
+  minutes, about 12 seconds a cell, so its 709 cells take about 2.4 hours; four hours leaves room for reruns and slower
+  calls. This is an operating rule, checked before launch, not code.
 - **Run 2 is stopped.** Its recorded attempts are kept in `evidence/`. None of its replies are scored.
 - **This is a harness change after a pilot**, so A4's rule applies. The next run starts from a new route record and
   owner-approved A4b, then a clean reference and pilot, all recorded.
