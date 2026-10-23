@@ -21,7 +21,7 @@ from .. import gen
 from ..items import BENCH, CONDITIONS, MODELS, RUNS, SETS, atomic_json, heldout_hashes, load_items, read_json, run_directory
 
 SEED = 20261023
-# A8: a model stops after more than this many of its cells fail check 1, 2 or 3 (A4 said more than one).
+# A8: a model stops after more than this many of its attempts fail check 1, 2 or 3 (A4 said more than one).
 STOP_AFTER = 10
 # A8: every arm's prompt shows the cell's own paths, so the run directory must not name what is tested.
 LABEL_WORDS = ("emotion", "chip", "bench", "eval", "pilot", "heldout", "voice", "native")

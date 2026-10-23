@@ -471,10 +471,10 @@ except as follows.
 - **The stop count.** A4 stops a model after a second check 1–3 failure. Some Hermes recovery paths cannot be turned
   off: retries after an empty reply, the `openai-codex` continuation after an incomplete response, and Hermes' reply to
   a call of a tool that is not offered. Each is rare, arm-independent and triggered by the model. Over 684 cells per
-  model, two such cells are likely by chance. **A model now stops after more than 10 cells fail check 1, 2 or 3**,
-  counted across its reference, pilot and full phases. An invalid cell is still rerun once and never admitted, so this
-  bounds wasted runs and does not relax validity. A broken harness, which fails every cell, still stops within 11
-  cells.
+  model, two such cells are likely by chance. **A model now stops after more than 10 attempts fail check 1, 2 or 3**,
+  counted across its reference, pilot and full phases. A failed rerun counts as a further attempt, as under A4. An
+  invalid cell is still rerun once and never admitted, so this bounds wasted runs and does not relax validity. A broken
+  harness, which fails both attempts of every cell, still stops within 6 cells.
 - **Pins.** The relay source is a pinned copy, recorded by digest, so a change to its origin cannot reach a run.
   These are harness changes after a pilot, so A4's rule applies: a new route record, owner-approved A4b, clean
   reference and pilot.
