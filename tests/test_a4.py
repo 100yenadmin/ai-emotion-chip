@@ -1117,7 +1117,7 @@ def test_harness_warm_host_args_and_checks(tmp_path, monkeypatch, model):
             assert args["item_dir"] == str(item)
             assert kwargs == {"token": None, "timeout": 600}
             calls.append(arm)
-            names = sorted(text.SKILL_TOOLS) + {"tools": ["terminal"], "write-tool": ["skill_manage"]}.get(scenario["kind"], [])
+            names = ["skill_view", "skills_list"] + {"tools": ["terminal"], "write-tool": ["skill_manage"]}.get(scenario["kind"], [])
             relay = [n for n in relay_tools_fixture()["sent_tools"]
                      if scenario["kind"] == "write-tool" or not n.endswith("__skill_manage")]
             return {"canaries": {"synthetic": scenario["kind"] == "canary"},
