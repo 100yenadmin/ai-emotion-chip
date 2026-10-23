@@ -1,0 +1,267 @@
+<title>Blind Voice Comparison</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one narrow column of numbered trials, a sticky progress strip, each trial a quiet card with two players. */
+:root {
+  --bg: #f3f5f7;
+  --surface: #ffffff;
+  --ink: #17212b;
+  --muted: #5b6875;
+  --line: #d8dee5;
+  --accent: #23708f;
+  --accent-ink: #ffffff;
+  --pick: #e3f0f5;
+  --warn: #9a5b00;
+  --font-display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Instrument Sans", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11171d; --surface: #182029; --ink: #e6ecf1; --muted: #9aa8b5; --line: #2b3742;
+    --accent: #5fb2d1; --accent-ink: #0d1a21; --pick: #1d3340; --warn: #e0a54a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11171d; --surface: #182029; --ink: #e6ecf1; --muted: #9aa8b5; --line: #2b3742;
+  --accent: #5fb2d1; --accent-ink: #0d1a21; --pick: #1d3340; --warn: #e0a54a; color-scheme: dark;
+}
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5; }
+.wrap { max-width: 44rem; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 64px; display: grid; gap: 20px; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.7rem, 5vw, 2.3rem); line-height: 1.1;
+  margin: 0; text-wrap: balance; }
+.lede { margin: 0; color: var(--muted); max-width: 38rem; }
+.how { margin: 0; padding-left: 1.2rem; color: var(--muted); display: grid; gap: 4px; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10;
+  background: var(--bg); }
+.progress { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg);
+  padding-block: 10px; border-bottom: 1px solid var(--line); display: flex; gap: 12px; align-items: center;
+  font-family: var(--font-mono); font-size: 0.85rem; color: var(--muted); }
+.bar { flex: 1; height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.bar > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width 0.3s; }
+.status { font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted); }
+.status.bad { color: var(--warn); }
+.trials { display: grid; gap: 14px; }
+.trial { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid;
+  gap: 12px; }
+.trial.done { border-color: var(--accent); }
+.head { display: flex; gap: 10px; align-items: baseline; justify-content: space-between; flex-wrap: wrap; }
+.tid { font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted); letter-spacing: 0.04em; }
+.saved { font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent); }
+.prompt { margin: 0; font-size: 1.02rem; min-width: 0; }
+.prompt::before { content: "User says: "; color: var(--muted); font-size: 0.85rem; }
+.players { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.trial.sequence .players { grid-template-columns: 1fr; }
+@media (max-width: 520px) { .players { grid-template-columns: 1fr; } }
+.player { display: grid; gap: 6px; min-width: 0; }
+.player b { font-family: var(--font-display); font-size: 1.1rem; }
+audio { width: 100%; max-width: 100%; }
+label.flag { display: flex; gap: 6px; align-items: center; font-size: 0.85rem; color: var(--muted); cursor: pointer; }
+.choices { display: flex; gap: 8px; flex-wrap: wrap; }
+.choices button { font: inherit; font-weight: 600; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink); cursor: pointer; }
+.choices button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.choices button:focus-visible, label.flag input:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent);
+  outline-offset: 2px; }
+textarea { font: inherit; font-size: 0.9rem; width: 100%; box-sizing: border-box; min-height: 2.4rem; padding: 8px;
+  border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); resize: vertical; }
+.foot { color: var(--muted); font-size: 0.85rem; margin: 0; }
+select { font: inherit; font-size: 0.95rem; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink); max-width: 100%; }
+select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#lock { justify-self: start; font: inherit; font-weight: 600; padding: 12px 20px; border-radius: 8px;
+  border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); cursor: pointer; }
+#lock:disabled { background: var(--surface); border-color: var(--line); color: var(--muted); cursor: not-allowed; }
+#lock:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#lock-confirmation { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 14px 16px;
+  border: 1px solid var(--accent); border-radius: 10px; background: var(--pick); }
+#lock-confirmation p { margin: 0; flex-basis: 100%; font-weight: 600; }
+#lock-confirmation button { font: inherit; font-weight: 600; padding: 10px 18px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+#lock-confirmation #lock-confirm { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+#lock-confirmation button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .bar > i { transition: none; } }
+</style>
+
+<div class="wrap">
+  <h1>Which reply sounds right?</h1>
+  <p class="lede">Each trial plays two clips. Pick the one that sounds more natural for the moment, or 'No difference'.</p>
+  <p class="lede">For a sequence of three clips, play them in order and rate 1–5 how much it sounds like the same conversation.</p>
+  <div class="progress" aria-live="polite"><span id="count">0 of 0 rated</span><div class="bar"><i id="fill"></i></div></div>
+  <p id="status" class="status">Connecting…</p>
+  <section id="trials" class="trials" aria-label="Trials"></section>
+  <button id="lock" type="button" disabled>Lock my ratings</button>
+  <div id="lock-confirmation" hidden>
+    <p>Lock all ratings? You cannot change them afterwards.</p>
+    <button id="lock-confirm" type="button">Lock now</button>
+    <button id="lock-cancel" type="button">Keep editing</button>
+  </div>
+</div>
+<script>
+const TRIALS = /*TRIALS*/[];
+const STORE = /*STORE*/"ratings";
+const state = {};
+let db = null, locked = false, locking = false, ready = false;
+const pending = new Set();
+const notes = new Map();
+let queue = Promise.resolve();
+const $ = (s, el = document) => el.querySelector(s);
+function controls(disabled) {
+  document.querySelectorAll("button,input,textarea,select,audio").forEach(el => {
+    el.disabled = disabled;
+    if (el.tagName === "AUDIO") { el.controls = !disabled; if (disabled) el.pause(); }
+  });
+  progress();
+}
+function rated(t) {
+  const s = state[t.id] || {};
+  return t.clips ? Number.isInteger(s.rating) && s.rating >= 1 && s.rating <= 5 : ["a", "b", "none"].includes(s.choice);
+}
+function progress() {
+  const done = TRIALS.filter(rated).length;
+  $("#count").textContent = `${done} of ${TRIALS.length} rated`;
+  $("#fill").style.width = TRIALS.length ? `${100 * done / TRIALS.length}%` : "0";
+  $("#lock").disabled = !ready || locked || locking || done !== TRIALS.length;
+}
+function observeLock(doc) {
+  if (doc?.exists === true || doc?.data() != null) {
+    locked = true; controls(true); $("#status").textContent = "Ratings locked";
+  }
+  return locked;
+}
+function apply(id) {
+  const card = document.getElementById("trial-" + id), s = state[id] || {};
+  if (!card) return;
+  card.querySelectorAll("[data-v]").forEach(el => el.setAttribute("aria-pressed", String(s.choice === el.dataset.v)));
+  card.querySelectorAll("[data-side]").forEach(el => { el.checked = !!s.acting?.[el.dataset.side]; });
+  const note = $("textarea", card), rating = $("select", card);
+  if (document.activeElement !== note) note.value = s.note || "";
+  if (rating) rating.value = s.rating || "";
+}
+function build() {
+  for (const t of TRIALS) {
+    const card = document.createElement("article");
+    card.className = t.clips ? "trial sequence" : "trial"; card.id = "trial-" + t.id;
+    card.innerHTML = `<span class="tid">TRIAL ${t.id}</span><div class="players"></div>`;
+    if (!t.clips) {
+      const message = document.createElement("p"); message.className = "prompt"; message.textContent = t.message;
+      card.insertBefore(message, $(".players", card));
+    }
+    const files = t.clips || [t.a, t.b];
+    files.forEach((file, i) => {
+      const player = document.createElement("div"); player.className = "player";
+      const title = document.createElement("b"); title.textContent = t.clips ? String(i + 1) : ["A", "B"][i];
+      const audio = document.createElement("audio"); audio.controls = true; audio.preload = "none"; audio.src = file;
+      audio.addEventListener("play", () => document.querySelectorAll("audio").forEach(o => { if (o !== audio) o.pause(); }));
+      if (t.clips) {
+        const message = document.createElement("p"); message.className = "prompt"; message.textContent = t.messages[i];
+        player.append(message);
+      }
+      player.append(title, audio); $(".players", card).append(player);
+    });
+    if (t.clips) {
+      const rating = document.createElement("select"); rating.setAttribute("aria-label", "Sounds like the same conversation");
+      rating.innerHTML = '<option value="">Choose 1–5</option>' + [1,2,3,4,5].map(i => `<option>${i}</option>`).join("");
+      rating.addEventListener("change", () => save(t.id, {rating: Number(rating.value)})); card.append(rating);
+    } else {
+      const choices = document.createElement("div"); choices.className = "choices";
+      for (const [v, label] of [["a","A sounds more natural"],["b","B sounds more natural"],["none","No difference"]]) {
+        const button = document.createElement("button"); button.type = "button"; button.dataset.v = v;
+        button.textContent = label; button.addEventListener("click", () => save(t.id, {choice: v})); choices.append(button);
+      }
+      card.append(choices);
+      for (const side of ["a","b"]) {
+        const label = document.createElement("label"); label.className = "flag";
+        const input = document.createElement("input"); input.type = "checkbox"; input.dataset.side = side;
+        input.addEventListener("change", () => save(t.id, {acting: {...state[t.id]?.acting, [side]: input.checked}}));
+        label.append(input, side.toUpperCase() + " sounds like acting"); card.append(label);
+      }
+    }
+    const note = document.createElement("textarea"); note.placeholder = "Optional note"; note.maxLength = 2000;
+    note.addEventListener("input", () => save(t.id, {note: note.value}, true)); card.append(note);
+    $("#trials").append(card);
+  }
+}
+function save(id, patch, debounce = false) {
+  if (locked || locking || !ready) return Promise.resolve();
+  $("#lock-confirmation").hidden = true;
+  state[id] = {choice: TRIALS.find(t => t.id === id)?.clips ? "none" : null, acting: {a: false, b: false}, note: "", ...state[id], ...patch};
+  apply(id); progress();
+  if (debounce) {
+    clearTimeout(notes.get(id));
+    notes.set(id, setTimeout(() => { notes.delete(id); persist(id); }, 800));
+    return Promise.resolve();
+  }
+  return persist(id);
+}
+function persist(id) {
+  if (locked || !ready) return Promise.resolve();
+  const body = JSON.parse(JSON.stringify({...state[id], trial: id}));
+  // Every save has an awaitable promise, including a save queued behind an earlier one.
+  const work = queue.then(async () => {
+    if (locked || observeLock(await db.doc(STORE + "/lock").get())) return;
+    body.updatedAt = new Date().toISOString();
+    await db.doc(STORE + "/" + id).set(body);
+  });
+  queue = work.catch(() => {});
+  pending.add(work);
+  work.then(() => { pending.delete(work); if (!locked) $("#status").textContent = "Saved"; },
+    () => { $("#status").textContent = "Save failed. Reload before locking."; });
+  return work;
+}
+function requestLock() {
+  if (locked || locking || !ready || !TRIALS.every(rated)) return;
+  $("#lock-confirmation").hidden = false;
+  $("#lock-confirm").focus();
+}
+async function lockRatings() {
+  if ($("#lock-confirmation").hidden || locked || locking || !ready || !TRIALS.every(rated)) return;
+  $("#lock-confirmation").hidden = true;
+  locking = true; controls(true);
+  try {
+    for (const [id, timer] of notes) { clearTimeout(timer); persist(id); }
+    notes.clear();
+    await Promise.all([...pending]);
+    if (observeLock(await db.doc(STORE + "/lock").get())) return;
+    const snapshot = await db.collection(STORE).get();
+    const ratings = Object.fromEntries(snapshot.docs.filter(doc => doc.id !== "lock").map(doc => [doc.id, doc.data()]));
+    const current = TRIALS.every(t => {
+      const saved = ratings[t.id], local = state[t.id], value = t.clips ? "rating" : "choice";
+      return saved && saved[value] === local[value] && saved.note === local.note &&
+        saved.acting?.a === local.acting.a && saved.acting?.b === local.acting.b;
+    });
+    if (!current) {
+      $("#status").textContent = "Could not lock: the saved ratings differ from this page. Reload, check your ratings, then lock again.";
+      return;
+    }
+    await db.doc(STORE + "/lock").set({collection: STORE, lockedAt: new Date().toISOString(), ratings});
+    locked = true; $("#status").textContent = "Ratings locked";
+  } catch (e) { $("#status").textContent = "Could not lock. Reload and check your ratings."; }
+  finally { locking = false; controls(locked || !ready); }
+}
+async function load() {
+  controls(true);
+  try {
+    db = await window.claude?.use?.("db");
+    if (!db) throw new Error("store unavailable");
+    const lock = await db.doc(STORE + "/lock").get();
+    observeLock(lock);
+    const snap = await db.collection(STORE).get();
+    for (const doc of snap.docs) { if (doc.id !== "lock") { state[doc.id] = doc.data(); apply(doc.id); } }
+    db.collection(STORE).onSnapshot(snap => {
+      for (const doc of snap.docs) { if (doc.id === "lock") observeLock(doc); }
+    }, () => { ready = false; controls(true); $("#status").textContent = "Connection lost. Reload to reconnect."; });
+    ready = true;
+    controls(locked);
+    $("#status").textContent = locked ? "Ratings locked" : "Your choices save automatically.";
+  } catch (e) { $("#status").textContent = "Ratings store unavailable. Reload to reconnect."; }
+}
+build();
+$("#lock").addEventListener("click", requestLock);
+$("#lock-confirm").addEventListener("click", lockRatings);
+$("#lock-cancel").addEventListener("click", () => { $("#lock-confirmation").hidden = true; });
+load();
+</script>

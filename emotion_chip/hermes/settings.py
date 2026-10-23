@@ -6,6 +6,7 @@ from pathlib import Path
 DEFAULTS = {
     "backend": "fish", "fish_model": "s2.1-pro", "guide_mode": "generate",
     "eleven_model": "eleven_v4", "eleven_voice_id": "", "eleven_style": None, "eleven_speed": None,
+    "eleven_seed": None,
     "signals": "off",
     "delivery_log": True,
 }

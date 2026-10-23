@@ -16,13 +16,17 @@ class ElevenClient:
         self.opener = opener or urlopen
         self.timeout = timeout
 
-    def _open(self, text, voice, model, params, output_format, *, streaming=False, previous_request_ids=()):
+    def _open(self, text, voice, model, params, output_format, *, streaming=False, previous_request_ids=(), seed=None):
         if not voice:
             raise ValueError("ElevenLabs needs a voice id (voice, eleven_voice_id or tts.elevenlabs.voice_id).")
         key = os.environ.get("ELEVENLABS_API_KEY", "")
         if not key:
             raise ValueError("ElevenLabs needs ELEVENLABS_API_KEY in the environment.")
         payload = {"text": text, "model_id": model, "voice_settings": dict(params)}
+        if seed is not None:
+            if type(seed) is not int or not 0 <= seed < 2**32:
+                raise ValueError("seed must be an unsigned 32-bit integer")
+            payload["seed"] = seed
         if previous_request_ids and not streaming and model in {"eleven_v4", "eleven_v4_turbo"}:
             payload["previous_request_ids"] = list(previous_request_ids)
         suffix = "/stream" if streaming else ""
@@ -36,13 +40,13 @@ class ElevenClient:
                 body = error.read().decode("utf-8", errors="replace").replace(key, "[redacted]")[:200]
             raise RuntimeError(f"ElevenLabs HTTP {error.code}: {body}") from None
 
-    def synthesize(self, text, output_path, *, voice, model, params, format="mp3", previous_request_ids=()):
+    def synthesize(self, text, output_path, *, voice, model, params, format="mp3", previous_request_ids=(), seed=None):
         if format not in FORMATS:
             format = "wav" if format == "flac" else "mp3"
             path = Path(output_path).with_suffix("." + format)
             output_path = str(path) if isinstance(output_path, str) else path
         with self._open(text, voice, model, params, FORMATS[format],
-                        previous_request_ids=previous_request_ids) as response:
+                        previous_request_ids=previous_request_ids, seed=seed) as response:
             audio, request_id = response.read(), response.headers.get("request-id")
         if format == "wav":
             with wave.open(str(output_path), "wb") as handle:
@@ -54,7 +58,7 @@ class ElevenClient:
             Path(output_path).write_bytes(audio)
         return output_path, request_id
 
-    def stream(self, text, *, voice, model, params):
-        with self._open(text, voice, model, params, "pcm_24000", streaming=True) as response:
+    def stream(self, text, *, voice, model, params, seed=None):
+        with self._open(text, voice, model, params, "pcm_24000", streaming=True, seed=seed) as response:
             while chunk := response.read(4096):
                 yield chunk

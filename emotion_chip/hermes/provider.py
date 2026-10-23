@@ -176,7 +176,8 @@ class EmotionChipTTSProvider(TTSProvider):
                 previous = [rid for rid, _ in self._request_ids.get(session_id, [])] if stitch else []
             output_path, request_id = self.eleven.synthesize(
                 rendered.text, output_path, voice=self.settings.eleven_voice(voice),
-                model=effective, params=rendered.params, format=format, previous_request_ids=previous)
+                model=effective, params=rendered.params, format=format, previous_request_ids=previous,
+                **({"seed": self.settings.get("eleven_seed")} if self.settings.get("eleven_seed") is not None else {}))
             if stitch and request_id:
                 with self._lock:
                     self._request_ids[session_id] = (self._request_ids.get(session_id, []) +
@@ -191,7 +192,8 @@ class EmotionChipTTSProvider(TTSProvider):
         if self.settings.get("backend") == "eleven":
             rendered, effective, _ = self._prepare(text, model, extra.get("speed"), streaming=True)
             return self.eleven.stream(rendered.text, voice=self.settings.eleven_voice(voice), model=effective,
-                                      params=rendered.params)
+                                      params=rendered.params,
+                                      **({"seed": self.settings.get("eleven_seed")} if self.settings.get("eleven_seed") is not None else {}))
         fish = self._required_fish()
         rendered, effective, final = self._prepare(text, model, extra.get("speed"), streaming=True)
         return fish.stream(rendered.text, voice=voice, model=effective, speed=final, format=format)

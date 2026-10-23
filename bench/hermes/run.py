@@ -533,7 +533,7 @@ def make_dirs(item):
         (item / sub).mkdir(parents=True, exist_ok=True)
 
 
-def prepare(run, fish_key, paths, eleven_key=None):
+def prepare(run, fish_key, paths, eleven_key=None, ref=CHIP_REF):
     """Run dir skeleton, plugin sources, tools and one warmed golden home per arm."""
     for sub in ("cwd", "tools", "src", "golden"):
         (run / sub).mkdir(parents=True)
@@ -546,14 +546,14 @@ def prepare(run, fish_key, paths, eleven_key=None):
     shutil.copyfile(HERE / "turn.py", run / "tools/turn.py")
     shutil.copyfile(HERE / "bench_probe/probe.py", run / "tools/probe.py")
     # Resolve each ref once and archive that commit, so a branch that moves mid-prepare cannot split sha and tree.
-    fish_sha, chip_sha = rev(paths["fish_repo"], FISH_REF), rev(paths["chip_repo"], CHIP_REF)
+    fish_sha, chip_sha = rev(paths["fish_repo"], FISH_REF), rev(paths["chip_repo"], ref)
     archive(paths["fish_repo"], fish_sha, run / "src/fish-audio")
     archive(paths["chip_repo"], chip_sha, run / "src/emotion-chip")
     shutil.copytree(paths["provider_src"], run / "src" / PROVIDER, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
     shutil.copytree(HERE / "bench_probe", run / "src/bench-probe", ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
     # The label is the operator's description; the tree digest pins the Hermes source files the cells ran.
     shas = {"hermes": paths["host_label"], "hermes_tree": tree_sha256(paths["host"], skip=HOST_SKIP),
-            "fish_audio": f"v1.8.0 {fish_sha}", "emotion_chip": f"{CHIP_REF} {chip_sha}",
+            "fish_audio": f"v1.8.0 {fish_sha}", "emotion_chip": f"{ref} {chip_sha}",
             "provider_tree": tree_sha256(run / "src" / PROVIDER), "provider_source_tree": tree_sha256(paths["provider_src"]),
             "bench_probe_tree": tree_sha256(run / "src/bench-probe")}
     if shas["provider_tree"] != shas["provider_source_tree"]:

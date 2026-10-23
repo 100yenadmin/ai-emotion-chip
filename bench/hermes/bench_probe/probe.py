@@ -44,6 +44,14 @@ def digest(text):
 
 def canaries(*texts):
     """Which negative canaries occur anywhere in the given texts."""
+    # E7 alone opts in: remove exact frozen persona bytes, never arbitrary canary words.
+    from pathlib import Path
+    exclusions = json.loads(os.environ.get("BENCH_PROBE_EXCLUDE_FILES") or "[]")
+    for path in exclusions:
+        snapshot = Path(path).read_text(encoding="utf-8")
+        if snapshot:
+            for literal in (snapshot, json.dumps(snapshot)[1:-1], json.dumps(snapshot, ensure_ascii=False)[1:-1]):
+                texts = tuple(text.replace(literal, "") for text in texts)
     return {canary: any(canary in text for text in texts) for canary in NEGATIVE_CANARIES}
 
 
