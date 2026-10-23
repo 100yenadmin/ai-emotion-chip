@@ -170,6 +170,7 @@ def test_text_configs_and_published_sections(tmp_path):
             assert cfg["tts"] == {"provider": "emotion-chip", "model": "eleven_v4"}
             assert cfg["auth"]["adopt_external_logins"] is False and not cfg["fallback_providers"]
             assert cfg["agent"]["reasoning_effort"] == "medium" and "openai_runtime" not in cfg["model"]
+            assert cfg["agent"]["environment_probe"] is False
             assert "fish-audio" not in cfg["plugins"]["enabled"]
             assert "emotion-chip" in text.sections(model, "ON")
             if model == items.MODELS[0]:
