@@ -1507,3 +1507,25 @@ def test_repeat_skill_view_expects_hermes_stub(monkeypatch):
     assert turn.tool_results_match(history(fixture["skill_view"]), agent) is False
     assert dedup.served == {agent._current_task_id: {(recorded["name"], None)}}
     assert turn.tool_reference(view("c")["tool_calls"][0]["function"], "c", agent)["content"] == fixture["skill_view"]
+
+
+@pytest.mark.parametrize("second", ["same", "other-file"])
+def test_views_in_one_batch_have_one_result_or_fail(monkeypatch, second):
+    turn, _, _, agent = capture_runtime(monkeypatch)
+    fixture = read_runtime(monkeypatch)
+    skills, dedup = sys.modules["tools.skills_tool"], sys.modules["tools.skills_tool_dedup"]
+    recorded = json.loads((Path(__file__).parent / "fixtures/a8-skill-view-repeat.json").read_text())
+    skills.skill_view = lambda name, file_path=None, task_id=None, preprocess=True: fixture["skill_view"]
+    arguments = [{"name": recorded["name"]}, {"name": recorded["name"]} if second == "same"
+                 else {"name": recorded["name"], "file_path": "references/notes.md"}]
+    batch = {"role": "assistant", "tool_calls": [{"id": str(i), "function": {
+        "name": "skill_view", "arguments": json.dumps(a)}} for i, a in enumerate(arguments)]}
+    # Hermes runs both views at once, so a repeat of the same file may get the full text or the stub.
+    for contents in ([fixture["skill_view"]] * 2, [fixture["skill_view"], recorded["stub"]]):
+        messages = [{"role": "user", "content": "hello"}, batch] + [
+            {"role": "tool", "tool_call_id": str(i), "content": c} for i, c in enumerate(contents)]
+        later = messages + [{"role": "assistant", "tool_calls": []}]
+        expected = second == "other-file" and contents[1] == fixture["skill_view"]
+        assert turn.tool_results_match(messages, agent) is expected
+        assert turn.tool_results_match(later, agent) is expected
+    assert dedup.served == {}

@@ -468,10 +468,13 @@ except as follows.
   them off none of these adds per-turn text, as A4 already asked. The paths that cannot be turned off are under "The
   stop count" below. Hermes also reads `SOUL.md` under a 5-second deadline, and a miss followed by a hit adds a second
   copy to `S`, so that deadline is now 600 seconds.
-- **Hermes' repeat-view stub.** A second `skill_view` of the same, unchanged skill file returns Hermes' short
-  "unchanged" result instead of the file, and no setting turns this off. That stub is what the tool returns, so check
-  3's reference now produces it. It does so by calling Hermes' own dedup functions on a private task id, which never
-  touches the cell's own record. Before this, a repeated view, most likely in ON, failed check 3.
+- **Hermes' repeat-view stub.** A `skill_view` of a skill file already served in an earlier batch of the turn returns
+  Hermes' short "unchanged" result instead of the file, and no setting turns this off. That stub is what the tool
+  returns, so check 3's reference now produces it. It does so by calling Hermes' own dedup functions on a private task
+  id, which never touches the cell's own record. Before this, a repeated view, most likely in ON, failed check 3.
+  Hermes runs the `skill_view` calls of one batch at once. Two views in one batch that could dedup each other (Hermes'
+  functions are tried in both orders) can come back either way, so such a cell has no single expected result. Check 3
+  fails it, and it is rerun as any invalid cell is.
 - **The stop count.** A4 stops a model after a second check 1–3 failure. Some Hermes recovery paths cannot be turned
   off: retries after an empty reply, the `openai-codex` continuation after an incomplete response, and Hermes' reply to
   a call of a tool that is not offered. Each is rare, arm-independent and triggered by the model. Over 684 cells per

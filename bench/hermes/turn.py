@@ -229,9 +229,10 @@ def skill_tree(home=None):
     return component(files)["sha256"]
 
 
-def tool_reference(function, call_id, agent, views=None):
-    """Normal read result, without skill_view's usage bump. With ``views`` (a private task id), a repeat view of an
-    unchanged skill file gets Hermes' own repeat-view stub (A8), replayed on that id so the cell's tracker is never read."""
+def tool_reference(function, call_id, agent, views=None, served=None):
+    """Normal read result, without skill_view's usage bump. With ``views`` (a private task id holding earlier
+    batches' views), a repeat of an unchanged skill file gets Hermes' own repeat-view stub (A8); the cell's tracker is
+    never read. A view served in full is appended to ``served`` for the caller to record when its batch closes."""
     from tools import skills_tool
     from agent.tool_executor import _budget_for_agent, get_active_env
     from tools.tool_result_storage import maybe_persist_tool_result
@@ -256,14 +257,14 @@ def tool_reference(function, call_id, agent, views=None):
             result = skills_tool_dedup._check_skill_view_dedup(views, view, file_path)
         if result is None:
             result = skills_tool.skill_view(view, file_path=file_path, task_id=agent._current_task_id)
-            if views:
+            if served is not None:
                 # As tools/skills_tool.py:_skill_view_with_bump records a served view.
                 try:
                     parsed = json.loads(result)
                 except (ValueError, TypeError):
                     parsed = None
                 if isinstance(parsed, dict) and parsed.get("success"):
-                    skills_tool_dedup._record_skill_view(views, view, file_path, parsed)
+                    served.append((view, file_path, parsed))
     result = maybe_persist_tool_result(result, name, call_id,
         env=get_active_env(agent._current_task_id), config=_budget_for_agent(agent))
     return make_tool_result_message(name, agent._tool_result_content_for_active_model(name, result), call_id)
@@ -280,14 +281,32 @@ def tool_results_match(messages, agent):
 
 def _tool_results_match(messages, agent, views):
     from agent.tool_executor import _budget_for_agent, get_active_env
+    from tools import skills_tool_dedup
     from tools.tool_result_storage import enforce_turn_budget
-    calls, expected, actual, changed = {}, [], [], False
+    calls, expected, actual, changed, served = {}, [], [], False, []
     def matches():
         enforce_turn_budget(expected, env=get_active_env(agent._current_task_id), config=_budget_for_agent(agent))
         return [m["content"] for m in expected] == [m.get("content") for m in actual]
+    def close_batch():
+        # Hermes runs one batch's skill_view calls concurrently (_PARALLEL_SAFE_TOOLS), so a repeat inside a batch
+        # may or may not see the other view. Such a batch has no single expected result, so it fails (A8).
+        trial = views + "-batch"
+        try:
+            for order in (served, served[::-1]):
+                skills_tool_dedup.reset_skill_view_dedup(trial)
+                for view, file_path, parsed in order:
+                    if skills_tool_dedup._check_skill_view_dedup(trial, view, file_path) is not None:
+                        return False
+                    skills_tool_dedup._record_skill_view(trial, view, file_path, parsed)
+        finally:
+            skills_tool_dedup.reset_skill_view_dedup(trial)
+        for view, file_path, parsed in served:
+            skills_tool_dedup._record_skill_view(views, view, file_path, parsed)
+        served.clear()
+        return True
     for message in messages:
         if message.get("role") == "assistant":
-            if not matches():
+            if not matches() or not close_batch():
                 return False
             expected, actual = [], []
             for call in message.get("tool_calls", []):
@@ -297,12 +316,12 @@ def _tool_results_match(messages, agent, views):
             if changed:
                 return False
             reference = tool_reference(calls.get(message.get("tool_call_id"), {}), message.get("tool_call_id"), agent,
-                                       views)
+                                       views, served)
             if reference is None:
                 return False
             expected.append(reference)
             actual.append(message)
-    return matches()
+    return matches() and close_batch()
 
 
 def history_for_send(messages, agent):
