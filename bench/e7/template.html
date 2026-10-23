@@ -216,7 +216,7 @@ async function lockRatings() {
         saved.acting?.a === local.acting.a && saved.acting?.b === local.acting.b;
     });
     if (!current) {
-      $("#status").textContent = "Could not lock: your latest ratings are still saving. Try again in a moment.";
+      $("#status").textContent = "Could not lock: the saved ratings differ from this page. Reload, check your ratings, then lock again.";
       return;
     }
     await db.doc(STORE + "/lock").set({lockedAt: new Date().toISOString(), ratings});

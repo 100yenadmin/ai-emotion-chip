@@ -504,6 +504,100 @@ def test_rule11_rerun_gate_and_byte_identical_real_pairs_and_source_counts(built
     assert scoring.score(rated, key, e7.read(new / "manifest.json")) == {"status": "void", "catch_preferences": 2}
 
 
+@pytest.fixture
+def fix6_rerun(built, tmp_path, monkeypatch):
+    _, paths, folder, bundle, key_path, first_key = built
+    parent, session = tmp_path / "first", tmp_path / "rerun"
+    shutil.copytree(folder, parent)
+    private_key = tmp_path / "first-key.json"
+    shutil.copyfile(key_path, private_key)
+    manifest = e7.read(parent / "manifest.json")
+    manifest["key_path"] = str(private_key)
+    e7.write(parent / "manifest.json", manifest)
+    ratings = tmp_path / "void-ratings.json"
+    e7.write(ratings, ratings_for(first_key, catches=2))
+    assert scoring.score_files(ratings, private_key, parent / "manifest.json")["status"] == "void"
+    monkeypatch.setattr(e7, "load_paths", lambda: dict(paths))
+    monkeypatch.setattr(e7, "frozen_tag", lambda *a: "fixture-commit")
+    def archive(repo, ref, dest):
+        dest.mkdir(parents=True)
+        (dest / "archived.txt").write_text(ref)
+    monkeypatch.setattr(run, "archive", archive)
+    return parent, session, tmp_path / "new-bundle", tmp_path / "new-key.json", bundle, first_key
+
+
+def test_fix6_cli_retries_failed_reserve_catch_then_builds(fix6_rerun, monkeypatch):
+    parent, session, bundle, key_path, _, _ = fix6_rerun
+    item = next(iter(e7.prompts()["catch_reserve"]))
+    original_measure = e7.measure
+    failed = False
+    def measure(clip):
+        nonlocal failed
+        if not failed and Path(clip).is_relative_to(session / "cells" / item):
+            failed = True
+            raise ValueError("fixture decode failure")
+        return original_measure(clip)
+    monkeypatch.setattr(e7, "measure", measure)
+    build_args = ["build", "--session", str(session), "--bundle", str(bundle),
+                  "--key", str(key_path), "--rerun-of", str(parent)]
+    with pytest.raises(ValueError, match="missing item"):
+        main(build_args)
+    before = e7.read(session / "manifest.json")
+    assert before["cells"][item + ":chip"][-1]["reason"] == "clip did not decode"
+    main(["generate", "--tag", before["tag"], "--session", str(session), "--dry-run",
+          "--retry", item, "--reason", "retry fixture decode failure"])
+    after = e7.read(session / "manifest.json")
+    attempts = after["cells"][item + ":chip"]
+    assert len(attempts) == 2
+    assert attempts[0] == before["cells"][item + ":chip"][0]
+    assert attempts[-1]["status"] == "completed"
+    assert attempts[-1]["retry_reason"] == "retry fixture decode failure"
+    assert set(after["cells"]) == {name + ":" + arm for name, arm, _ in e7.jobs(reserve=True)}
+    for cell in after["cells"]:
+        if cell != item + ":chip":
+            assert after["cells"][cell] == before["cells"][cell]
+    main(build_args)
+    assert e7.read(key_path)["rerun_of"] == str(parent)
+
+
+@pytest.mark.parametrize("peaky", ["encoded_reuse", "reserve_original"])
+def test_fix6_rerun_preserves_target_bytes_and_commands_despite_peaks(fix6_rerun, monkeypatch, peaky):
+    parent, session, bundle, key_path, first_bundle, first_key = fix6_rerun
+    item = next(iter(e7.prompts()["catch_reserve"]))
+    original_measure = e7.measure
+    measured = []
+    def measure(clip):
+        clip = Path(clip)
+        measured.append(clip)
+        result = original_measure(clip)
+        if ((peaky == "encoded_reuse" and clip.is_relative_to(first_bundle)) or
+                (peaky == "reserve_original" and clip.is_relative_to(session / "cells" / item))):
+            result["peak"] = result["lufs"] - first_key["target_lufs"] + .237
+        return result
+    monkeypatch.setattr(e7, "measure", measure)
+    key = e7.build(session, bundle, key_path, rerun_of=parent)
+    assert key["target_lufs"] == first_key["target_lufs"]
+    assert not any(p.is_relative_to(first_bundle) for p in measured)
+    original = {t["item"]: t for t in first_key["trials"]}
+    for trial in key["trials"]:
+        if trial["kind"] == "catch":
+            if peaky == "reserve_original" and trial["item"] == item:
+                assert trial["peak_over_db"] == 1.24
+            else:
+                assert "peak_over_db" not in trial
+            assert len(set(trial["clip_sha256"].values())) == 1
+            continue
+        old = original[trial["item"]]
+        for side in trial["commands"]:
+            old_side = (side if trial["kind"] == "mini" else
+                        next(s for s, arm in old["sides"].items() if arm == trial["sides"][side]))
+            new_name = trial["files"][int(side) - 1] if trial["kind"] == "mini" else trial["files"][side]
+            old_name = old["files"][int(old_side) - 1] if trial["kind"] == "mini" else old["files"][old_side]
+            assert (bundle / new_name).read_bytes() == (first_bundle / old_name).read_bytes()
+            assert trial["gains"][side] == old["gains"][old_side]
+            assert trial["commands"][side] == old["commands"][old_side]
+
+
 def test_dry_run_cli_end_to_end(generated, tmp_path, monkeypatch, capsys):
     _, paths, original = generated
     monkeypatch.setattr(e7, "load_paths", lambda: paths)
@@ -1723,7 +1817,7 @@ await lockRatings();
 assert.equal(writes.length, before); assert.equal(stored.has('lock'), false);
 assert.equal(locked, false); assert.equal(locking, false);
 assert.equal(document.querySelector('#status').textContent,
-  'Could not lock: your latest ratings are still saving. Try again in a moment.');
+  'Could not lock: the saved ratings differ from this page. Reload, check your ratings, then lock again.');
 assert.ok(document.querySelectorAll('button,input,textarea,select,audio').every(el => !el.disabled));
 await save('t01', {note:'edited after failed lock'});
 assert.equal(stored.get('t01').note, 'edited after failed lock');

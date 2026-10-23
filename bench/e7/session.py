@@ -527,6 +527,7 @@ def generate(tag, session, *, dry_run=False, paths=None, retry=None, reason=None
         "routes": {"sag": {"normalize": "off", "lang": "en", "endpoint": "sag speak /v1/text-to-speech/{voice}"},
                    "chip": {"normalize": None, "lang": None, "endpoint": "/v1/text-to-speech/{voice}"}},
         "voice_settings": VOICE_SETTINGS, "model": run.MODEL, "effort": "high", "provider": run.PROVIDER}
+    reserve = reserve or bool(manifest.get("rerun_of"))
     if (manifest["tag"], manifest["commit"], manifest["dry_run"]) != (tag, commit, dry_run):
         raise ValueError("session generation identity changed")
     manifest["inputs_sha256"] = snapshot(session, paths, manifest.get("inputs_sha256"))
@@ -833,6 +834,8 @@ def build(session, bundle, key_path, *, rerun_of=None, now=None):
                 row["clips"] = [Path(source["bundle_path"]) / name for name in files]
             row["prior_gains"] = ({trial["sides"][side]: gain for side, gain in trial["gains"].items()}
                                   if trial["kind"] != "mini" else trial["gains"])
+            row["prior_commands"] = ({trial["sides"][side]: command for side, command in trial["commands"].items()}
+                                     if trial["kind"] != "mini" else trial["commands"])
             pairs.append(row)
         for index, item in enumerate(prompts()["catch_reserve"]):
             arm = "chip" if index < 2 else "eva"
@@ -847,14 +850,15 @@ def build(session, bundle, key_path, *, rerun_of=None, now=None):
     if input_hashes(session / "inputs") != manifest["inputs_sha256"]:
         raise ValueError("frozen inputs changed")
     sources = list(dict.fromkeys(p for row in pairs for p in (row.get("clips") or list(row["arms"].values()))))
-    measurements = {p: measure(p) for p in sources}
-    target, values = gains(list(measurements.values()))
-    gain_map = dict(zip(sources, values))
-    if source_key and target < source_key["target_lufs"] - .05:
-        raise ValueError("reserve catch would lower target; cannot preserve real bytes")
+    originals = list(dict.fromkeys(p for row in pairs if "prior_gains" not in row
+                                   for p in (row.get("clips") or list(row["arms"].values()))))
+    measurements = {p: measure(p) for p in originals}
     if source_key:
         target = source_key["target_lufs"]
         gain_map = {p: target - m["lufs"] for p, m in measurements.items()}
+    else:
+        target, values = gains(list(measurements.values()))
+        gain_map = dict(zip(originals, values))
     bundle.mkdir(parents=True, exist_ok=True)
     rng = secrets.SystemRandom()
     rng.shuffle(pairs)
@@ -888,6 +892,11 @@ def build(session, bundle, key_path, *, rerun_of=None, now=None):
             group = row["comparison"] or ("catch_reserve" if rerun_of else "catch")
             public.append({"id": trial_id, **names, "message": prompts()[group][row["item"]]})
         record.update(id=trial_id, gains={}, commands={}, clip_sha256={})
+        if source_key and row["kind"] == "catch":
+            src = next(iter(mapping.values()))
+            peak_over = measurements[src]["peak"] + gain_map[src] + 1
+            if peak_over > 0:
+                record["peak_over_db"] = round(peak_over, 2)
         first_catch = None
         first_catch_gain = None
         for side, src in mapping.items():
@@ -907,7 +916,9 @@ def build(session, bundle, key_path, *, rerun_of=None, now=None):
             record["gains"][side] = applied
             if row["kind"] == "catch":
                 first_catch, first_catch_gain = dest, applied
-            record["commands"][side] = {"analysis": measurements[src]["command"], "calibration": calibration, "encode": command}
+            record["commands"][side] = (row["prior_commands"][prior_side] if "prior_commands" in row else
+                                        {"analysis": measurements[src]["command"], "calibration": calibration,
+                                         "encode": command})
             record["clip_sha256"][names[side]] = sha(dest)
         key["trials"].append(record)
     # Escape markup in user messages without changing the rendered text.
