@@ -540,3 +540,55 @@ the Amendments heading changes, and no bar moves. A4 to A9 stay in force except 
   asked for exactly the fields their answers are checked against. Answers are still validated unchanged against the
   schema. The judge plan also records a digest of the prompt's wording, so a resumed judging run refuses to mix two
   prompt formats.
+
+### A11 (2026-10-23): how E7 runs for the ElevenLabs backend
+
+Reason: E7 (above) fixes its bar, its two comparisons and its catch rule, but not several choices a session needs: which
+prompts are "fresh", what "eva's current voice route" is, how seeds are set, and what a rerun replays. These are fixed
+here, before any E7 trial, and they apply to the ElevenLabs session only. The Fish session gets its own terms in a later
+amendment, before it starts. Nothing above the Amendments heading changes, and the E7 bar does not move.
+
+- **Settings frozen at a tag.** Every E7 render runs the chip archived from one tag's commit. The harness refuses any
+  other commit, and records the tag, the commit and the plugin tree.
+- **Fresh prompts.** `bench/e7/prompts.json` (sha256 recorded in the tag) holds 20 prompts for comparison a, 20 for
+  comparison b, 4 catch prompts, 4 reserve catch prompts and three 3-turn mini-sessions. None was heard in a listening
+  pilot, and none is a bench item. About a third of each comparison's prompts are plain work or information requests, so
+  the set does not reward expression by its make-up.
+- **The agent.** `claude-opus-5-5` through eva's provider, at eva's reasoning effort (high), with eva's persona file
+  (`SOUL.md`, snapshotted once and recorded by sha256) in every arm. Each cell is one real Hermes turn in which the
+  agent calls `text_to_speech`. Every user message is sent with "Reply as a voice message." appended. Voice Ava,
+  `eleven_v4`, eva's settings.
+- **Comparison a** is one authored reply from the chip arm, rendered twice with the same seed and settings: as the chip
+  sends it, and with every cue removed (the chip's tagless rendering). A reply with no cues stays a trial.
+- **Comparison b** is the chip end to end against eva's route as she runs it. Her arm has her `voice.md` in context and
+  her speech-authorship skill, with no chip plugin. It is synthesized by the same `sag` command and flags she uses. Her
+  `voice.md` is always in context here, while in use she reads it when needed. This can only make her baseline stronger.
+  The chip arm has no `voice.md`.
+- **Seeds.** One ElevenLabs seed per pair, fixed in the tag and derived from the item id, is sent with both clips of the
+  pair. ElevenLabs treats a seed as best effort.
+- **What the listener sees.** Each trial shows the user's message, without the voice-message suffix. It is the same for
+  both sides, and nothing else about the arms is shown.
+- **What the listener is asked.** For each pair: which clip "sounds more natural for the moment", or "No difference".
+  "No difference" is a tie. Each mini-session is rated 1 to 5 on "sounds like the same conversation". Every trial must
+  be rated before the page allows the lock.
+- **What the listener hears.** Every clip is loudness-matched by a static gain and re-encoded to one format, with no
+  metadata, so level and format are not tells. Clip names are opaque, sides and order are random, and the key's sha256
+  is posted on issue #10 before listening. Ratings are locked in the page before the key is read. The lock records every
+  rating, and the score is computed from that record.
+- **First usable clip counts.** A cell that yields a clip is never regenerated. A clip counts only if it decodes with a
+  measurable loudness. A cell that yields none (the turn failed, the agent did not speak, synthesis failed or gave a
+  clip that does not decode, or an integrity check failed) is recorded with its reason. An item with such a cell may be
+  retried at most twice; each retry replays every failed cell of that item. Every attempt is kept, and the report gives
+  each arm's count per reason. A credential failure stops the run. It produces no usable audio and says nothing about
+  either arm, so once the credential is fixed, the next run plays that cell again; this does not count as a retry.
+- **Several spoken calls.** If the agent speaks more than once in a turn, comparison b and the mini-sessions play the
+  calls in order, as a user would hear them. Calls that produced no audio are dropped. Comparison a needs exactly one
+  call that produced audio.
+- **Verdict.** Each comparison passes at 15 or more of 20, with ties against. E7 for ElevenLabs passes only if both
+  comparisons pass, and its claim class is `owner_accepted(n=1)`. Mini-session ratings and "sounds like acting" flags
+  are reported, with no bar.
+- **Rerun.** A void session (more than 1 catch preference) may be rerun once, at least 12 hours later. The rerun plays
+  the same 40 real pairs (the same bytes) in a new order with new sides, and 4 new catch clips from the reserve prompts,
+  matched to the first session's level. A void rerun makes E7 for ElevenLabs void. A void session's report gives only
+  the catch count, so the rerun stays blind. A rerun's report also gives the first session's attempt counts, since its
+  real clips come from that session.
