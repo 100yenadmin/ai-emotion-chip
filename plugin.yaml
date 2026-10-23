@@ -43,6 +43,11 @@ config_schema:
     default: null
     label: "ElevenLabs speed"
     description: "Optional voice speed; omitted from requests when unset."
+  eleven_seed:
+    type: int
+    default: null
+    label: "ElevenLabs seed"
+    description: "Optional unsigned 32-bit synthesis seed; omitted when unset."
   guide_mode:
     type: str
     choices: [generate, defer]

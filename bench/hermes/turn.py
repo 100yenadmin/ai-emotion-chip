@@ -460,7 +460,12 @@ def main():
     from hermes_cli.web_server_profiles import _config_profile_scope
     with _config_profile_scope(None):
         discover_plugins()
-        result = {"warm": warm, "turn": turn, "asr": asr}[args["mode"]](args)
+        if args["mode"].startswith("e7-"):
+            sys.path.insert(0, args["chip_root"])
+            from bench.e7.session import child
+            result = child(args, sys.modules[__name__])
+        else:
+            result = {"warm": warm, "turn": turn, "asr": asr}[args["mode"]](args)
     print("PROOF=" + json.dumps(result, default=str), flush=True)
     sys.stdout.flush()
     # Session-mode natives and relay threads must not hold the sandboxed process open.

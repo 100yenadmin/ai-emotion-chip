@@ -10,6 +10,12 @@
   "fish_key_file": "~/.config/fish-audio-hermes/test.env",
   "eleven_key_file": "~/.hermes/profiles/<profile>/.env",
   "eleven_voice_id": "<an ElevenLabs voice id; --voice ava only>",
+  "eva_soul": "<path to eva SOUL.md>",
+  "eva_voice": "<path to eva voice.md>",
+  "eva_skill_dir": "<path to speech-authorship skill directory>",
+  "eva_sag_wrapper": "<path to sag wrapper>",
+  "sag_binary": "<absolute path to sag>",
+  "ava_voice_id": "<Ava voice id>",
   "runs_root": "~/scratch/hermes-runs",
   "evidence_root": "~/bench-evidence/hermes-runs",
   "canaries": ["~/src", "<a worktree name that must not reach the model>"]

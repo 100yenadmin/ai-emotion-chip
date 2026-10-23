@@ -1,0 +1,75 @@
+{
+ "comparison_a": {
+  "a01": "I finally cleaned out my inbox. Zero unread for the first time in about four years.",
+  "a02": "Can you walk me through how compound interest works, quickly? I always forget.",
+  "a03": "My grandmother's recipe book turned up in a box in the attic. Her handwriting is all over the margins.",
+  "a04": "The client moved the deadline up to Friday. That's two days early and nothing's ready.",
+  "a05": "Read me back the three things I said I'd do today: email Priya, fix the login bug, and book the dentist.",
+  "a06": "You booked the restaurant for the wrong night. We showed up and they had nothing for us.",
+  "a07": "Tell me a bedtime story about a lighthouse keeper and a very polite seagull. Short.",
+  "a08": "My laptop died in the middle of the presentation. In front of everyone.",
+  "a09": "What's a good way to keep basil alive indoors? Mine always wilts.",
+  "a10": "My brother and I haven't spoken in a year, and he just texted me happy birthday.",
+  "a11": "I've got jury duty next week. No idea what to expect.",
+  "a12": "We found out we're having twins.",
+  "a13": "Quick one: convert 72 Fahrenheit to Celsius, and tell me if I need a jacket.",
+  "a14": "Read me a short poem about the first snow of the year.",
+  "a15": "Remind me how to undo my last git commit without losing the changes.",
+  "a16": "Remind me what I need to pack for a two-night work trip. Keep it simple.",
+  "a17": "I accidentally sent my boss a meme meant for my sister. She replied with a thumbs up.",
+  "a18": "Today's the anniversary of my friend Sam's death. Five years.",
+  "a19": "The code review came back with forty comments. Forty.",
+  "a20": "It's midnight and I just realised I forgot to send the invoice that was due today."
+ },
+ "comparison_b": {
+  "b01": "I just got my first paycheck from the new job. It's real now.",
+  "b02": "Can you explain what a VPN actually does, in plain words?",
+  "b03": "My best friend is moving across the country next month. I'm happy for her, but.",
+  "b04": "Read me my calendar for tomorrow: stand-up at nine, design review at eleven, gym at six.",
+  "b05": "What's the quickest way to check which process is using port 8080 on a Mac?",
+  "b06": "You told me the train left at eight. It left at seven forty. I'm on the platform watching it go.",
+  "b07": "Tell me a quick story about a dragon who's afraid of the dark.",
+  "b08": "My grandad doesn't recognise me anymore. I visited today and he asked who I was.",
+  "b09": "What's the difference between baking soda and baking powder?",
+  "b10": "I got a scholarship. A full one.",
+  "b11": "The landlord says the heating won't be fixed until next week, and it's freezing in here.",
+  "b12": "I'm nervous about my speech at the wedding tomorrow. I'm the best man.",
+  "b13": "Give me the thirty-second version of what a mortgage agreement in principle is.",
+  "b14": "Read me the opening lines of a ghost story, the properly spooky kind.",
+  "b15": "Someone got into my savings account. The bank says it'll take ten days to investigate.",
+  "b16": "Give me the two-minute version of what I need to know about taxes as a freelancer.",
+  "b17": "I tried to make bread and it came out as a brick. A literal brick.",
+  "b18": "My mentor from my first job passed away. I found out on LinkedIn, of all places.",
+  "b19": "Everyone at work forgot my birthday. It's fine. It's whatever.",
+  "b20": "It's two in the morning and I just finished the last chapter of my novel draft."
+ },
+ "catch": {
+  "c01": "What time does the sun usually set in late October?",
+  "c02": "I just adopted a cat from the shelter. She's hiding under the bed.",
+  "c03": "My flight's delayed four hours. I'm stuck at the gate.",
+  "c04": "Give me one good reason to go for a walk right now."
+ },
+ "catch_reserve": {
+  "r01": "What's a nice, easy dinner I can make with eggs and spinach?",
+  "r02": "My phone screen cracked when I dropped it this morning.",
+  "r03": "I got a really kind email from a stranger who read my blog.",
+  "r04": "Tell me something calming before I go into this meeting."
+ },
+ "mini_sessions": {
+  "m1": [
+   "Big day. I'm presenting the roadmap to the whole company at ten.",
+   "Okay, it's done. I think it went well? People asked good questions.",
+   "My manager just messaged me: great job, the CEO loved it."
+  ],
+  "m2": [
+   "I think I've lost my keys. I've checked everywhere twice.",
+   "Still nothing. I'm going to be late for work.",
+   "Found them. They were in the fridge. Don't ask."
+  ],
+  "m3": [
+   "We're finally planning the trip to Japan. Where should we even start?",
+   "Flights are booked! Two weeks in April.",
+   "Wait. My passport expires in May. Is that going to be a problem?"
+  ]
+ }
+}
