@@ -30,6 +30,18 @@ def isolated_child_environment(monkeypatch):
         monkeypatch.setenv(name, "")
 
 
+@pytest.fixture
+def scorer_clock(monkeypatch):
+    instant = [datetime(2026, 10, 22, 12, tzinfo=timezone.utc)]
+    class Clock(datetime):
+        @classmethod
+        def now(cls, tz):
+            assert tz is timezone.utc
+            return instant[0]
+    monkeypatch.setattr(scoring, "datetime", Clock)
+    return instant
+
+
 WRAPPER = '''#!/bin/sh
 set -eu
 if [ "$#" -ne 3 ]; then
@@ -118,7 +130,8 @@ def ratings_for(key, wins=15, catches=0):
         if trial["kind"] == "mini":
             doc["rating"] = 4
         docs[trial["id"]] = doc
-    docs["lock"] = {"lockedAt": "2026-10-22T12:00:00Z", "ratings": deepcopy(docs)}
+    docs["lock"] = {"collection": key["collection"], "lockedAt": "2026-10-22T12:00:00Z",
+                    "ratings": deepcopy(docs)}
     return {"docs": docs}
 
 
@@ -453,7 +466,7 @@ def test_warm_frozen_soul_voice_and_arm_config(tmp_path, monkeypatch):
             e7.warm_proof(args, driver)
 
 
-def test_rule11_rerun_gate_and_byte_identical_real_pairs_and_source_counts(built, tmp_path, monkeypatch):
+def test_rule11_rerun_gate_and_byte_identical_real_pairs_and_source_counts(built, tmp_path, monkeypatch, scorer_clock):
     _, paths, folder, bundle, key_path, first_key = built
     parent = tmp_path / "first"
     shutil.copytree(folder, parent)
@@ -481,6 +494,7 @@ def test_rule11_rerun_gate_and_byte_identical_real_pairs_and_source_counts(built
                    now=datetime(2026, 10, 23, 0, tzinfo=timezone.utc))
     assert key["collection"] != first_key["collection"]
     rerun_manifest = e7.read(new / "manifest.json")
+    assert "scored_at" not in rerun_manifest
     assert rerun_manifest["source_attempt_counts"] == manifest["attempt_counts"]
     monkeypatch.setattr(scoring.report, "prereg_check", lambda: {"matches": True})
     result = scoring.score(ratings_for(key), key, rerun_manifest)
@@ -505,7 +519,7 @@ def test_rule11_rerun_gate_and_byte_identical_real_pairs_and_source_counts(built
 
 
 @pytest.fixture
-def fix6_rerun(built, tmp_path, monkeypatch):
+def fix6_rerun(built, tmp_path, monkeypatch, scorer_clock):
     _, paths, folder, bundle, key_path, first_key = built
     parent, session = tmp_path / "first", tmp_path / "rerun"
     shutil.copytree(folder, parent)
@@ -988,6 +1002,7 @@ def real_case(tmp_path, monkeypatch):
     folder = tmp_path / "session"
     calls, joined = [], []
     serial = [0]
+    read_jsonl = run.read_jsonl
     monkeypatch.setattr(gen, "keychain_token", lambda: "offline-fixture")
     def build_home(item, *a):
         (item / "out").mkdir(parents=True)
@@ -1001,8 +1016,10 @@ def real_case(tmp_path, monkeypatch):
         dest.write_bytes(b"|".join(p.read_bytes() for p in sources))
         return True
     monkeypatch.setattr(run, "concat_clips", concat)
-    def invoke(proof, *, item="b01", arm="chip", messages=None, warm=None, rendered=None):
+    def invoke(proof, *, item="b01", arm="chip", messages=None, warm=None, rendered=None, probe_rows=None):
         serial[0] += 1
+        if probe_rows is not None:
+            monkeypatch.setattr(run, "read_jsonl", read_jsonl)
         class Host:
             def __init__(self, *a):
                 pass
@@ -1017,6 +1034,10 @@ def real_case(tmp_path, monkeypatch):
                     for clip in clips:
                         clip.write_bytes(clip.stem.encode())
                     return {"clips": [str(p) for p in clips], "cued_differs": True}
+                if probe_rows is not None:
+                    (cell / "probe.jsonl").write_text("".join(json.dumps(row) + "\n" for row in probe_rows))
+                    upstream = probe.upstream_row(json.dumps({"system": "Clean prompt", "model": run.MODEL}))
+                    (cell / "upstream.jsonl").write_text(json.dumps(upstream) + "\n")
                 rows = proof.get("sent_to_voice", []) + [r for t in proof.get("turns", []) for r in t.get("sent_to_voice", [])]
                 for row in rows:
                     if row.get("clip") and not row.get("missing_file"):
@@ -1260,7 +1281,7 @@ def test_fix1_rerun_requires_void_score_receipt_bound_to_key(built, tmp_path, mo
     shutil.copyfile(source_key, key_path)
     manifest = e7.read(source / "manifest.json")
     manifest.update(key_path=str(key_path), locked_at="2026-10-22T12:00:00Z",
-                    ratings_sha256="fixture-ratings", score={"status": "void"})
+                    scored_at="2026-10-22T12:00:00Z", ratings_sha256="fixture-ratings", score={"status": "void"})
     e7.write(parent / "manifest.json", manifest)
     if status is not None:
         e7.write(e7.score_receipt_path(key_path), {"status": status, "key_sha256": e7.sha(key_path),
@@ -1448,7 +1469,8 @@ assert.equal(lastRating.body.note, 'final note');
 assert.ok(lock.path.endsWith('/lock')); assert.equal(timers.size, 0);
 assert.equal(reads, 1);
 assert.equal(writes.filter(w => w.path.endsWith('/lock')).length, 1);
-assert.deepEqual(Object.keys(lock.body).sort(), ['lockedAt', 'ratings']);
+assert.deepEqual(Object.keys(lock.body).sort(), ['collection', 'lockedAt', 'ratings']);
+assert.equal(lock.body.collection, STORE);
 assert.deepEqual(lock.body.ratings, Object.fromEntries([...stored].filter(([id]) => id !== 'lock')));
 assert.equal(lock.body.ratings.t01.note, 'final note');
 assert.equal(lock.body.ratings.m01.rating, 3);
@@ -1741,7 +1763,7 @@ def test_fix2_rerun_requires_void_receipt_matching_locked_ratings(tmp_path, defe
     key = parent / "key.json"
     e7.write(key, {})
     manifest = {"key_path": str(key), "key_sha256": e7.sha(key), "ratings_sha256": "locked-ratings",
-                "locked_at": "2026-10-22T12:00:00Z", "score": {"status": "void"}}
+                "locked_at": "2026-10-22T12:00:00Z", "scored_at": "2026-10-22T12:00:00Z", "score": {"status": "void"}}
     receipt = {"status": "void", "key_sha256": e7.sha(key), "ratings_sha256": "locked-ratings"}
     if defect == "manifest-status":
         manifest["score"]["status"] = "pass"
@@ -2033,3 +2055,95 @@ def test_generate_refuses_before_any_attempt_without_ffmpeg(generated, tmp_path,
     with pytest.raises(RuntimeError, match="ffmpeg is required"):
         e7.generate("fixture-tag", folder, dry_run=True, paths=paths)
     assert (folder / "manifest.json").read_bytes() == before
+
+
+@pytest.mark.parametrize("case,status", [("clean", "completed"), ("canary", "integrity"), ("post_only", "integrity")])
+def test_fix7_real_cell_checks_only_request_rows(real_case, monkeypatch, case, status):
+    _, invoke, _, _ = real_case
+    monkeypatch.setattr(probe, "NEGATIVE_CANARIES", (*run.FIXED_CANARIES, "fixture"))
+    pre = probe.request_row({"api_call_count": 1,
+                             "system_prompt": "AGENTS.md" if case == "canary" else "Clean prompt"})
+    post = probe.response_row({"api_call_count": 1, "finish_reason": "stop",
+                               "usage": {"input_tokens": 10, "output_tokens": 5},
+                               "assistant_tool_call_count": 0})
+    assert "canaries" not in post
+    rows = [post] if case == "post_only" else [pre, post]
+    result = invoke({"completed": True, "sent_to_voice": [{"clip": "good.mp3"}]}, probe_rows=rows)
+    assert result["status"] == status
+
+
+@pytest.mark.parametrize("collection", ["matching", "other-session", None])
+def test_fix7_lock_collection_must_match_key(built, collection):
+    _, _, folder, _, _, key = built
+    ratings = ratings_for(key, catches=2)
+    if collection != "matching":
+        ratings["docs"]["lock"]["collection"] = collection
+        with pytest.raises(ValueError, match="collection"):
+            scoring.score(ratings, key, e7.read(folder / "manifest.json"))
+    else:
+        assert scoring.score(ratings, key, e7.read(folder / "manifest.json"))["status"] == "void"
+
+
+def test_fix7_score_records_utc_time_once(built, tmp_path, scorer_clock):
+    _, _, source, _, source_key, key = built
+    manifest, ratings = tmp_path / "manifest.json", tmp_path / "ratings.json"
+    shutil.copyfile(source / "manifest.json", manifest)
+    e7.write(ratings, ratings_for(key, catches=2))
+    scorer_clock[0] = datetime(2026, 10, 23, 12, tzinfo=timezone.utc)
+    assert scoring.score_files(ratings, source_key, manifest)["status"] == "void"
+    first = e7.read(manifest)
+    assert first["scored_at"] == "2026-10-23T12:00:00+00:00"
+    assert first["locked_at"] == ratings_for(key)["docs"]["lock"]["lockedAt"]
+    scorer_clock[0] = datetime(2026, 10, 24, 12, tzinfo=timezone.utc)
+    assert scoring.score_files(ratings, source_key, manifest)["status"] == "void"
+    assert e7.read(manifest)["scored_at"] == first["scored_at"]
+
+
+@pytest.mark.parametrize("scored_at,admitted", [(None, False), ("2026-10-23T12:00:00Z", False),
+                                               ("2026-10-23T00:00:00Z", True)])
+def test_fix7_rerun_delay_uses_scorer_time(tmp_path, scored_at, admitted):
+    parent = tmp_path / "parent"
+    parent.mkdir()
+    key = parent / "key.json"
+    e7.write(key, {})
+    manifest = {"key_path": str(key), "key_sha256": e7.sha(key), "ratings_sha256": "locked-ratings",
+                "locked_at": "2020-01-01T00:00:00Z", "score": {"status": "void"}}
+    if scored_at is not None:
+        manifest["scored_at"] = scored_at
+    e7.write(parent / "manifest.json", manifest)
+    e7.write(e7.score_receipt_path(key), {"status": "void", "key_sha256": e7.sha(key),
+                                        "ratings_sha256": manifest["ratings_sha256"]})
+    now = datetime(2026, 10, 23, 13, tzinfo=timezone.utc)
+    if admitted:
+        assert e7.rerun_admission(parent, tmp_path / "new", now) == manifest
+    else:
+        with pytest.raises(ValueError, match="scored_at|12 hours"):
+            e7.rerun_admission(parent, tmp_path / "new", now)
+        assert not (parent / "rerun.json").exists()
+
+
+def test_fix7_snapshot_preserves_interrupted_copy_before_retry(tmp_path, monkeypatch):
+    paths = fixture_paths(tmp_path / "source")
+    folder = tmp_path / "session"
+    partial = folder / "inputs.partial"
+    partial.mkdir(parents=True)
+    shutil.copyfile(paths["eva_soul"], partial / "SOUL.md")
+    previous = folder / "interrupted-snapshot-1"
+    previous.mkdir()
+    (previous / "preserved").write_text("earlier interruption")
+    original_hashes, verified = e7.input_hashes, []
+    def hashes(path):
+        assert path == partial
+        assert path.stat().st_mode & 0o777 == 0o700
+        assert not (folder / "inputs").exists()
+        result = original_hashes(path)
+        verified.append(result)
+        return result
+    monkeypatch.setattr(e7, "input_hashes", hashes)
+    result = e7.snapshot(folder, paths)
+    assert verified == [result] == [original_hashes(folder / "inputs")]
+    assert not partial.exists()
+    assert (previous / "preserved").read_text() == "earlier interruption"
+    interrupted = folder / "interrupted-snapshot-2"
+    assert [p.name for p in interrupted.iterdir()] == ["SOUL.md"]
+    assert (interrupted / "SOUL.md").read_bytes() == paths["eva_soul"].read_bytes()

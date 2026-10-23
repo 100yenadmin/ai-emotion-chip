@@ -1,5 +1,5 @@
 """E7 locked-collection scorer. Returns counts only, never notes, prompts, replies or paths."""
-from datetime import datetime
+from datetime import datetime, timezone
 import math
 from pathlib import Path
 import statistics
@@ -32,6 +32,8 @@ def score(ratings, key, manifest):
     lock = docs["lock"]
     if not isinstance(lock, dict) or not isinstance(lock.get("ratings"), dict):
         raise ValueError("lock requires a ratings object")
+    if lock.get("collection") != key["collection"]:
+        raise ValueError("lock collection identity mismatch")
     timestamp(lock.get("lockedAt"))
     live_docs, docs = docs, lock["ratings"]
     trials = key["trials"]
@@ -113,6 +115,8 @@ def score_files(ratings_path, key_path, manifest_path):
         if manifest.get("locked_at") and (manifest["locked_at"] != lock or
                                           manifest["ratings_sha256"] != sha(ratings_path)):
             raise ValueError("locked ratings changed")
+        if not manifest.get("locked_at"):
+            manifest["scored_at"] = datetime.now(timezone.utc).isoformat()
         manifest.update(locked_at=lock, ratings_sha256=sha(ratings_path), score=result)
         write(manifest_path, manifest)
     write(score_receipt_path(key_path), {"key_sha256": sha(key_path), "ratings_sha256": sha(ratings_path),

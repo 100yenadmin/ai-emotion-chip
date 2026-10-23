@@ -145,6 +145,12 @@ def input_hashes(folder):
 def snapshot(session, paths, expected=None):
     """Freeze private inputs once, comparing future callers without ever publishing contents."""
     dest = session / "inputs"
+    partial = session / "inputs.partial"
+    if partial.exists():
+        index = 1
+        while (session / f"interrupted-snapshot-{index}").exists():
+            index += 1
+        partial.rename(session / f"interrupted-snapshot-{index}")
     incoming = {name: run.tree_sha256(paths[key]) if Path(paths[key]).is_dir() else sha(paths[key])
                 for key, name in INPUTS.items()}
     if dest.exists():
@@ -152,16 +158,17 @@ def snapshot(session, paths, expected=None):
         if actual != incoming or (expected is not None and actual != expected):
             raise ValueError("different or modified eva snapshot")
         return actual
-    dest.mkdir(mode=0o700)
+    partial.mkdir(mode=0o700)
     for key, name in INPUTS.items():
         source = Path(paths[key])
         if source.is_dir():
-            shutil.copytree(source, dest / name, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+            shutil.copytree(source, partial / name, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
         else:
-            shutil.copyfile(source, dest / name)
-    actual = input_hashes(dest)
+            shutil.copyfile(source, partial / name)
+    actual = input_hashes(partial)
     if actual != incoming:
         raise ValueError("eva inputs changed during snapshot")
+    partial.rename(dest)
     return actual
 
 
@@ -452,7 +459,7 @@ def real_cell(session, item, arm, messages, seed, paths, attempt):
         return failure("integrity", proof)
     if "rc" in proof or not proof.get("completed") or proof.get("failed") or proof.get("error"):
         return failure("turn_error", proof)
-    pre = run.read_jsonl(folder / "probe.jsonl")
+    pre = [row for row in run.read_jsonl(folder / "probe.jsonl") if row.get("event") == "pre_api_request"]
     upstream = run.read_jsonl(folder / "upstream.jsonl")
     required = set(run.FIXED_CANARIES) | set(paths["canaries"])
     if (not pre or not upstream
@@ -769,9 +776,11 @@ def rerun_admission(parent, session, now=None):
         raise ValueError("score receipt ratings commitment changed")
     if scored.get("key_sha256") != source["key_sha256"] or sha(key_path) != source["key_sha256"]:
         raise ValueError("score receipt key commitment changed")
-    locked = datetime.fromisoformat(source["locked_at"].replace("Z", "+00:00"))
-    if ((now or datetime.now(timezone.utc)) - locked).total_seconds() < 12 * 3600:
-        raise ValueError("rerun requires 12 hours after first lock")
+    if not source.get("scored_at"):
+        raise ValueError("first session has no recorded scored_at")
+    scored_at = datetime.fromisoformat(source["scored_at"].replace("Z", "+00:00"))
+    if ((now or datetime.now(timezone.utc)) - scored_at).total_seconds() < 12 * 3600:
+        raise ValueError("rerun requires 12 hours after first score")
     receipt = parent / "rerun.json"
     if receipt.exists():
         if read(receipt)["session"] != str(session):
@@ -811,7 +820,7 @@ def build(session, bundle, key_path, *, rerun_of=None, now=None):
         if not (session / "manifest.json").exists():
             shutil.copytree(parent / "inputs", session / "inputs")
             manifest = {k: v for k, v in source.items() if k not in {"cells", "key_sha256", "bundle", "key_path",
-                        "bundle_path", "locked_at", "ratings_sha256", "score", "shas"}}
+                        "bundle_path", "locked_at", "scored_at", "ratings_sha256", "score", "shas"}}
             manifest.update(cells={}, rerun_of=str(parent), source_attempt_counts=source["attempt_counts"])
             write(session / "manifest.json", manifest, exclusive=True)
         # No live persona read on reruns: the same four snapshots are the only sources.

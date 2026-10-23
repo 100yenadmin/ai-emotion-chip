@@ -219,7 +219,7 @@ async function lockRatings() {
       $("#status").textContent = "Could not lock: the saved ratings differ from this page. Reload, check your ratings, then lock again.";
       return;
     }
-    await db.doc(STORE + "/lock").set({lockedAt: new Date().toISOString(), ratings});
+    await db.doc(STORE + "/lock").set({collection: STORE, lockedAt: new Date().toISOString(), ratings});
     locked = true; $("#status").textContent = "Ratings locked";
   } catch (e) { $("#status").textContent = "Could not lock. Reload and check your ratings."; }
   finally { locking = false; controls(locked || !ready); }
