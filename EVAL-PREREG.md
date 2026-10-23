@@ -464,9 +464,10 @@ except as follows.
 
   Each one adds a synthetic turn or rewrites a tool result when the model's reply matches a pattern. Check 3 rejects
   such a turn. On the `gpt-6.1-sol` route the audit estimated that the first fires in a few percent of cells or more;
-  that is not measured, because that route has not run a cell yet. They are settings identical across arms,
-  and with them off nothing adds per-turn text, which is what A4 already asked for. Hermes also reads `SOUL.md` under a
-  5-second deadline, and a miss followed by a hit adds a second copy to `S`, so that deadline is now 600 seconds.
+  that is not measured, because that route has not run a cell yet. They are settings identical across arms, and with
+  them off none of these adds per-turn text, as A4 already asked. The paths that cannot be turned off are under "The
+  stop count" below. Hermes also reads `SOUL.md` under a 5-second deadline, and a miss followed by a hit adds a second
+  copy to `S`, so that deadline is now 600 seconds.
 - **The stop count.** A4 stops a model after a second check 1–3 failure. Some Hermes recovery paths cannot be turned
   off: retries after an empty reply, the `openai-codex` continuation after an incomplete response, and Hermes' reply to
   a call of a tool that is not offered. Each is rare, arm-independent and triggered by the model. Over 684 cells per
