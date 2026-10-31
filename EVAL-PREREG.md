@@ -612,3 +612,46 @@ amendment, before it starts. Nothing above the Amendments heading changes, and t
   matched to the first session's level. A void rerun makes E7 for ElevenLabs void. A void session's report gives only
   the catch count, so the rerun stays blind. A rerun's report also gives the first session's attempt counts, since its
   real clips come from that session.
+
+### A12 (2026-10-31): the first ElevenLabs E7 session is void; a fresh session replaces it
+
+Reason: session `e7-eleven-1` (tag `e7-eleven-1`, commit b2d31a0) was generated and built on 2026-10-23, and its key's
+sha256 was posted on issue #10. On 2026-10-24 a disk cleanup on the run machine moved the session folder to the system
+Trash, and the Trash was emptied on 2026-10-30. The loss was found on 2026-10-31. The folder held the only copy of the
+key, along with the manifest and the source clips. No score was computed. The session cannot be scored, so it is void.
+
+This amendment makes three readings of the rules above, each stated here rather than left implicit. The E7 bar and every
+other term stay as they are.
+
+- **Readings of the rules.**
+  - The stop rules allow a rerun "only for an infrastructure failure ... with the failed run kept". For session
+    `e7-eleven-1` only, this amendment reads the failure to include losing its key, manifest or lock record before any
+    score is computed, and "the failed run kept" as keeping what survives of it (below).
+  - A11's "a cell that yields a clip is never regenerated" applies within one session. Session 2 regenerates every
+    cell.
+  - E7's "fresh pairs" is relaxed for a listener who heard session 1. Session 2 uses the same prompts with new renders,
+    new sides and a new order.
+- **No third generation.** If the key, manifest or lock record of session 2, or of its A11 rerun, is lost or
+  unreadable before its score is published, E7 for ElevenLabs is reported as incomplete. No further generation or rerun
+  follows under this or any later amendment, so a lost key cannot be used to choose between sessions.
+- **What is kept.** What survives of session 1 is kept in `evidence/e7-eleven-1/`: its post-generation checks (every
+  recorded input and tree hash matched; 67 of 67 cells completed on the first attempt) and its clip formats per arm. They
+  were written on 2026-10-23 by the evidence script, to a file outside the session folder. Its tag and the key commitment
+  on #10 stay as they are. The run machine's copy of the blinded bundle is gone too. The page published for listening is
+  hosted under an account the run machine can no longer reach, so whether it was rated or locked is not known here.
+- **Ratings of session 1 are excluded.** Ratings made on its page are never scored or reported. The listener never saw
+  session 1's key, manifest or source clips. The operator read only cell statuses and counts from its manifest, and
+  never opened the key or played a source clip.
+- **Session 2.** `e7-eleven-2` is tagged at this amendment's merge commit, before anything else lands on `main`.
+  The harness has not changed since b2d31a0; only this file and the session-1 record differ, and session 2's evidence
+  records `git diff --stat b2d31a0 e7-eleven-2`. It is a fresh generation under A11: the same prompts, seeds, settings
+  and retry rules. Session 1's clips are gone, so A11's rerun rule (the same bytes in a new order) cannot use them.
+  Session 2 is a first session, and A11's rerun rule applies to it as written.
+- **The session-2 report also gives:**
+  - whether the listener heard or rated session 1, and when;
+  - eva's input hashes for both sessions (`SOUL.md`, `voice.md`, the speech-authorship skill, the `sag` wrapper and
+    program). A changed hash means the eva arm is a different baseline from session 1's.
+- **Storage.** Everything needed to score, report or rerun session 2 is kept where the run machine's cleanups are set
+  to skip: its session folder (source clips and attempt records), its bundle, its key, its manifest and the exported
+  ratings. This holds until its score is published, and through any A11 rerun. The key and manifest are also kept
+  outside regenerable scratch.
