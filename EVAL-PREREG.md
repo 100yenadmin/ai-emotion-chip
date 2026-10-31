@@ -617,22 +617,38 @@ amendment, before it starts. Nothing above the Amendments heading changes, and t
 
 Reason: session `e7-eleven-1` (tag `e7-eleven-1`, commit b2d31a0) was generated and built on 2026-10-23, and its key's
 sha256 was posted on issue #10. On 2026-10-24 a disk cleanup on the run machine moved the session folder to the system
-Trash, and the Trash was emptied on 2026-10-30. The folder held the only copy of the key, along with the manifest and the
-source clips. The key was never opened and no rating was scored. The session cannot be scored, so it is void as an
-infrastructure failure under the stop rules. Nothing above the Amendments heading changes, the E7 bar does not move, and
-A11 applies unchanged except as stated here.
+Trash, and the Trash was emptied on 2026-10-30. The loss was found on 2026-10-31. The folder held the only copy of the
+key, along with the manifest and the source clips. No score was computed. The session cannot be scored, so it is void.
 
+This amendment makes three readings of the rules above, each stated here rather than left implicit. The E7 bar and every
+other term stay as they are.
+
+- **Readings of the rules.**
+  - The stop rules allow a rerun "only for an infrastructure failure". This amendment reads that to include losing the
+    key, the manifest or the lock record before any score is computed.
+  - A11's "a cell that yields a clip is never regenerated" applies within one session. Session 2 regenerates every
+    cell.
+  - E7's "fresh pairs" is relaxed for a listener who heard session 1. Session 2 uses the same prompts with new renders,
+    new sides and a new order.
+- **No third generation.** If session 2's key, manifest or lock record is lost or unreadable before its score is
+  published, E7 for ElevenLabs is reported as incomplete. No further generation is made under this or any later
+  amendment, so a lost key cannot be used to choose between sessions.
 - **What is kept.** What survives of session 1 is kept in `evidence/e7-eleven-1/`: its post-generation checks (every
-  recorded input and tree hash matched; 67 of 67 cells completed on the first attempt) and its clip formats per arm.
-  Its tag and the key commitment on #10 stay as they are.
-- **Ratings of session 1 are excluded.** Ratings made on its page are never scored or reported, because without the key
-  they say nothing about the arms. If the listener heard session 1, its prompts are not new to them in session 2. They
-  are still blind: no key was read, and session 2 draws new sides and a new order. The session-2 report says whether
-  the listener heard session 1.
-- **Session 2.** `e7-eleven-2` is tagged at this amendment's merge commit. The harness has not changed since b2d31a0;
-  only this file and the session-1 record differ. It is a fresh generation under A11: the same prompts, seeds, settings
-  and retry rules. eva's inputs are snapshotted again at its start and recorded by sha256, and the report gives both
-  sessions' hashes. Session 1's clips are gone, so A11's rerun rule (the same bytes in a new order) cannot use them.
+  recorded input and tree hash matched; 67 of 67 cells completed on the first attempt) and its clip formats per arm. They
+  were written on 2026-10-23 by the evidence script, to a file outside the session folder. Its tag and the key commitment
+  on #10 stay as they are. The run machine's copy of the blinded bundle is gone too. The page published for listening is
+  hosted under an account the run machine can no longer reach, so whether it was rated or locked is not known here.
+- **Ratings of session 1 are excluded.** Ratings made on its page are never scored or reported. The listener never saw
+  session 1's key, manifest or source clips. The operator read only cell statuses and counts from its manifest, and
+  never opened the key or played a source clip.
+- **Session 2.** `e7-eleven-2` is tagged at this amendment's merge commit, before anything else lands on the branch.
+  The harness has not changed since b2d31a0; only this file and the session-1 record differ, and session 2's evidence
+  records `git diff --stat b2d31a0 e7-eleven-2`. It is a fresh generation under A11: the same prompts, seeds, settings
+  and retry rules. Session 1's clips are gone, so A11's rerun rule (the same bytes in a new order) cannot use them.
   Session 2 is a first session, and A11's rerun rule applies to it as written.
-- **Storage.** Session 2's key and manifest are kept outside the run machine's regenerable scratch, where cleanups do
-  not reach, until its score is published.
+- **The session-2 report also gives:**
+  - whether the listener heard or rated session 1, and when;
+  - eva's input hashes for both sessions (`SOUL.md`, `voice.md`, the speech-authorship skill, the `sag` wrapper and
+    program). A changed hash means the eva arm is a different baseline from session 1's.
+- **Storage.** Session 2's key and manifest are kept outside the run machine's regenerable scratch, in a location its
+  cleanups are set to skip, until its score is published.
