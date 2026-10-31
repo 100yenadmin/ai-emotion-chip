@@ -624,15 +624,15 @@ This amendment makes three readings of the rules above, each stated here rather 
 other term stay as they are.
 
 - **Readings of the rules.**
-  - The stop rules allow a rerun "only for an infrastructure failure". This amendment reads that to include losing the
-    key, the manifest or the lock record before any score is computed.
+  - The stop rules allow a rerun "only for an infrastructure failure". For session `e7-eleven-1` only, this amendment reads
+    that to include losing its key, manifest or lock record before any score is computed.
   - A11's "a cell that yields a clip is never regenerated" applies within one session. Session 2 regenerates every
     cell.
   - E7's "fresh pairs" is relaxed for a listener who heard session 1. Session 2 uses the same prompts with new renders,
     new sides and a new order.
-- **No third generation.** If session 2's key, manifest or lock record is lost or unreadable before its score is
-  published, E7 for ElevenLabs is reported as incomplete. No further generation is made under this or any later
-  amendment, so a lost key cannot be used to choose between sessions.
+- **No third generation.** If the key, manifest or lock record of session 2, or of its A11 rerun, is lost or
+  unreadable before its score is published, E7 for ElevenLabs is reported as incomplete. No further generation or rerun
+  follows under this or any later amendment, so a lost key cannot be used to choose between sessions.
 - **What is kept.** What survives of session 1 is kept in `evidence/e7-eleven-1/`: its post-generation checks (every
   recorded input and tree hash matched; 67 of 67 cells completed on the first attempt) and its clip formats per arm. They
   were written on 2026-10-23 by the evidence script, to a file outside the session folder. Its tag and the key commitment
@@ -641,7 +641,7 @@ other term stay as they are.
 - **Ratings of session 1 are excluded.** Ratings made on its page are never scored or reported. The listener never saw
   session 1's key, manifest or source clips. The operator read only cell statuses and counts from its manifest, and
   never opened the key or played a source clip.
-- **Session 2.** `e7-eleven-2` is tagged at this amendment's merge commit, before anything else lands on the branch.
+- **Session 2.** `e7-eleven-2` is tagged at this amendment's merge commit, before anything else lands on `main`.
   The harness has not changed since b2d31a0; only this file and the session-1 record differ, and session 2's evidence
   records `git diff --stat b2d31a0 e7-eleven-2`. It is a fresh generation under A11: the same prompts, seeds, settings
   and retry rules. Session 1's clips are gone, so A11's rerun rule (the same bytes in a new order) cannot use them.
