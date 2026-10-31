@@ -11,7 +11,8 @@ A12). It was never scored. Session `e7-eleven-2` replaces it.
   20 comparison b, 2 catch, 3 mini-sessions), and the eva arm 22 (20 comparison b, 2 catch).
 - After generation, every recorded hash was recomputed and matched (`session-checks.json`). The hashes cover the Hermes
   source tree, the provider copy and its source, the probe plugin, the archived chip plugin, eva's snapshotted inputs and
-  the `sag` program. Every clip was MP3: chip 71, eva 22.
+  the `sag` program. Every source clip was MP3: chip 71, eva 22, so 93 in all. Each of the 4 catch pairs plays one
+  source clip on both sides, so the bundle held 97 clips.
 - `session-checks.json` was written on 2026-10-23 by the operator's evidence script, to a file outside the session
   folder, so it survived. It holds counts and booleans only. Its `fish_audio` field records the fish-audio plugin
   version, because every Hermes test home installs it (the chip's Fish backend wraps it), including on ElevenLabs runs.

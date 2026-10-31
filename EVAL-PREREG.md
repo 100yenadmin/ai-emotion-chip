@@ -624,8 +624,9 @@ This amendment makes three readings of the rules above, each stated here rather 
 other term stay as they are.
 
 - **Readings of the rules.**
-  - The stop rules allow a rerun "only for an infrastructure failure". For session `e7-eleven-1` only, this amendment reads
-    that to include losing its key, manifest or lock record before any score is computed.
+  - The stop rules allow a rerun "only for an infrastructure failure ... with the failed run kept". For session
+    `e7-eleven-1` only, this amendment reads the failure to include losing its key, manifest or lock record before any
+    score is computed, and "the failed run kept" as keeping what survives of it (below).
   - A11's "a cell that yields a clip is never regenerated" applies within one session. Session 2 regenerates every
     cell.
   - E7's "fresh pairs" is relaxed for a listener who heard session 1. Session 2 uses the same prompts with new renders,
@@ -650,5 +651,7 @@ other term stay as they are.
   - whether the listener heard or rated session 1, and when;
   - eva's input hashes for both sessions (`SOUL.md`, `voice.md`, the speech-authorship skill, the `sag` wrapper and
     program). A changed hash means the eva arm is a different baseline from session 1's.
-- **Storage.** Session 2's key and manifest are kept outside the run machine's regenerable scratch, in a location its
-  cleanups are set to skip, until its score is published.
+- **Storage.** Everything needed to score, report or rerun session 2 is kept where the run machine's cleanups are set
+  to skip: its session folder (source clips and attempt records), its bundle, its key, its manifest and the exported
+  ratings. This holds until its score is published, and through any A11 rerun. The key and manifest are also kept
+  outside regenerable scratch.
