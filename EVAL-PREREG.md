@@ -612,3 +612,27 @@ amendment, before it starts. Nothing above the Amendments heading changes, and t
   matched to the first session's level. A void rerun makes E7 for ElevenLabs void. A void session's report gives only
   the catch count, so the rerun stays blind. A rerun's report also gives the first session's attempt counts, since its
   real clips come from that session.
+
+### A12 (2026-10-31): the first ElevenLabs E7 session is void; a fresh session replaces it
+
+Reason: session `e7-eleven-1` (tag `e7-eleven-1`, commit b2d31a0) was generated and built on 2026-10-23, and its key's
+sha256 was posted on issue #10. On 2026-10-24 a disk cleanup on the run machine moved the session folder to the system
+Trash, and the Trash was emptied on 2026-10-30. The folder held the only copy of the key, along with the manifest and the
+source clips. The key was never opened and no rating was scored. The session cannot be scored, so it is void as an
+infrastructure failure under the stop rules. Nothing above the Amendments heading changes, the E7 bar does not move, and
+A11 applies unchanged except as stated here.
+
+- **What is kept.** What survives of session 1 is kept in `evidence/e7-eleven-1/`: its post-generation checks (every
+  recorded input and tree hash matched; 67 of 67 cells completed on the first attempt) and its clip formats per arm.
+  Its tag and the key commitment on #10 stay as they are.
+- **Ratings of session 1 are excluded.** Ratings made on its page are never scored or reported, because without the key
+  they say nothing about the arms. If the listener heard session 1, its prompts are not new to them in session 2. They
+  are still blind: no key was read, and session 2 draws new sides and a new order. The session-2 report says whether
+  the listener heard session 1.
+- **Session 2.** `e7-eleven-2` is tagged at this amendment's merge commit. The harness has not changed since b2d31a0;
+  only this file and the session-1 record differ. It is a fresh generation under A11: the same prompts, seeds, settings
+  and retry rules. eva's inputs are snapshotted again at its start and recorded by sha256, and the report gives both
+  sessions' hashes. Session 1's clips are gone, so A11's rerun rule (the same bytes in a new order) cannot use them.
+  Session 2 is a first session, and A11's rerun rule applies to it as written.
+- **Storage.** Session 2's key and manifest are kept outside the run machine's regenerable scratch, where cleanups do
+  not reach, until its score is published.

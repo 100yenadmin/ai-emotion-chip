@@ -1,0 +1,45 @@
+{
+ "checks": {
+  "sag_sha256": true,
+  "hermes_tree": true,
+  "provider_source_tree": true,
+  "provider_tree": true,
+  "bench_probe_tree": true,
+  "plugin_tree": true,
+  "inputs": true,
+  "chip_commit_is_tag": true
+ },
+ "all_match": true,
+ "fish_audio": "v1.8.0 f7ae982e3bd44c8ed3c2489c887850fbb3c2c702",
+ "hermes": "upstream v0.22.2 d923a5eb (acceptance cache)",
+ "commit": "b2d31a0c291324e2a10cd12df2fc1ec818203b19",
+ "tag": "e7-eleven-1",
+ "attempt_counts": {
+  "chip": {
+   "completed": 45,
+   "credential": 0,
+   "error": 0,
+   "integrity": 0,
+   "synthesis_failed": 0,
+   "turn_error": 0,
+   "unvoiced": 0
+  },
+  "eva": {
+   "completed": 22,
+   "credential": 0,
+   "error": 0,
+   "integrity": 0,
+   "synthesis_failed": 0,
+   "turn_error": 0,
+   "unvoiced": 0
+  }
+ },
+ "source_formats_per_arm": {
+  "chip": {
+   "mp3/mp3": 71
+  },
+  "eva": {
+   "mp3/mp3": 22
+  }
+ }
+}
