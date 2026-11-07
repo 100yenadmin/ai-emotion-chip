@@ -113,9 +113,11 @@ On the chip's own provider path `/chip why` shows every drop and why, and the de
 - **Prompt and skill.** With `guide_mode: generate` (the default) the plugin registers the `emotion-chip-voice`
   skill, and while the chip is the speech provider it also adds a delivery guide of up to 4,000 characters to the
   system prompt. With `generate`, when another speech provider is selected, its `tool_request` middleware rewrites
-  `text_to_speech` text that carries cues for that provider: Fish Audio's dialect for `fish-audio`, the ElevenLabs dialect for
-  `elevenlabs` with a v3 or v4 model, and plain text with the cues removed for any other provider. A command provider
-  (your own script) is left alone. This compatibility path records nothing in `/chip why` or the delivery log.
+  `text_to_speech` text that carries cues for that provider: Fish Audio's dialect for `fish-audio` and the ElevenLabs
+  dialect for `elevenlabs` with a v3 or v4 model. Any other provider, including Hermes's default Edge and ElevenLabs on
+  older models, gets plain text with every bracketed span removed, because the score treats brackets as cues: a
+  `[Step 2]` goes too. A command provider (your own script) is left alone. This compatibility path records nothing in
+  `/chip why` or the delivery log.
 - **Local files.** Under the profile's `plugin-data/emotion-chip/`: the generated skill and, unless `delivery_log` is
   off, `delivery.jsonl` (time, session id, sender id, platform, model, dialect, rendering group, cue words,
   parameters, kinds of drops and character count, never the spoken text). At 5 MB the log moves to

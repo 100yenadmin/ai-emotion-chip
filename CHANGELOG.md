@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Docs: the plugin README says that, with another speech provider selected, every bracketed span is removed,
+  not only cues.
+
 ## 0.1.0 — 2026-11-08
 
 First release.
