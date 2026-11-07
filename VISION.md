@@ -4,7 +4,7 @@
 
 AI Emotion Chip is where we work on that, starting with Hermes Emotion Chip, a plugin for
 [Hermes Agent](https://github.com/NousResearch/hermes-agent). This page says why the project exists, what we believe,
-where it stands in October 2026, and where we want it to go.
+where it stands in November 2026, and where we want it to go.
 
 ## Why this exists
 
@@ -43,7 +43,7 @@ its own, grounded in what happened, and audibly realised, without a persona laid
 7. **One score, every voice.** The agent writes one small bracket score. Each vendor gets it in its own dialect, at
    that vendor's documented ceiling.
 
-## Where we are (October 2026, pre-release)
+## Where we are (November 2026, release 0.1.0)
 
 **Built:**
 - The score language and its renderers: Fish Audio S2, Fish Drama 3 and ElevenLabs v4.

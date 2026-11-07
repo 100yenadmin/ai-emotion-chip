@@ -284,7 +284,8 @@ def test_golden_coverage():
     assert len(GOLDENS) >= 40
     for situation in ("failed-deploy", "criticism", "grief", "breakthrough", "safety"):
         assert sum(c["name"].startswith(situation+"-") for c in GOLDENS) == 3
-    assert __version__ == "0.1.0.dev0"
+    manifest = yaml.safe_load((Path(__file__).parents[1] / "plugin" / "plugin.yaml").read_text())
+    assert __version__ == manifest["version"] == "0.1.0"
 
 
 def test_literal_cue_and_unmatched_non_crossing_span(data):
