@@ -12,7 +12,8 @@ Hermes Emotion Chip (repo: AI Emotion Chip) is a Hermes Agent plugin that lets t
 - `plugin/plugin.yaml`, `plugin/__init__.py`: Hermes manifest and `register(ctx)`.
 - `plugin/emotion_chip/`: score parser, renderers per vendor dialect, policy, provider, hooks.
 - `plugin/emotion_chip/data/`: CC0 emotion concepts, rendering groups, sounds, dialect tables, model notes.
-- `tests/`: unit tests and render goldens. `bench/`: paid benches (listening, ASR leak, acoustic probe).
+- `tests/`: unit tests and render goldens. `bench/`: paid benches (listening, ASR leak, acoustic probe). Importing
+  `bench` puts `plugin/` on `sys.path`, so bench entry points import `emotion_chip` without `PYTHONPATH`.
 - `EVAL-PREREG.md`: pre-registered evaluation bars; frozen by git tag.
 - `evidence/`: published evaluation results.
 
