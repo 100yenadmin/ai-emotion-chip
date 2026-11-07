@@ -20,6 +20,6 @@ First release.
 - **Optional situation facts** (`signals`): dated task facts such as errors in a row and retries. Off by default.
 - **Delivery log.** Local metadata without the spoken text; it can be turned off.
 - **CC0 emotion data.** 171 concepts with attribution, rendering groups, sounds and dialect tables.
-- **Evaluation.** Pre-registered bars in `EVAL-PREREG.md`; the scope-A3 run 3 evidence passed (#26).
+- **Evaluation.** Pre-registered bars in `EVAL-PREREG.md`; scope A3 run 3 passed its mechanical gate (#26).
 - **Hermes compatibility.** Requires Hermes 0.22.2 or newer; tested on 0.23.0 (#29). The ElevenLabs key is read
   through the profile's secret scope (#30). The installable plugin lives in `plugin/` (#31).

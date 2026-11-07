@@ -144,6 +144,8 @@ next.
 - Cues can shape the agent's words as well as its voice. We measure that with sycophancy and harshness checks; see the
   pre-registration.
 - Synthesis calls are paid requests to ElevenLabs or Fish Audio, billed to your accounts.
+- The plugin adds no safety behaviour of its own. In emotional-support conversations the agent's judgment and the
+  model's safeguards apply unchanged; the chip only renders the delivery the agent wrote.
 
 ## License
 
