@@ -43,7 +43,7 @@ Then make the Emotion Chip the speech provider and pick a backend.
 ### Fish Audio
 
 Install, enable and sign in to the [Fish Audio plugin](https://github.com/100yenadmin/fish-audio-hermes)
-(`hermes plugins install fish-audio --enable`, then `hermes fish doctor`). The chip hands Fish the rendered text in
+(`hermes plugins install fish-audio --enable`, then `hermes fish login` and `hermes fish doctor`). The chip hands Fish the rendered text in
 the same process, so Fish's key, voice and model settings stay where they are:
 
 ```yaml
