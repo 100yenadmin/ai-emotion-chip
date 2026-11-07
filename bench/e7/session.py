@@ -14,6 +14,7 @@ import secrets
 import shlex
 import shutil
 import subprocess
+import sys
 import tempfile
 from datetime import datetime, timezone
 
@@ -332,6 +333,13 @@ def render_pair(score, recorded, render):
     return cued, stripped
 
 
+def plugin_on_path():
+    """The archived commit keeps the plugin's package under plugin/; make emotion_chip importable from it."""
+    root = str(Path(__file__).resolve().parents[2] / "plugin")
+    if root not in sys.path:
+        sys.path.insert(0, root)
+
+
 def child(args, driver):
     """NEW turn.py modes. This code is imported from the archived tagged chip, never the live checkout."""
     os.environ["BENCH_PROBE_EXCLUDE_FILES"] = json.dumps([str(Path(args["inputs"]) / name)
@@ -348,6 +356,7 @@ def child(args, driver):
         if args["mode"] == "e7-warm":
             return warm_proof(args, driver)
         if args["mode"] == "e7-render":
+            plugin_on_path()
             from emotion_chip.hermes.eleven import ElevenClient
             from emotion_chip.render import render
             cued, stripped = render_pair(args["score"], args["recorded"], render)

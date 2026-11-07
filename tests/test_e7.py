@@ -2343,3 +2343,15 @@ def test_child_imports_bench_code_from_the_whole_tagged_commit(generated, monkey
     host = e7.E7Host.__new__(e7.E7Host)
     host.run, host.paths = session, paths
     assert host.call("item", {"mode": "e7-turn"})["chip_root"] == str(session / "src/chip-repo")
+
+
+def test_archived_commit_imports_plugin_from_its_own_tree(tmp_path):
+    # The E7 child runs with only chip_root (the whole archived commit) on its path.
+    root = tmp_path / "chip-repo"
+    for name in ("bench", "plugin"):
+        shutil.copytree(e7.ROOT / name, root / name, ignore=shutil.ignore_patterns("__pycache__"))
+    code = ("import sys; sys.path.insert(0, sys.argv[1]); from bench.e7.session import plugin_on_path; "
+            "plugin_on_path(); import emotion_chip.render, emotion_chip.hermes.eleven; print(emotion_chip.render.__file__)")
+    result = subprocess.run([sys.executable, "-I", "-c", code, str(root)], capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip().startswith(str(root / "plugin" / "emotion_chip"))
