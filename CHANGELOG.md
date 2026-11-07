@@ -2,8 +2,10 @@
 
 ## Unreleased
 
-- Docs: the plugin README says that, with another speech provider selected, standalone bracketed words are removed
-  as cues, recognised or not, while spans keep their words and numeric references and code stay.
+- Docs: the plugin README states exactly what the compatibility path does when another speech provider is selected
+  (with `guide_mode: generate`). Fish S2 and Drama 3 and ElevenLabs v3/v4 get their dialects. Other providers and
+  models, Fish S1 included, get plain text: standalone bracketed words are removed as cues, recognised or not, while
+  spans keep their words and numeric references and code stay. Command providers are left alone.
 
 ## 0.1.0 — 2026-11-08
 
