@@ -95,7 +95,7 @@ def sandbox_profile(workspace, root, hidden=()):
     return ('(version 1)\n(allow default)\n(deny file-write*)\n'
             f'(allow file-write* {writable} (literal "/dev/null"))\n'
             f'(deny file-read-data {denied})\n'
-            f'(allow file-read-data (subpath {q(ep)}) (literal {q(ROOT)}) (subpath {q(ROOT / "emotion_chip")}) (literal {q(HOOK)}))\n')
+            f'(allow file-read-data (subpath {q(ep)}) (literal {q(ROOT)}) (literal {q(ROOT / "plugin")}) (subpath {q(ROOT / "plugin" / "emotion_chip")}) (literal {q(HOOK)}))\n')
 
 
 def load_auth(runner):

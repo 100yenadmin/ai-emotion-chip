@@ -558,7 +558,7 @@ def generate(tag, session, *, dry_run=False, paths=None, retry=None, reason=None
             for path in partial:
                 path.rename(interrupted / path.name)
         if dry_run:
-            run.archive(paths["chip_repo"], commit, session / "src/emotion-chip")
+            run.archive_plugin(paths["chip_repo"], commit, session / "src/emotion-chip")
             shas = {}
         else:
             shas = run.prepare(session, "", paths, ref=commit)

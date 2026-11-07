@@ -1,4 +1,4 @@
-Data in emotion_chip/data/ is dedicated to the public domain under CC0 1.0 Universal (full text below).
+Data in plugin/emotion_chip/data/ is dedicated to the public domain under CC0 1.0 Universal (full text below).
 
 Attribution (requested, not required by CC0):
 - The emotion concept words and the `paper_cluster` and `post_training_delta` fields are factual annotations

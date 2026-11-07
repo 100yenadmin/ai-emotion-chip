@@ -523,6 +523,11 @@ def archive(repo, ref, dest):
             raise SystemExit(f"git archive {repo} {ref} failed")
 
 
+def archive_plugin(repo, ref, dest):
+    """The installable plugin is the plugin/ subtree of the chip repository."""
+    archive(repo, f"{ref}:plugin", dest)
+
+
 def rev(repo, ref):
     return subprocess.run(["git", "-C", str(repo), "rev-parse", ref + "^{commit}"], capture_output=True, text=True,
                           check=True).stdout.strip()
@@ -548,7 +553,7 @@ def prepare(run, fish_key, paths, eleven_key=None, ref=CHIP_REF):
     # Resolve each ref once and archive that commit, so a branch that moves mid-prepare cannot split sha and tree.
     fish_sha, chip_sha = rev(paths["fish_repo"], FISH_REF), rev(paths["chip_repo"], ref)
     archive(paths["fish_repo"], fish_sha, run / "src/fish-audio")
-    archive(paths["chip_repo"], chip_sha, run / "src/emotion-chip")
+    archive_plugin(paths["chip_repo"], chip_sha, run / "src/emotion-chip")
     shutil.copytree(paths["provider_src"], run / "src" / PROVIDER, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
     shutil.copytree(HERE / "bench_probe", run / "src/bench-probe", ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
     # The label is the operator's description; the tree digest pins the Hermes source files the cells ran.

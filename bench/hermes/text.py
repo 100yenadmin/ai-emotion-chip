@@ -313,7 +313,7 @@ class Harness:
         for name in ("turn.py", "bench_probe/probe.py"):
             shutil.copyfile(host.HERE / name, self.run / "tools" / Path(name).name)
         chip = host.rev(self.paths["chip_repo"], host.CHIP_REF)
-        host.archive(self.paths["chip_repo"], chip, self.run / "src/emotion-chip")
+        host.archive_plugin(self.paths["chip_repo"], chip, self.run / "src/emotion-chip")
         for name, source in ((host.PROVIDER, self.paths["provider_src"]), ("bench-probe", host.HERE / "bench_probe")):
             shutil.copytree(source, self.run / "src" / name, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
         guidance = self.run / "src/bench-guidance"

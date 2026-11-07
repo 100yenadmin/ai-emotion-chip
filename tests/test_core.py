@@ -3,6 +3,7 @@ from dataclasses import replace
 import importlib
 import io
 import json
+import os
 from pathlib import Path
 import re
 import shutil
@@ -271,9 +272,11 @@ def test_cli(monkeypatch, capsys, data):
 
 
 def test_cli_module_validation(tmp_path):
-    result = subprocess.run([sys.executable,"-m","emotion_chip","validate-data","--path",str(FIXTURES)],capture_output=True,text=True)
+    # pytest.ini pythonpath does not reach a subprocess: point it at the plugin directory explicitly.
+    env = dict(os.environ, PYTHONPATH=str(Path(__file__).parents[1] / "plugin"))
+    result = subprocess.run([sys.executable,"-m","emotion_chip","validate-data","--path",str(FIXTURES)],capture_output=True,text=True,env=env)
     assert result.returncode == 0 and result.stdout == "data valid\n"
-    result = subprocess.run([sys.executable,"-m","emotion_chip","validate-data","--path",str(tmp_path)],capture_output=True,text=True)
+    result = subprocess.run([sys.executable,"-m","emotion_chip","validate-data","--path",str(tmp_path)],capture_output=True,text=True,env=env)
     assert result.returncode == 1 and "Cannot load" in result.stderr
 
 
