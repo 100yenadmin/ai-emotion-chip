@@ -81,7 +81,7 @@ The agent writes the score in the text of its `text_to_speech` call:
 
 The plugin translates the syntax for the selected backend: ElevenLabs tags, Fish S2 tags, or Drama 3's paired tags.
 Everything the agent writes is kept, crying, sobbing and screaming included, unless the model cannot perform it.
-On the chip's own provider path every change is recorded in `/chip why` and the delivery log.
+On the chip's own provider path `/chip why` shows every drop and why, and the delivery log keeps the kind of each drop.
 
 | Command | What it does |
 |---|---|
@@ -112,8 +112,8 @@ On the chip's own provider path every change is recorded in `/chip why` and the 
   credentials.
 - **Prompt and skill.** With `guide_mode: generate` (the default) the plugin registers the `emotion-chip-voice`
   skill, and while the chip is the speech provider it also adds a delivery guide of up to 4,000 characters to the
-  system prompt. When another speech provider is selected, its `tool_request` middleware rewrites `text_to_speech`
-  text that contains a `[` for that provider: Fish Audio's dialect for `fish-audio`, the ElevenLabs dialect for
+  system prompt. With `generate`, when another speech provider is selected, its `tool_request` middleware rewrites
+  `text_to_speech` text that carries cues for that provider: Fish Audio's dialect for `fish-audio`, the ElevenLabs dialect for
   `elevenlabs` with a v3 or v4 model, and plain text with the cues removed for any other provider. A command provider
   (your own script) is left alone. This compatibility path records nothing in `/chip why` or the delivery log.
 - **Local files.** Under the profile's `plugin-data/emotion-chip/`: the generated skill and, unless `delivery_log` is
