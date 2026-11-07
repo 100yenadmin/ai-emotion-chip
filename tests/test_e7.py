@@ -93,7 +93,7 @@ def generated(tmp_path_factory):
     with pytest.MonkeyPatch.context() as patch:
         patch.setattr(e7, "frozen_tag", lambda tag, repo: "fixture-commit")
         def archive(repo, ref, dest):
-            assert ref == "fixture-commit:plugin"
+            assert ref in ("fixture-commit:plugin", "fixture-commit")
             dest.mkdir(parents=True)
             (dest / "archived.txt").write_text(ref)
         patch.setattr(run, "archive", archive)
@@ -2332,3 +2332,14 @@ def test_fix9_rerun_recovers_interrupted_input_copy(fix6_rerun, monkeypatch, lef
     preserved = [(session / f"interrupted-snapshot-{i}" / "keep").read_text()
                  for i in range(2, len(leftovers) + 2)]
     assert set(preserved) == set(leftovers)
+
+
+def test_child_imports_bench_code_from_the_whole_tagged_commit(generated, monkeypatch):
+    _, paths, session = generated
+    # The plugin tree Hermes installs is only plugin/; the child's bench code comes from the full commit.
+    assert (session / "src/emotion-chip/archived.txt").read_text() == "fixture-commit:plugin"
+    assert (session / "src/chip-repo/archived.txt").read_text() == "fixture-commit"
+    monkeypatch.setattr(run.Host, "call", lambda self, item, args_obj, token=None, timeout=900: args_obj)
+    host = e7.E7Host.__new__(e7.E7Host)
+    host.run, host.paths = session, paths
+    assert host.call("item", {"mode": "e7-turn"})["chip_root"] == str(session / "src/chip-repo")

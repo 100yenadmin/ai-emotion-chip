@@ -232,7 +232,7 @@ def build_home(item, arm, session, paths, seed):
 class E7Host(run.Host):
     """Reuse Host.call's sandbox and empty child_env; provision credentials only inside its child."""
     def call(self, item, args_obj, token=None, timeout=900):
-        args_obj = dict(args_obj, chip_root=str(self.run / "src/emotion-chip"),
+        args_obj = dict(args_obj, chip_root=str(self.run / "src/chip-repo"),
                         inputs=str(self.run / "inputs"), key_file=str(self.paths["eleven_key_file"]))
         return super().call(item, args_obj, token=token, timeout=timeout)
 
@@ -562,6 +562,8 @@ def generate(tag, session, *, dry_run=False, paths=None, retry=None, reason=None
             shas = {}
         else:
             shas = run.prepare(session, "", paths, ref=commit)
+        # The child imports its bench code from the whole tagged commit; src/emotion-chip holds only the plugin.
+        run.archive(paths["chip_repo"], commit, session / "src/chip-repo")
         write(prepared, shas)
     manifest["shas"] = read(prepared)
     plugin_tree = run.tree_sha256(session / "src/emotion-chip")
