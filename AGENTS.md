@@ -4,7 +4,7 @@ Guidance for AI coding agents, and for people, working in this repository.
 
 ## What this is
 
-Hermes Emotion Chip (repo: AI Emotion Chip) is a Hermes Agent plugin that lets the agent write its own delivery cues (a small bracket score) into the text it speaks, and renders that score for Fish Audio and ElevenLabs. It renders the delivery the agent chose; it measures nothing about feelings. The emotion data in `emotion_chip/data/` is CC0 research data with attribution.
+Hermes Emotion Chip (repo: AI Emotion Chip) is a Hermes Agent plugin that lets the agent write its own delivery cues (a small bracket score) into the text it speaks, and renders that score for Fish Audio and ElevenLabs. It renders the delivery the agent chose; it measures nothing about feelings. The emotion data in `plugin/emotion_chip/data/` is CC0 research data with attribution.
 
 ## Layout
 
