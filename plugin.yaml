@@ -5,6 +5,11 @@ kind: standalone
 manifest_version: 2
 api_version: 1
 requires_hermes: ">=0.22.2"
+optional_env:
+  - name: ELEVENLABS_API_KEY
+    description: "ElevenLabs API key, needed only with backend: eleven."
+    url: https://elevenlabs.io/app/settings/api-keys
+    secret: true
 license: Apache-2.0
 homepage: https://github.com/100yenadmin/ai-emotion-chip
 provides_hooks: [pre_llm_call, post_tool_call, api_request_error, on_session_start, on_session_end, transform_tool_result]
