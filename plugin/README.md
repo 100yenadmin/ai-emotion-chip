@@ -18,7 +18,8 @@ plain speech is always a valid choice.
 Requires Hermes 0.22.2 or newer.
 
 ```bash
-hermes plugins install emotion-chip --enable
+hermes plugins install emotion-chip --enable                         # from the Hermes plugin catalog, once listed
+hermes plugins install 100yenadmin/ai-emotion-chip/plugin --enable   # straight from the repository
 ```
 
 Then make the Emotion Chip the speech provider and pick a backend.
@@ -79,8 +80,8 @@ The agent writes the score in the text of its `text_to_speech` call:
 ```
 
 The plugin translates the syntax for the selected backend: ElevenLabs tags, Fish S2 tags, or Drama 3's paired tags.
-Everything the agent writes is kept, crying, sobbing and screaming included, unless the model cannot perform it, and
-every change is recorded.
+Everything the agent writes is kept, crying, sobbing and screaming included, unless the model cannot perform it.
+On the chip's own provider path every change is recorded in `/chip why` and the delivery log.
 
 | Command | What it does |
 |---|---|
@@ -109,14 +110,19 @@ every change is recorded.
   speech-provider registry to reach it and imports its tag adapter.
 - **Credentials.** The ElevenLabs key is read at each call through the profile's secret scope. The plugin stores no
   credentials.
-- **Prompt.** While the chip is the speech provider and `guide_mode` is `generate`, it adds a delivery guide of up to
-  4,000 characters to the system prompt and registers the `emotion-chip-voice` skill. Its `tool_request` middleware
-  renders the text of `text_to_speech` calls when Fish Audio or ElevenLabs is the provider instead.
-- **Local files.** Only under the profile's `plugin-data/emotion-chip/`: the generated skill, per-session state (task
-  counters, the messaging sender id and platform, the last register line, the quiet switch; the 50 most recent
-  sessions) and, unless `delivery_log` is off, `delivery.jsonl` (session id, sender id, platform, model, dialect, cue
-  words, parameters, drops and character count, never the spoken text), rotated once at 5 MB. Audio goes to the path
-  Hermes supplies.
+- **Prompt and skill.** With `guide_mode: generate` (the default) the plugin registers the `emotion-chip-voice`
+  skill, and while the chip is the speech provider it also adds a delivery guide of up to 4,000 characters to the
+  system prompt. When another speech provider is selected, its `tool_request` middleware rewrites `text_to_speech`
+  text that contains a `[` for that provider: Fish Audio's dialect for `fish-audio`, the ElevenLabs dialect for
+  `elevenlabs` with a v3 or v4 model, and plain text with the cues removed for any other provider. A command provider
+  (your own script) is left alone. This compatibility path records nothing in `/chip why` or the delivery log.
+- **Local files.** Under the profile's `plugin-data/emotion-chip/`: the generated skill and, unless `delivery_log` is
+  off, `delivery.jsonl` (time, session id, sender id, platform, model, dialect, rendering group, cue words,
+  parameters, kinds of drops and character count, never the spoken text). At 5 MB the log moves to
+  `delivery.1.jsonl`, replacing the previous copy, so at most about 10 MB is kept. Hermes keeps the plugin's
+  per-session state in its own namespaced folder under `plugin-data/`: task counters and timestamps, the map from
+  Hermes session keys to session ids, the messaging sender id and platform, the last situation and register lines,
+  and the quiet switch, for the 50 most recent sessions. Audio goes to the path Hermes supplies.
 - No background processes, no shell commands, no telemetry.
 
 ## Grounding
@@ -133,7 +139,7 @@ tables.
 
 ## Evaluation
 
-Every bar was pre-registered before the data existed:
+Every bar is pre-registered, with dated amendments and recorded deviations:
 [EVAL-PREREG.md](https://github.com/100yenadmin/ai-emotion-chip/blob/main/EVAL-PREREG.md). The first complete text
 run passed its mechanical gate on Claude Opus 5.5 and gpt-6.1-sol, 684 replies each:
 [evidence](https://github.com/100yenadmin/ai-emotion-chip/tree/main/evidence/a3-run-3). The blind listening test is

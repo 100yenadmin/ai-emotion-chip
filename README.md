@@ -15,6 +15,8 @@ never adds an emotion the agent did not write, and treats plain speech as a vali
 [sigh] An entire day lost to one character. [pause] Glad you found it.
 ```
 
+![Hermes CLI: the agent whispers that the tests passed because a baby is asleep, /chip why shows the render, and the next turn is whispered excitement](docs/media/screenshot-cli.png)
+
 ## Install
 
 Requires Hermes 0.22.2 or newer.
@@ -33,7 +35,7 @@ sends where are in **[plugin/README.md](plugin/README.md)**.
 |---|---|
 | [`plugin/`](plugin/) | The installable plugin; a catalog install takes only this folder. |
 | [`plugin/emotion_chip/data/`](plugin/emotion_chip/data/) | CC0 research data: 171 emotion concepts with attribution, rendering groups, sounds, dialect tables. |
-| [`EVAL-PREREG.md`](EVAL-PREREG.md) | Every evaluation bar, sample size and stop rule, frozen by git tag before the data existed. |
+| [`EVAL-PREREG.md`](EVAL-PREREG.md) | Every evaluation bar, sample size and stop rule: frozen by git tag, with dated amendments made before each run's data and any deviation recorded. |
 | [`evidence/`](evidence/) | Published results, regenerable from the raw files. |
 | [`bench/`](bench/) | The harnesses that produced them: text benches through real Hermes sessions and the blind listening test. |
 | [`VISION.md`](VISION.md) | Why the project exists and where it is going. |
