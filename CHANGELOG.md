@@ -2,8 +2,8 @@
 
 ## Unreleased
 
-- Docs: the plugin README says that, with another speech provider selected, every bracketed span is removed,
-  not only cues.
+- Docs: the plugin README says that, with another speech provider selected, standalone bracketed words are removed
+  as cues, recognised or not, while spans keep their words and numeric references and code stay.
 
 ## 0.1.0 — 2026-11-08
 
