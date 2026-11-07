@@ -29,7 +29,11 @@ jobs:
         run: python -m pip install -r requirements-dev.txt
       - name: Validate data
         run: python -m emotion_chip validate-data
+        env:
+          PYTHONPATH: plugin
       - name: Test
         run: python -m pytest -q
       - name: Check generated bundle
         run: python -m emotion_chip check-bundle
+        env:
+          PYTHONPATH: plugin

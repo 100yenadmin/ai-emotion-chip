@@ -14,6 +14,7 @@ import secrets
 import shlex
 import shutil
 import subprocess
+import sys
 import tempfile
 from datetime import datetime, timezone
 
@@ -232,7 +233,7 @@ def build_home(item, arm, session, paths, seed):
 class E7Host(run.Host):
     """Reuse Host.call's sandbox and empty child_env; provision credentials only inside its child."""
     def call(self, item, args_obj, token=None, timeout=900):
-        args_obj = dict(args_obj, chip_root=str(self.run / "src/emotion-chip"),
+        args_obj = dict(args_obj, chip_root=str(self.run / "src/chip-repo"),
                         inputs=str(self.run / "inputs"), key_file=str(self.paths["eleven_key_file"]))
         return super().call(item, args_obj, token=token, timeout=timeout)
 
@@ -332,6 +333,13 @@ def render_pair(score, recorded, render):
     return cued, stripped
 
 
+def plugin_on_path():
+    """The archived commit keeps the plugin's package under plugin/; make emotion_chip importable from it."""
+    root = str(Path(__file__).resolve().parents[2] / "plugin")
+    if root not in sys.path:
+        sys.path.insert(0, root)
+
+
 def child(args, driver):
     """NEW turn.py modes. This code is imported from the archived tagged chip, never the live checkout."""
     os.environ["BENCH_PROBE_EXCLUDE_FILES"] = json.dumps([str(Path(args["inputs"]) / name)
@@ -348,6 +356,7 @@ def child(args, driver):
         if args["mode"] == "e7-warm":
             return warm_proof(args, driver)
         if args["mode"] == "e7-render":
+            plugin_on_path()
             from emotion_chip.hermes.eleven import ElevenClient
             from emotion_chip.render import render
             cued, stripped = render_pair(args["score"], args["recorded"], render)
@@ -558,10 +567,12 @@ def generate(tag, session, *, dry_run=False, paths=None, retry=None, reason=None
             for path in partial:
                 path.rename(interrupted / path.name)
         if dry_run:
-            run.archive(paths["chip_repo"], commit, session / "src/emotion-chip")
+            run.archive_plugin(paths["chip_repo"], commit, session / "src/emotion-chip")
             shas = {}
         else:
             shas = run.prepare(session, "", paths, ref=commit)
+        # The child imports its bench code from the whole tagged commit; src/emotion-chip holds only the plugin.
+        run.archive(paths["chip_repo"], commit, session / "src/chip-repo")
         write(prepared, shas)
     manifest["shas"] = read(prepared)
     plugin_tree = run.tree_sha256(session / "src/emotion-chip")

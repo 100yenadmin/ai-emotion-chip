@@ -29,7 +29,7 @@ The plugin needs Hermes 0.22.2 or newer. For the default Fish backend, the
 where they are. The ElevenLabs backend uses REST directly and needs no Fish plugin or extra SDK.
 
 ```bash
-hermes plugins install https://github.com/100yenadmin/ai-emotion-chip --enable
+hermes plugins install 100yenadmin/ai-emotion-chip/plugin --enable
 ```
 
 ## Configure
@@ -118,7 +118,7 @@ We state that research at the strength it supports:
 - a cue records the delivery the agent chose, not a measured internal state;
 - how well a model can introspect on its own states is not validated for this use.
 
-`emotion_chip/data/` is CC0 research data with attribution to its sources.
+`plugin/emotion_chip/data/` is CC0 research data with attribution to its sources.
 
 ## Caveats
 
@@ -128,4 +128,4 @@ We state that research at the strength it supports:
 
 ## License
 
-Code: Apache-2.0 ([LICENSE](LICENSE)). Data in `emotion_chip/data/`: CC0-1.0 ([LICENSE-DATA](LICENSE-DATA)).
+Code: Apache-2.0 ([LICENSE](LICENSE)). Data in `plugin/emotion_chip/data/`: CC0-1.0 ([LICENSE-DATA](LICENSE-DATA)).

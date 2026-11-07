@@ -4,13 +4,14 @@ Guidance for AI coding agents, and for people, working in this repository.
 
 ## What this is
 
-Hermes Emotion Chip (repo: AI Emotion Chip) is a Hermes Agent plugin that lets the agent write its own delivery cues (a small bracket score) into the text it speaks, and renders that score for Fish Audio and ElevenLabs. It renders the delivery the agent chose; it measures nothing about feelings. The emotion data in `emotion_chip/data/` is CC0 research data with attribution.
+Hermes Emotion Chip (repo: AI Emotion Chip) is a Hermes Agent plugin that lets the agent write its own delivery cues (a small bracket score) into the text it speaks, and renders that score for Fish Audio and ElevenLabs. It renders the delivery the agent chose; it measures nothing about feelings. The emotion data in `plugin/emotion_chip/data/` is CC0 research data with attribution.
 
 ## Layout
 
-- `plugin.yaml`, `__init__.py`: Hermes manifest and `register(ctx)`.
-- `emotion_chip/`: score parser, renderers per vendor dialect, policy, provider, hooks.
-- `emotion_chip/data/`: CC0 emotion concepts, rendering groups, sounds, dialect tables, model notes.
+- `plugin/`: the installable Hermes plugin (a catalog install takes only this directory).
+- `plugin/plugin.yaml`, `plugin/__init__.py`: Hermes manifest and `register(ctx)`.
+- `plugin/emotion_chip/`: score parser, renderers per vendor dialect, policy, provider, hooks.
+- `plugin/emotion_chip/data/`: CC0 emotion concepts, rendering groups, sounds, dialect tables, model notes.
 - `tests/`: unit tests and render goldens. `bench/`: paid benches (listening, ASR leak, acoustic probe).
 - `EVAL-PREREG.md`: pre-registered evaluation bars; frozen by git tag.
 - `evidence/`: published evaluation results.
@@ -21,7 +22,7 @@ Hermes Emotion Chip (repo: AI Emotion Chip) is a Hermes Agent plugin that lets t
 ```bash
 uv venv && uv pip install -r requirements-dev.txt
 uv run pytest -q
-uv run python -m emotion_chip check-bundle   # after editing anything in emotion_chip/data/: build-bundle
+PYTHONPATH=plugin uv run python -m emotion_chip check-bundle   # after editing anything in plugin/emotion_chip/data/: build-bundle
 ```
 
 ## Rules

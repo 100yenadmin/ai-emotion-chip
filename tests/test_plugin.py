@@ -81,7 +81,7 @@ def test_guarded_registrations():
 
 def test_root_entry_loads_like_hermes(tmp_path):
     """Load the plugin as Hermes does (hermes_plugins.<slug>, plugin dir not on sys.path) in a clean interpreter."""
-    root = Path(__file__).parents[1]
+    root = Path(__file__).parents[1] / "plugin"
     script = f"""
 import importlib.util, sys, types
 sys.modules["hermes_plugins"] = types.ModuleType("hermes_plugins"); sys.modules["hermes_plugins"].__path__ = []
@@ -494,7 +494,7 @@ def test_hermes_source_contract():
     assert [a.arg for a in skill.args.args][:4] == ["self", "name", "path", "description"]
     manifest_source = ast.parse((root / "hermes_cli" / "plugins_manifest.py").read_text())
     known = _literal_assignment(manifest_source, "_KNOWN_MANIFEST_FIELDS")
-    manifest = yaml.safe_load((Path(__file__).parents[1] / "plugin.yaml").read_text())
+    manifest = yaml.safe_load((Path(__file__).parents[1] / "plugin" / "plugin.yaml").read_text())
     # Hermes 0.22.2 parser omits provides_middleware, although its validator requires it.
     assert set(manifest) - known == {"provides_middleware"}
     assert "requires_plugins" not in manifest

@@ -9,7 +9,7 @@ import time
 
 if not __package__:
     # Run as a script inside the sandbox: import the plugin from this checkout, with no PYTHONPATH in the agent's env.
-    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "plugin"))
 
 from emotion_chip.hermes.hooks import Hooks  # noqa: E402
 from emotion_chip.hermes.situation import Situation, situation_line  # noqa: E402

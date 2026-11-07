@@ -93,7 +93,7 @@ def generated(tmp_path_factory):
     with pytest.MonkeyPatch.context() as patch:
         patch.setattr(e7, "frozen_tag", lambda tag, repo: "fixture-commit")
         def archive(repo, ref, dest):
-            assert ref == "fixture-commit"
+            assert ref in ("fixture-commit:plugin", "fixture-commit")
             dest.mkdir(parents=True)
             (dest / "archived.txt").write_text(ref)
         patch.setattr(run, "archive", archive)
@@ -172,7 +172,7 @@ def test_rule1_prepare_archives_resolved_ref(tmp_path, monkeypatch):
     dest = tmp_path / "run"
     dest.mkdir()
     result = run.prepare(dest, "", paths, ref="tag-commit")
-    assert (paths["chip_repo"], "resolved-tag-commit") in calls
+    assert (paths["chip_repo"], "resolved-tag-commit:plugin") in calls
     assert result["emotion_chip"] == "tag-commit resolved-tag-commit"
 
 
@@ -231,7 +231,7 @@ def test_rule4_provider_seed_top_level_and_unset_unchanged(tmp_path, monkeypatch
         assert calls[0]["seed"] == seed
         assert "seed" not in calls[0]["voice_settings"]
     assert DEFAULTS["eleven_seed"] is None
-    schema = yaml.safe_load((e7.ROOT / "plugin.yaml").read_text())["config_schema"]["eleven_seed"]
+    schema = yaml.safe_load((e7.ROOT / "plugin" / "plugin.yaml").read_text())["config_schema"]["eleven_seed"]
     assert schema["default"] is None and schema["type"] == "int"
 
 
@@ -851,7 +851,7 @@ def test_fix4_interrupted_preparation_is_archived_and_redone(ledger, monkeypatch
         (dest / "complete.txt").write_text(ref)
     monkeypatch.setattr(run, "archive", archive)
     clean = folder.parent / "clean-archive"
-    archive(paths["chip_repo"], "fixture-commit", clean)
+    archive(paths["chip_repo"], "fixture-commit:plugin", clean)
     (folder / "src/emotion-chip").mkdir(parents=True)
     (folder / "src/emotion-chip/partial.txt").write_text("interrupted copy")
     for name in ("cwd", "tools", "golden"):
@@ -865,7 +865,7 @@ def test_fix4_interrupted_preparation_is_archived_and_redone(ledger, monkeypatch
     monkeypatch.setattr(e7, "check_credentials", lambda *a: None)
     def prepare(session, *a, **k):
         assert not any((session / name).exists() for name in ("src", "cwd", "tools", "golden", "sandbox.sb", "secrets.env"))
-        archive(paths["chip_repo"], "fixture-commit", session / "src/emotion-chip")
+        archive(paths["chip_repo"], "fixture-commit:plugin", session / "src/emotion-chip")
         return {"emotion_chip": "fixture-commit"}
     monkeypatch.setattr(run, "prepare", prepare)
     def generate():
@@ -2332,3 +2332,26 @@ def test_fix9_rerun_recovers_interrupted_input_copy(fix6_rerun, monkeypatch, lef
     preserved = [(session / f"interrupted-snapshot-{i}" / "keep").read_text()
                  for i in range(2, len(leftovers) + 2)]
     assert set(preserved) == set(leftovers)
+
+
+def test_child_imports_bench_code_from_the_whole_tagged_commit(generated, monkeypatch):
+    _, paths, session = generated
+    # The plugin tree Hermes installs is only plugin/; the child's bench code comes from the full commit.
+    assert (session / "src/emotion-chip/archived.txt").read_text() == "fixture-commit:plugin"
+    assert (session / "src/chip-repo/archived.txt").read_text() == "fixture-commit"
+    monkeypatch.setattr(run.Host, "call", lambda self, item, args_obj, token=None, timeout=900: args_obj)
+    host = e7.E7Host.__new__(e7.E7Host)
+    host.run, host.paths = session, paths
+    assert host.call("item", {"mode": "e7-turn"})["chip_root"] == str(session / "src/chip-repo")
+
+
+def test_archived_commit_imports_plugin_from_its_own_tree(tmp_path):
+    # The E7 child runs with only chip_root (the whole archived commit) on its path.
+    root = tmp_path / "chip-repo"
+    for name in ("bench", "plugin"):
+        shutil.copytree(e7.ROOT / name, root / name, ignore=shutil.ignore_patterns("__pycache__"))
+    code = ("import sys; sys.path.insert(0, sys.argv[1]); from bench.e7.session import plugin_on_path; "
+            "plugin_on_path(); import emotion_chip.render, emotion_chip.hermes.eleven; print(emotion_chip.render.__file__)")
+    result = subprocess.run([sys.executable, "-I", "-c", code, str(root)], capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip().startswith(str(root / "plugin" / "emotion_chip"))

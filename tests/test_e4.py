@@ -334,7 +334,7 @@ def test_sandbox_profile_hides_siblings_records_and_docs(tmp_path):
     assert deny < allow  # SBPL: the last match wins
     for path in (tmp_path / "w", run.ROOT, tmp_path / "artifacts"):
         assert json.dumps(str(path.resolve())) in lines[deny]
-    for path in (workspace, run.ROOT / "emotion_chip", run.HOOK):
+    for path in (workspace, run.ROOT / "plugin" / "emotion_chip", run.HOOK):
         assert json.dumps(str(path.resolve())) in lines[allow]
     assert json.dumps(str((run.ROOT / "bench" / "rubrics").resolve())) not in lines[allow]
     for name in run.WRITABLE:

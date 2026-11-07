@@ -86,8 +86,10 @@ def generation_path(out, row):
 
 
 def provenance():
-    paths = sorted(p for p in (ROOT / "emotion_chip" / "data").rglob("*") if p.is_file())
-    return {"guide_version": sha256("".join(p.relative_to(ROOT).as_posix() + sha256(p.read_bytes()) for p in paths)),
+    # Paths are hashed relative to the plugin directory, so guide_version is the same before and after the move.
+    plugin = ROOT / "plugin"
+    paths = sorted(p for p in (plugin / "emotion_chip" / "data").rglob("*") if p.is_file())
+    return {"guide_version": sha256("".join(p.relative_to(plugin).as_posix() + sha256(p.read_bytes()) for p in paths)),
             "prereg_sha256": sha256((ROOT / "EVAL-PREREG.md").read_bytes())}
 
 
