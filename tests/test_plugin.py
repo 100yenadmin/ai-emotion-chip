@@ -479,10 +479,14 @@ def test_hermes_source_contract():
         args = methods[name].args
         assert [a.arg for a in args.args[1:1+len(positional)]] == positional
         assert set(keywords) <= {a.arg for a in [*args.args, *args.kwonlyargs]}
-    rows = _literal_assignment(plugins, "_SCOPED_PROVIDER_REGISTRARS")
+    # Hermes 0.23.0 moved the provider registrar table and its factory into plugins_registrars.py.
+    registrars = root / "hermes_cli" / "plugins_registrars.py"
+    table = ast.parse(registrars.read_text()) if registrars.is_file() else plugins
+    rows = _literal_assignment(table, "_SCOPED_PROVIDER_REGISTRARS")
     tts = next(row for row in rows if row[0] == "register_tts_provider")
     assert tts[2:4] == ("agent.tts_registry", "agent.tts_provider:TTSProvider")
-    factory = next(n for n in plugins.body if isinstance(n, ast.FunctionDef) and n.name == "_make_scoped_provider_registrar")
+    factory = next(n for n in table.body if isinstance(n, ast.FunctionDef)
+                   and n.name in ("_make_scoped_provider_registrar", "make_scoped_provider_registrar"))
     registrar = next(n for n in factory.body if isinstance(n, ast.FunctionDef) and n.name == "register")
     assert [a.arg for a in registrar.args.args] == ["self", "provider"]
     content = ast.parse((root / "hermes_cli" / "plugins_content.py").read_text())
