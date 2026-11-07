@@ -7,6 +7,18 @@ from urllib.parse import quote
 from urllib.request import Request, urlopen
 import wave
 
+def eleven_api_key():
+    """The ElevenLabs key from the active profile's secret scope; the process environment before Hermes had one."""
+    try:
+        from agent.secret_scope import UnscopedSecretError, get_secret
+    except ImportError:
+        return os.environ.get("ELEVENLABS_API_KEY", "").strip()
+    try:
+        return (get_secret("ELEVENLABS_API_KEY") or "").strip()
+    except UnscopedSecretError:
+        return ""
+
+
 FORMATS = {"mp3": "mp3_44100_128", "ogg": "opus_48000_64", "opus": "opus_48000_64",
            "pcm": "pcm_24000", "wav": "pcm_24000"}
 
@@ -19,9 +31,9 @@ class ElevenClient:
     def _open(self, text, voice, model, params, output_format, *, streaming=False, previous_request_ids=(), seed=None):
         if not voice:
             raise ValueError("ElevenLabs needs a voice id (voice, eleven_voice_id or tts.elevenlabs.voice_id).")
-        key = os.environ.get("ELEVENLABS_API_KEY", "")
+        key = eleven_api_key()
         if not key:
-            raise ValueError("ElevenLabs needs ELEVENLABS_API_KEY in the environment.")
+            raise ValueError("ElevenLabs needs ELEVENLABS_API_KEY in the profile's .env.")
         payload = {"text": text, "model_id": model, "voice_settings": dict(params)}
         if seed is not None:
             if type(seed) is not int or not 0 <= seed < 2**32:

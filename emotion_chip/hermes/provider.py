@@ -2,7 +2,6 @@
 from dataclasses import asdict, replace
 from threading import RLock
 import math
-import os
 import time
 
 from ..data import load_data
@@ -10,7 +9,7 @@ from ..model import Cue
 from ..render import dialect_for
 from ..score import header_cue, parse
 from ._compat import TTSProvider
-from .eleven import ElevenClient
+from .eleven import ElevenClient, eleven_api_key
 from .fishtags import adapt_all, fish_adapter, settled_render
 from .log import DeliveryLog
 from .settings import ELEVEN_MODELS, Settings, session_env, session_identity, sounds_on
@@ -77,7 +76,7 @@ class EmotionChipTTSProvider(TTSProvider):
 
     def is_available(self):
         if self.settings.get("backend") == "eleven":
-            return bool(os.environ.get("ELEVENLABS_API_KEY") and self.settings.eleven_voice(self.settings.call_voice()))
+            return bool(eleven_api_key() and self.settings.eleven_voice(self.settings.call_voice()))
         fish = _fish()
         return fish is not None and fish.is_available()
 

@@ -343,3 +343,46 @@ def test_carry_quiet_parens_and_compat_unchanged(rig):
     host.update({"tts.provider": "elevenlabs", "tts.elevenlabs.model_id": "eleven_v4"})
     assert ctx.middleware(tool_name="text_to_speech", args={"text": "[soft: here]"}) == {
         "args": {"text": "[softly] here"}}
+
+
+def _secret_scope(monkeypatch, get_secret):
+    from types import ModuleType
+    import sys
+
+    class UnscopedSecretError(RuntimeError):
+        pass
+
+    module = ModuleType("agent.secret_scope")
+    module.UnscopedSecretError = UnscopedSecretError
+    module.get_secret = lambda name: get_secret(name, UnscopedSecretError)
+    monkeypatch.setitem(sys.modules, "agent.secret_scope", module)
+
+
+def test_key_comes_from_the_profile_secret_scope(monkeypatch):
+    monkeypatch.setenv("ELEVENLABS_API_KEY", "process-key")
+    _secret_scope(monkeypatch, lambda name, _: " scoped-key " if name == "ELEVENLABS_API_KEY" else None)
+    assert eleven_module.eleven_api_key() == "scoped-key"
+    seen = []
+    monkeypatch.setattr(eleven_module, "urlopen", lambda request, timeout: seen.append(request) or Response())
+    ElevenClient().synthesize("hello", "/dev/null", voice="v", model="eleven_v4", params={"stability": 0.5})
+    assert seen[0].get_header("Xi-api-key") == "scoped-key"
+
+
+def test_unscoped_secret_reads_as_missing(monkeypatch):
+    monkeypatch.setenv("ELEVENLABS_API_KEY", "another-profile-key")
+
+    def unscoped(name, error):
+        raise error(name)
+    _secret_scope(monkeypatch, unscoped)
+    assert eleven_module.eleven_api_key() == ""
+    with pytest.raises(ValueError, match="ELEVENLABS_API_KEY"):
+        ElevenClient().synthesize("hello", "/dev/null", voice="v", model="eleven_v4", params={})
+
+
+def test_key_falls_back_to_the_environment_without_secret_scope(monkeypatch):
+    import sys
+    monkeypatch.setitem(sys.modules, "agent.secret_scope", None)
+    monkeypatch.setenv("ELEVENLABS_API_KEY", " env-key ")
+    assert eleven_module.eleven_api_key() == "env-key"
+    monkeypatch.delenv("ELEVENLABS_API_KEY")
+    assert eleven_module.eleven_api_key() == ""
