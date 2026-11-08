@@ -116,8 +116,7 @@ On the chip's own provider path `/chip why` shows every drop and why, and the de
   `text_to_speech` text that carries cues for that provider: Fish Audio's dialect for `fish-audio` on S2 and Drama 3
   models, and the ElevenLabs dialect for `elevenlabs` with a v3 or v4 model. Any other provider or model, including
   Hermes's default Edge, Fish S1 and ElevenLabs on older models, gets plain text: standalone bracketed words are read as cues and removed (a `[Step 2]` too), spans
-  such as `[whisper: …]` keep their words, and numeric references such as `[1]` and code such as `items[index]` stay
-  (inside a span, bracketed code is read as a cue and removed).
+  such as `[whisper: …]` keep their words, and numeric references such as `[1]` and code such as `items[index]` stay.
   A command provider (your own script) is left alone. This compatibility path records nothing in
   `/chip why` or the delivery log.
 - **Local files.** Under the profile's `plugin-data/emotion-chip/`: the generated skill and, unless `delivery_log` is

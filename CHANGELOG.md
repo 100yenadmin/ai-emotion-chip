@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fix: code inside a span stays span text in every dialect, by the same rule as outside spans:
+  `[whisper: call items[index] now]` is one whispered segment, no longer split around `[index]` (#34).
 - Docs: the plugin README states exactly what the compatibility path does when another speech provider is selected
   (with `guide_mode: generate`). Fish S2 and Drama 3 and ElevenLabs v3/v4 get their dialects. Other providers and
   models, Fish S1 included, get plain text: standalone bracketed words are removed as cues, recognised or not, while

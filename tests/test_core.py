@@ -528,6 +528,98 @@ def test_a_group_attached_to_a_word_is_text_not_score(dialect, data):
     assert [type(t).__name__ for t in parse("Call it. [pause] Now.", data).sentences[1].tokens] == ["Event", "Text"]
 
 
+SPAN_CODE_BODY = ('use matrix[i][j], factory()[k], f(g(x))[laugh], x_1[laugh], items[0][pause], '
+                  'Dict[str, List[int]], handlers[names[pause]] and df[["a", "b"]] now')
+SPAN_CODE_CASES = ["[whisper: call items[index] now]", '[whisper: read d["key"] aloud]',
+                   f"[soft: {SPAN_CODE_BODY}]"]
+# Captured on 380eb93, in DIALECTS order: Fish S2, Drama 3, Eleven v4, tagless, prose.
+SPAN_SYNTAX_CASES = [
+    ("[soft: I'm glad [laugh] you told me.]", (
+        "[soft tone] I'm glad [laughing] [soft tone] you told me.",
+        "<soft>I'm glad</soft> [laughing] <soft>you told me.</soft>",
+        "[softly] I'm glad [laughs] [softly] you told me.", "I'm glad you told me.", "I'm glad you told me.")),
+    ("[soft: a [sigh] b]", ("[soft tone] a [sighing] [soft tone] b", "<soft>a</soft> [sighing] <soft>b</soft>",
+                             "[softly] a [sighs] [softly] b", "a b", "a b")),
+    ("[soft: a [whisper: b] c]", ("[soft tone] a [whispering] b [soft tone] c",
+                                "<soft>a</soft> <whisper>b</whisper> <soft>c</soft>",
+                                "[softly] a [whispers] b [softly] c", "a b c", "a b c")),
+    ("Okay[soft: [sigh] fine.]", ("Okay[sighing] [soft tone] fine.", "Okay[sighing] <soft>fine.</soft>",
+                                "Okay[sighs] [softly] fine.", "Okay fine.", "Okay fine.")),
+    ("[soft: glad [happy [laugh]] ok]", ("[soft tone] glad [happy] [laughing] [soft tone] ok",
+                                      "<soft>glad</soft> [happy] [laughing] <soft>ok</soft>",
+                                      "[softly] glad [happy] [laughs] [softly] ok", "glad ok", "glad ok")),
+    ("[soft: 今日は[sigh]疲れた]", ("[soft tone] 今日は [sighing] [soft tone] 疲れた",
+                                 "<soft>今日は</soft> [sighing] <soft>疲れた</soft>",
+                                 "[softly] 今日は [sighs] [softly] 疲れた", "今日は 疲れた", "今日は 疲れた")),
+    ("[soft: x[whisper: y] z]", ("[soft tone] x [whispering] y [soft tone] z",
+                                "<soft>x</soft> <whisper>y</whisper> <soft>z</soft>",
+                                "[softly] x [whispers] y [softly] z", "x y z", "x y z")),
+]
+
+
+@pytest.mark.parametrize("dialect", DIALECTS)
+@pytest.mark.parametrize("inner", ["call items[index] now", 'read d["key"] aloud'])
+def test_code_inside_a_whisper_stays_one_span(inner, dialect, data):
+    text = f"[whisper: {inner}]"
+    tokens = [t for s in parse(text, data).sentences for t in s.tokens]
+    assert tokens == [Span("whisper", inner, f"whisper: {inner}")]
+    expected = {"tagless": inner, "prose": inner, "eleven_v4": f"[whispers] {inner}",
+                "fish_s2": f"[whispering] {inner}", "fish_drama3": f"<whisper>{inner}</whisper>"}
+    out = render(text, dialect, data=data)
+    assert out.text == expected[dialect]
+    baseline = render("[whisper: call items now]", dialect, data=data)
+    assert out.dropped == baseline.dropped
+    if dialect not in {"tagless", "prose"}:
+        assert out.dropped == []
+
+
+@pytest.mark.parametrize("dialect", DIALECTS)
+def test_every_code_shape_stays_in_the_span(dialect, data):
+    text = f"[soft: {SPAN_CODE_BODY}]"
+    out = render(text, dialect, data=data)
+    assert SPAN_CODE_BODY in out.text and "soft:" not in out.text
+    if dialect == "tagless":
+        assert out.text == SPAN_CODE_BODY
+    assert out.dropped == render("[soft: use code now]", dialect, data=data).dropped
+    assert [t for s in parse(text, data).sentences for t in s.tokens] == [
+        Span("soft", SPAN_CODE_BODY, f"soft: {SPAN_CODE_BODY}")]
+
+
+@pytest.mark.parametrize("dialect", DIALECTS)
+@pytest.mark.parametrize("text, expected", SPAN_SYNTAX_CASES)
+def test_span_score_syntax_keeps_baseline_outputs(text, expected, dialect, data):
+    assert render(text, dialect, data=data).text == expected[DIALECTS.index(dialect)]
+
+
+@pytest.mark.parametrize("dialect", ["fish_s2", "eleven_v4"])
+@pytest.mark.parametrize("text", SPAN_CODE_CASES)
+def test_span_code_is_consistent_with_authored_score(text, dialect, data):
+    assert check(parse(text, data), render(text, dialect, data=data), data) == []
+
+
+@pytest.mark.parametrize("dialect", DIALECTS)
+@pytest.mark.parametrize("text", SPAN_CODE_CASES + [t for t, _ in SPAN_SYNTAX_CASES] + [
+    "[whisper: read d[key]. Next.]", "[soft: call items[index] [sigh] now]"])
+def test_span_code_placeholders_never_reach_public_text(text, dialect, data):
+    score = parse(text, data)
+    out = render(text, dialect, data=data)
+    values = [out.text] + [s.text for s in out.plan.segments]
+    values += [v for s in score.sentences for t in s.tokens for v in vars(t).values() if isinstance(v, str)]
+    values += [t.raw for s in out.plan.segments for t in s.spans]
+    assert all("\ue000" not in v and "\ue001" not in v for v in values)
+
+
+@pytest.mark.parametrize("dialect", DIALECTS)
+def test_span_code_does_not_decode_agent_private_use_characters(dialect, data):
+    markers = "\ue000\ue001\ue001\ue002\ue003"
+    inner = f"call items[index] {markers} now"
+    out = render(f"[whisper: {inner}]", dialect, data=data)
+    baseline = render(f"[whisper: call items {markers} now]", dialect, data=data)
+    assert out.text == baseline.text.replace("call items ", "call items[index] ")
+    assert [t for s in parse(f"[whisper: {inner}]", data).sentences for t in s.tokens] == [
+        Span("whisper", inner, f"whisper: {inner}")]
+
+
 @pytest.mark.parametrize("text, kinds", [
     ("(He laughed)[laugh] ok.", ["Text", "Event", "Text"]),
     ("Fine. [sad][laugh] Yes.", ["Cue", "Event", "Text"]),
