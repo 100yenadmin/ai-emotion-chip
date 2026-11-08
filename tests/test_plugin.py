@@ -603,6 +603,36 @@ def test_session_reset_moves_the_key_to_the_new_session(rig):
     assert json.dumps(ctx.state, sort_keys=True) == before
 
 
+def test_session_reset_moves_only_the_chat_that_ran_new(rig):
+    ctx, _, _, env, *_ = rig
+    env.clear()
+    for key in ("chat-a", "chat-b"):
+        env["HERMES_SESSION_KEY"] = key
+        ctx.hooks["pre_llm_call"](session_id="X")
+    reset = ctx.hooks["on_session_reset"]
+    env.clear()
+    # Two chats share session X (/resume from a second chat) and Hermes names no key: leave both alone.
+    reset(session_id="Y", old_session_id="X", new_session_id="Y")
+    assert ctx.state["session_keys"] == {"chat-a": "X", "chat-b": "X"}
+    env["HERMES_SESSION_KEY"] = "chat-a"
+    reset(session_id="Y", old_session_id="X", new_session_id="Y")
+    assert ctx.state["session_keys"] == {"chat-a": "Y", "chat-b": "X"}
+
+
+def test_session_reset_keeps_the_key_at_the_row_cap(rig):
+    ctx, _, _, env, now, _ = rig
+    env.clear()
+    env["HERMES_SESSION_KEY"] = "chat-a"
+    ctx.hooks["pre_llm_call"](session_id="old")
+    env.clear()
+    for n in range(49):
+        now[0] += 1
+        ctx.hooks["post_tool_call"](session_id=f"sub{n}", status="ok")
+    now[0] += 1
+    ctx.hooks["on_session_reset"](session_id="new", old_session_id="old", new_session_id="new")
+    assert ctx.state["session_keys"] == {"chat-a": "new"} and "old" not in ctx.state["sessions"]
+
+
 @pytest.mark.parametrize("provider", ["emotion-chip", "edge"])
 def test_skill_follows_a_live_fish_pin_change(rig, provider):
     from emotion_chip.guide import build_skill
@@ -616,6 +646,15 @@ def test_skill_follows_a_live_fish_pin_change(rig, provider):
     stamp = path.stat().st_mtime_ns
     ctx.section({"model": "default"})
     assert path.stat().st_mtime_ns == stamp and path.read_text() == text
+
+
+def test_skill_rewrite_keeps_an_ordinary_file_mode(rig):
+    ctx, _, host, *_ = rig
+    path = ctx.skill[0]
+    path.chmod(0o644)
+    host["tts.fish-audio.model"] = "drama-3"
+    ctx.section({"model": "default"})
+    assert path.stat().st_mode & 0o777 == 0o644 and len(list(path.parent.iterdir())) == 1
 
 
 def test_skill_rewrite_error_keeps_prompt_working(rig, monkeypatch, caplog):
@@ -855,6 +894,26 @@ def test_transform_uses_call_status_not_shared_streak(rig):
         post(**kw, status=status)
     assert transform(**kw, status="ok", result='{"output":"B"}') is None
     assert transform(**kw, result="err") is not None
+
+
+def test_transform_counts_this_failure_in_either_hook_order(rig):
+    ctx, *_ = rig
+    ctx.set_config("signals", "facts")
+    post, transform = ctx.hooks["post_tool_call"], ctx.hooks["transform_tool_result"]
+    kw = {"session_id": "fixture-session", "tool_name": "terminal"}
+    # Hermes's serial path: transform_tool_result runs before this call's post_tool_call.
+    first = transform(**kw, status="error", tool_call_id="c1", result="err")
+    assert "1 tool error in a row" in first
+    post(**kw, status="error", tool_call_id="c1")
+    assert transform(**kw, status="ok", tool_call_id="c2", result="ok") is None
+    post(**kw, status="ok", tool_call_id="c2")
+    after_success = transform(**kw, status="error", tool_call_id="c3", result="err")
+    assert "1 tool error in a row" in after_success and "success" not in after_success
+    post(**kw, status="error", tool_call_id="c3")
+    # The concurrent path: post_tool_call first; the failure is not counted twice.
+    post(**kw, status="error", tool_call_id="c4")
+    assert "2 tool errors in a row" in transform(**kw, status="error", tool_call_id="c4", result="err")
+    assert ctx.state["sessions"]["fixture-session"]["tool_error_streak"] == 2
 
 
 def test_transform_preserves_json_object_bytes(rig):

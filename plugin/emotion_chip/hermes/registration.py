@@ -58,6 +58,8 @@ def register_all(ctx, *, reader=None, data_dir=None, env=None, clock=None):
         try:
             with temp:
                 temp.write(text + "\n")
+            # NamedTemporaryFile is private (0600); keep the mode an ordinary write gave the skill.
+            os.chmod(temp.name, path.stat().st_mode & 0o777 if path.exists() else 0o644)
             os.replace(temp.name, path)
         except BaseException:
             # Leave no partial file next to the skill when the write or the swap fails.

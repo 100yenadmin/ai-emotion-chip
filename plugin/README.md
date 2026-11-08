@@ -129,9 +129,9 @@ On the chip's own provider path `/chip why` shows every drop and why, and the de
   off, `delivery.jsonl` (time, session id, sender id, platform, model, dialect, rendering group, cue words,
   parameters, kinds of drops and character count, never the spoken text). At 5 MB the log moves to
   `delivery.1.jsonl`, replacing the previous copy, so at most about 10 MB is kept. Hermes keeps the plugin's
-  per-session state in its own namespaced folder under `plugin-data/`: task counters and timestamps, the map from
-  Hermes session keys to session ids, the messaging sender id and platform, the last situation and register lines,
-  and the quiet switch, for the 50 most recent sessions. Audio goes to the path Hermes supplies.
+  per-session state in its own namespaced folder under `plugin-data/`: task counters and timestamps, the ids of the
+  last 16 tool calls counted, the map from Hermes session keys to session ids, the messaging sender id and platform,
+  the last situation and register lines, and the quiet switch, for the 50 most recent sessions. Audio goes to the path Hermes supplies.
 - No background processes, no shell commands, no telemetry.
 
 ## Grounding
