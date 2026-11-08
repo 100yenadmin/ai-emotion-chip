@@ -89,6 +89,7 @@ class EmotionChipTTSProvider(TTSProvider):
         backend = self.settings.get("backend")
         models = self.settings.resolve_fish_model(model) if backend == "fish" else None
         effective = models.effective if models else self.settings.eleven_model()
+        label = models.label if models else effective
         dialect = dialect_for(backend, effective)
         session_id = session_identity(self.env, self.situation)
         platform = self.env("HERMES_SESSION_PLATFORM")
@@ -135,14 +136,14 @@ class EmotionChipTTSProvider(TTSProvider):
             {"register": "[[" + score.header.raw + "]]"} if score.header else {}), platform=platform or None)
         with last_render_lock:
             last_render.pop(session_id, None)
-            last_render[session_id] = dict(session_id=session_id, fish_model=effective, backend=backend, dialect=rendered.dialect,
+            last_render[session_id] = dict(session_id=session_id, fish_model=label, backend=backend, dialect=rendered.dialect,
                                            cue_words=words, group=rendered.group, params=dict(rendered.params),
                                            dropped=[asdict(d) for d in rendered.dropped], notes=list(rendered.notes))
             while len(last_render) > 50:
                 last_render.pop(next(iter(last_render)))
         metadata = self.situation.session(session_id)
         metadata["platform"] = platform or metadata.get("platform", "")
-        self.log.append(session_id, metadata, rendered, words, original_chars, now, effective)
+        self.log.append(session_id, metadata, rendered, words, original_chars, now, label)
         if backend == "eleven" and len(rendered.text) > self.max_text_length:
             raise ValueError(f"ElevenLabs text length {len(rendered.text)} exceeds {self.max_text_length} for {effective}.")
         return rendered, models.requested if models else effective, final

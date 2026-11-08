@@ -12,7 +12,7 @@ optional_env:
     secret: true
 license: Apache-2.0
 homepage: https://github.com/100yenadmin/ai-emotion-chip
-provides_hooks: [pre_llm_call, post_tool_call, api_request_error, on_session_start, on_session_end, transform_tool_result]
+provides_hooks: [pre_llm_call, post_tool_call, api_request_error, on_session_start, on_session_end, transform_tool_result, on_session_reset]
 provides_middleware: [tool_request]
 config_schema:
   backend:
@@ -23,10 +23,10 @@ config_schema:
     description: "Render the agent's score for Fish Audio or ElevenLabs."
   fish_model:
     type: str
-    choices: [s2.1-pro, s2.1-pro-free, s2-pro, drama-3]
-    default: s2.1-pro
+    choices: [fish-default, s2.1-pro, s2.1-pro-free, s2-pro, drama-3]
+    default: fish-default
     label: "Fish model"
-    description: "Requested model when the call has no Fish model; Fish tts.fish-audio.model takes precedence."
+    description: "fish-default lets Fish choose by your account (s2.1-pro, or s2.1-pro-free on free credit). Fish's tts.fish-audio.model takes precedence."
   eleven_model:
     type: str
     choices: [eleven_v4, eleven_v4_turbo, eleven_v3]

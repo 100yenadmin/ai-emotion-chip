@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 DEFAULTS = {
-    "backend": "fish", "fish_model": "s2.1-pro", "guide_mode": "generate",
+    "backend": "fish", "fish_model": "fish-default", "guide_mode": "generate",
     "eleven_model": "eleven_v4", "eleven_voice_id": "", "eleven_style": None, "eleven_speed": None,
     "eleven_seed": None,
     "signals": "off",
@@ -22,6 +22,10 @@ class FishModel:
     pinned: str | None
     requested: str | None
     effective: str
+
+    @property
+    def label(self):
+        return self.pinned or self.requested or "fish-default"
 
 
 def canonical_fish_model(value):

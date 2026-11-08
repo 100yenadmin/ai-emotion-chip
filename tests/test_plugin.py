@@ -140,13 +140,13 @@ def test_quiet_is_the_only_sound_switch(rig):
     ctx.provider.synthesize("[sad] Hello. [sigh]", "out.mp3")
     assert fish.calls[-1][1] == "[sad] Hello. [sighing]"
     session["HERMES_SESSION_PLATFORM"] = "telegram"
-    assert ctx.command("quiet on") == "Sounds quiet: on" and ctx.state["quiet"] is True
+    assert ctx.command("quiet on") == "Sounds quiet: on (every chat on this profile)" and ctx.state["quiet"] is True
     list(ctx.provider.stream("[sigh] [crying] Hello."))
     assert fish.calls[-1][1] == "[crying] Hello."
-    ctx.command("quiet off")
+    assert ctx.command("quiet off") == "Sounds quiet: off (every chat on this profile)"
     ctx.provider.synthesize("[sigh] Hello.", "out.mp3")
     assert fish.calls[-1][1] == "[sighing] Hello."
-    assert ctx.command("quiet") == "Sounds quiet: on"
+    assert ctx.command("quiet") == "Sounds quiet: on (every chat on this profile)"
 
 
 def test_stream_carry_session_and_expiry(rig):
@@ -565,16 +565,111 @@ def test_load_time_skill_uses_the_fish_model_hermes_sends(tmp_path, key):
 
 @pytest.mark.parametrize("configured,call,expected", [
     (None, None, None), ("invalid", "invalid", None), ("drama-3", None, "drama-3"),
+    ("fish-default", None, None), ("s2.1-pro", None, "s2.1-pro"),
     ("drama-3", "s2-pro", "s2-pro"), ("drama-3-preview", None, "drama-3"),
 ])
 def test_requested_model_and_wallet_default(rig, configured, call, expected):
-    ctx, fish, host, *_ = rig
+    ctx, fish, host, _, _, directory = rig
     host["tts.fish-audio.model"] = "invalid"
     if configured is not None:
         ctx.set_config("fish_model", configured)
     ctx.provider.synthesize("Hello.", "out.mp3", model=call)
     assert fish.calls[-1][2]["model"] == expected
-    assert latest()["fish_model"] == (expected or "s2.1-pro")
+    label = expected or "fish-default"
+    assert latest()["fish_model"] == label
+    assert f"Fish model: {label}" in ctx.command("why")
+    assert json.loads((directory / "delivery.jsonl").read_text().splitlines()[-1])["fish_model"] == label
+    if call is None:
+        assert f"fish_model: {label}" in ctx.command("status")
+    host["tts.fish-audio.model"] = "drama-3"
+    assert "fish_model: drama-3" in ctx.command("status")
+
+
+def test_session_reset_moves_the_key_to_the_new_session(rig):
+    ctx, _, _, env, *_ = rig
+    env.clear()
+    env["HERMES_SESSION_KEY"] = "chat-a"
+    ctx.hooks["pre_llm_call"](session_id="A")
+    ctx.provider.synthesize("Hello.", "out.mp3")
+    reset = ctx.hooks["on_session_reset"]
+    for extra in ({"parent_session_id": "A"}, {"platform": "subagent"}):
+        reset(session_id="B", old_session_id="A", **extra)
+        assert "B" not in ctx.state["sessions"]
+    reset(session_id="B", old_session_id="A", new_session_id="B", reason="new_session")
+    assert "session_id: B" in ctx.command("status")
+    assert ctx.command("why").startswith("No render recorded")
+    before = json.dumps(ctx.state, sort_keys=True)
+    reset(session_id="C", old_session_id="unmapped", new_session_id="C")
+    assert json.dumps(ctx.state, sort_keys=True) == before
+
+
+def test_session_reset_moves_only_the_chat_that_ran_new(rig):
+    ctx, _, _, env, *_ = rig
+    env.clear()
+    for key in ("chat-a", "chat-b"):
+        env["HERMES_SESSION_KEY"] = key
+        ctx.hooks["pre_llm_call"](session_id="X")
+    reset = ctx.hooks["on_session_reset"]
+    env.clear()
+    # Two chats share session X (/resume from a second chat) and Hermes names no key: leave both alone.
+    reset(session_id="Y", old_session_id="X", new_session_id="Y")
+    assert ctx.state["session_keys"] == {"chat-a": "X", "chat-b": "X"}
+    env["HERMES_SESSION_KEY"] = "chat-a"
+    reset(session_id="Y", old_session_id="X", new_session_id="Y")
+    assert ctx.state["session_keys"] == {"chat-a": "Y", "chat-b": "X"}
+    # A bound key that is not on the old session never moves another chat's key.
+    env["HERMES_SESSION_KEY"] = "chat-a"
+    reset(session_id="Z", old_session_id="X", new_session_id="Z")
+    assert ctx.state["session_keys"] == {"chat-a": "Y", "chat-b": "X"}
+
+
+def test_session_reset_keeps_the_key_at_the_row_cap(rig):
+    ctx, _, _, env, now, _ = rig
+    env.clear()
+    env["HERMES_SESSION_KEY"] = "chat-a"
+    ctx.hooks["pre_llm_call"](session_id="old")
+    env.clear()
+    for n in range(49):
+        now[0] += 1
+        ctx.hooks["post_tool_call"](session_id=f"sub{n}", status="ok")
+    now[0] += 1
+    ctx.hooks["on_session_reset"](session_id="new", old_session_id="old", new_session_id="new")
+    assert ctx.state["session_keys"] == {"chat-a": "new"} and "old" not in ctx.state["sessions"]
+
+
+@pytest.mark.parametrize("provider", ["emotion-chip", "edge"])
+def test_skill_follows_a_live_fish_pin_change(rig, provider):
+    from emotion_chip.guide import build_skill
+    ctx, _, host, *_ = rig
+    host["tts.provider"] = provider
+    host["tts.fish-audio.model"] = "drama-3"
+    ctx.section({"model": "default"})
+    path = ctx.skill[0]
+    text = build_skill("fish_drama3", "default", load_data()) + "\n"
+    assert path.read_text() == text
+    stamp = path.stat().st_mtime_ns
+    ctx.section({"model": "default"})
+    assert path.stat().st_mtime_ns == stamp and path.read_text() == text
+
+
+def test_skill_rewrite_keeps_an_ordinary_file_mode(rig):
+    ctx, _, host, *_ = rig
+    path = ctx.skill[0]
+    path.chmod(0o644)
+    host["tts.fish-audio.model"] = "drama-3"
+    ctx.section({"model": "default"})
+    assert path.stat().st_mode & 0o777 == 0o644 and len(list(path.parent.iterdir())) == 1
+
+
+def test_skill_rewrite_error_keeps_prompt_working(rig, monkeypatch, caplog):
+    ctx, _, host, *_ = rig
+    before = ctx.skill[0].read_text()
+    host["tts.fish-audio.model"] = "drama-3"
+    def fail(*args):
+        raise OSError("fixture write failure")
+    monkeypatch.setattr("emotion_chip.hermes.registration.os.replace", fail)
+    assert ctx.section({"model": "default"}) == build_prompt_section("fish_drama3", "default", load_data())
+    assert "skill rewrite failed" in caplog.text and ctx.skill[0].read_text() == before
 
 
 @pytest.mark.parametrize("host_speed,call,expected", [(1.3, None, 1.196), (1.3, 1.1, 1.012),
@@ -781,6 +876,97 @@ def test_transform_tool_result_mid_task(rig, mode, result):
     ctx.set_config("signals", "facts")
     ctx.hooks["post_tool_call"](**kw, status="ok")
     assert hook(**kw, result=result) is None
+
+
+def test_transform_default_signals_never_rewrites(rig):
+    ctx, *_ = rig
+    for _ in range(3):
+        ctx.hooks["post_tool_call"](status="error")
+    assert ctx.hooks["transform_tool_result"](result='{"error":"x"}', status="error", tool_name="terminal") is None
+
+
+def test_transform_uses_call_status_not_shared_streak(rig):
+    ctx, *_ = rig
+    ctx.set_config("signals", "facts")
+    post, transform = ctx.hooks["post_tool_call"], ctx.hooks["transform_tool_result"]
+    kw = {"session_id": "fixture-session", "tool_name": "terminal"}
+    for status in ("error", "ok"):
+        post(**kw, status=status)
+    assert transform(**kw, status="error", result='{"error":"A"}') is not None
+    assert transform(**kw, result="err") is None
+    for status in ("ok", "error"):
+        post(**kw, status=status)
+    assert transform(**kw, status="ok", result='{"output":"B"}') is None
+    assert transform(**kw, result="err") is not None
+
+
+def test_transform_counts_this_failure_in_either_hook_order(rig):
+    ctx, *_ = rig
+    ctx.set_config("signals", "facts")
+    post, transform = ctx.hooks["post_tool_call"], ctx.hooks["transform_tool_result"]
+    kw = {"session_id": "fixture-session", "tool_name": "terminal"}
+    # Hermes's serial path: transform_tool_result runs before this call's post_tool_call.
+    first = transform(**kw, status="error", tool_call_id="c1", result="err")
+    assert "1 tool error in a row" in first
+    post(**kw, status="error", tool_call_id="c1")
+    assert transform(**kw, status="ok", tool_call_id="c2", result="ok") is None
+    post(**kw, status="ok", tool_call_id="c2")
+    after_success = transform(**kw, status="error", tool_call_id="c3", result="err")
+    assert "1 tool error in a row" in after_success and "success" not in after_success
+    post(**kw, status="error", tool_call_id="c3")
+    # The concurrent path: post_tool_call first; the failure is not counted twice.
+    post(**kw, status="error", tool_call_id="c4")
+    assert "2 tool errors in a row" in transform(**kw, status="error", tool_call_id="c4", result="err")
+    assert ctx.state["sessions"]["fixture-session"]["tool_error_streak"] == 2
+
+
+def test_transform_preserves_json_object_bytes(rig):
+    ctx, *_ = rig
+    ctx.set_config("signals", "facts")
+    ctx.hooks["post_tool_call"](status="error")
+    transform = ctx.hooks["transform_tool_result"]
+    result = '{\n  "error": "x",\n  "n": 1.0e5\n}'
+    transformed = transform(result=result, status="error", tool_name="terminal")
+    line = ctx.state["sessions"][""]["last_situation"]
+    assert transformed.startswith('{\n  "error": "x",\n  "n": 1.0e5')
+    assert json.loads(transformed)["situation"] == line
+    result = '{"error":"x","situation":"tool"}'
+    assert transform(result=result, status="error") == result + "\n\nSituation: " + line
+    assert json.loads(transform(result="{}", status="error")) == {"situation": line}
+
+
+def test_transform_signals_off_reads_no_state(rig):
+    ctx, *_ = rig
+    class Counting(dict):
+        reads = 0
+        def get(self, *args):
+            self.reads += 1
+            return super().get(*args)
+    hooks = ctx.hooks["transform_tool_result"].__self__
+    state = Counting()
+    hooks.situation.state, hooks.env = state, lambda key: ""
+    assert hooks.transform_tool_result(session_id="", tool_name="terminal", result="x") is None
+    assert state.reads == 0
+
+
+def test_transform_empty_session_id_matches_post_tool_call(rig):
+    ctx, _, _, env, *_ = rig
+    env["HERMES_SESSION_ID"] = "S-env"
+    ctx.set_config("signals", "facts")
+    for _ in range(2):
+        ctx.hooks["post_tool_call"](session_id="", status="error")
+    result = ctx.hooks["transform_tool_result"](session_id="", tool_name="terminal", result="err", status="error")
+    line = ctx.state["sessions"][""]["last_situation"]
+    assert "2 tool errors in a row" in result and result == "err\n\nSituation: " + line
+
+
+def test_transform_deeply_nested_json_falls_back_to_text(rig):
+    ctx, *_ = rig
+    ctx.set_config("signals", "facts")
+    ctx.hooks["post_tool_call"](status="error")
+    result = "[" * 200000 + "]" * 200000
+    transformed = ctx.hooks["transform_tool_result"](result=result, status="error", tool_name="terminal")
+    assert transformed == result + "\n\nSituation: " + ctx.state["sessions"][""]["last_situation"]
 
 
 def test_stream_pieces_keep_every_sound(rig):
