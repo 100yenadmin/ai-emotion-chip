@@ -617,6 +617,10 @@ def test_session_reset_moves_only_the_chat_that_ran_new(rig):
     env["HERMES_SESSION_KEY"] = "chat-a"
     reset(session_id="Y", old_session_id="X", new_session_id="Y")
     assert ctx.state["session_keys"] == {"chat-a": "Y", "chat-b": "X"}
+    # A bound key that is not on the old session never moves another chat's key.
+    env["HERMES_SESSION_KEY"] = "chat-a"
+    reset(session_id="Z", old_session_id="X", new_session_id="Z")
+    assert ctx.state["session_keys"] == {"chat-a": "Y", "chat-b": "X"}
 
 
 def test_session_reset_keeps_the_key_at_the_row_cap(rig):

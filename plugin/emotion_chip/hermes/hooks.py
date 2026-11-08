@@ -78,12 +78,12 @@ class Hooks:
             return
         with self.situation.lock:
             # Hermes passes no session key here, and several chats can share one session (/resume from a second
-            # chat). Move only the chat that ran /new: the bound key, else the one key on the old session. When
-            # that is ambiguous, leave the map; each chat's next message maps its key again.
+            # chat). Move only the chat that ran /new: the bound key, else (with no key bound) the one key on the
+            # old session. When that is ambiguous, leave the map; each chat's next message maps its key again.
             keys = self.situation.get("session_keys", {})
             bound = self.env("HERMES_SESSION_KEY")
             on_old = [key for key, value in keys.items() if value == old]
-            moved = bound if bound in on_old else (on_old[0] if len(on_old) == 1 else None)
+            moved = bound if bound in on_old else (on_old[0] if not bound and len(on_old) == 1 else None)
             if moved is None:
                 return
             # update() may evict the old row at the 50-row cap and prune its keys, so re-add the moved key after.
