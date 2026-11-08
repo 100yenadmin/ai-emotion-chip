@@ -488,6 +488,22 @@ def _damaged(tmp_path, name, edit):
     ("sounds.yaml", lambda v: v.setdefault("aliases", {}).update(happy="laugh"), "emotion cue or score form"),
     ("sounds.yaml", lambda v: v.setdefault("aliases", {}).update({"speaker: 1": "laugh"}), "emotion cue or score form"),
     ("sounds.yaml", lambda v: v["events"].update(soft={"kind": "affect"}), "emotion cue or score form"),
+    # #4: ids must be in the parser's form (lowercase, single spaces), or they are read as cues and skip the sound cap.
+    ("sounds.yaml", lambda v: v["events"].update(Hum={"kind": "affect"}), "lowercase"),
+    ("sounds.yaml", lambda v: v["events"].update({"deep  hum": {"kind": "affect"}}), "lowercase"),
+    ("sounds.yaml", lambda v: v.setdefault("aliases", {}).update(Giggly="laugh"), "lowercase"),
+    ("sounds.yaml", lambda v: v.setdefault("aliases", {}).update({" giggly": "laugh"}), "lowercase"),
+    ("sounds.yaml", lambda v: (v["events"].update(Purr={"kind": "affect"}),
+                               v.setdefault("aliases", {}).update(purr="laugh")), "lowercase"),
+    ("sounds.yaml", lambda v: v["events"].update({"123": {"kind": "affect"}}), "with a letter and no brackets"),
+    ("sounds.yaml", lambda v: v["events"].update({"a]b": {"kind": "affect"}}), "with a letter and no brackets"),
+    ("sounds.yaml", lambda v: v.setdefault("aliases", {}).update({"hum[foo]": "laugh"}), "with a letter and no brackets"),
+    ("sounds.yaml", lambda v: v.setdefault("aliases", {}).update(giggly=["laugh"]), "not an event"),
+    ("sounds.yaml", lambda v: v["events"].update({"ſoft": {"kind": "affect"}}), "emotion cue or score form"),
+    ("sounds.yaml", lambda v: v.setdefault("aliases", {}).update({"whısper: x": "laugh"}), "emotion cue or score form"),
+    # #4: a dialect note that is not a string would raise TypeError when the guide is built.
+    ("dialects/fish_s2.yaml", lambda v: v.update(notes=None), "notes must be a string"),
+    ("dialects/fish_s2.yaml", lambda v: v.update(notes=["a"]), "notes must be a string"),
 ])
 def test_sound_and_variant_tables_are_validated(tmp_path, name, edit, match):
     with pytest.raises(ValueError, match=match):

@@ -4,7 +4,7 @@ from functools import lru_cache
 import re
 from .data import load_data
 
-from .model import GAP, SPAN_OPS, Cue, Dropped, Event, Header, Score, Sentence, Span, Speaker, Text
+from .model import GAP, LETTER, SPAN_OPS, Cue, Dropped, Event, Header, Score, Sentence, Span, Speaker, Text
 
 # A period after a common title or "e.g." does not end a sentence ("Dr. Smith arrived." is one sentence).
 ABBREVIATIONS = ("Mr", "Mrs", "Ms", "Dr", "Prof", "Sr", "Jr", "St", "Mt", "vs", "e.g", "i.e")
@@ -18,7 +18,6 @@ SPAN_OPEN = re.compile(rf"\[\s*({'|'.join(SPAN_OPS)}):\s*", re.I)
 SPEAKER_ID = re.compile(r"\d{1,3}")
 INNER = re.compile(r"(\[[^\[\]]*\])")
 # A bracket group with no letter names no cue ("items[0]", "[1]", "[::1]"); a Markdown link's target is a URL or path.
-LETTER = re.compile(r"[^\W\d_]")
 # A link target may hold one level of balanced parentheses ("wiki/Mercury_(planet)").
 LINK_TARGET = re.compile(r"\(((?:[^\s()]|\([^\s()]*\))+)\)")
 RUNG = re.compile(r"^(slightly|a little|somewhat|very|extremely|deeply|really)\s+", re.I)
