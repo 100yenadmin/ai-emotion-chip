@@ -4,7 +4,8 @@ import json
 from .settings import session_env, session_identity
 from .situation import situation_line
 
-HOOKS = ("pre_llm_call", "post_tool_call", "api_request_error", "on_session_start", "on_session_end", "transform_tool_result")
+HOOKS = ("pre_llm_call", "post_tool_call", "api_request_error", "on_session_start", "on_session_end", "transform_tool_result",
+         "on_session_reset")
 
 
 class Hooks:
@@ -58,6 +59,22 @@ class Hooks:
             self.situation.update(kwargs.get("session_id") or "",
                                   lambda row: row.update(interruptions=row["interruptions"] + 1))
 
+    def on_session_reset(self, **kwargs):
+        if kwargs.get("parent_session_id") or kwargs.get("platform") == "subagent":
+            return
+        old = kwargs.get("old_session_id")
+        new = kwargs.get("new_session_id") or kwargs.get("session_id")
+        if not old or not new or old == new:
+            return
+        with self.situation.lock:
+            if old not in self.situation.get("session_keys", {}).values():
+                return
+            # Create the new row first: update() drops key-map entries whose session row is missing. Read the map
+            # again afterwards, so entries that update() pruned stay pruned.
+            self.situation.update(new, lambda row: None)
+            keys = self.situation.get("session_keys", {})
+            self.situation.set("session_keys", {key: new if value == old else value for key, value in keys.items()})
+
     def pre_llm_call(self, **kwargs):
         if self.start_turn and not (kwargs.get("parent_session_id") or kwargs.get("platform") == "subagent"):
             self.start_turn(kwargs.get("session_id") or session_identity(self.env, self.situation))
@@ -77,21 +94,25 @@ class Hooks:
 
     def transform_tool_result(self, **kwargs):
         mode = self.settings.get("signals")
-        session_id = kwargs.get("session_id") or session_identity(self.env, self.situation)
-        row = self.situation.session(session_id)
-        if mode == "off" or row.get("tool_error_streak", 0) < 1 or kwargs.get("tool_name") == "text_to_speech":
-            return None
         result = kwargs.get("result")
-        if not isinstance(result, str):
+        if mode == "off" or kwargs.get("tool_name") == "text_to_speech" or not isinstance(result, str):
+            return None
+        session_id = kwargs.get("session_id") or ""
+        row = self.situation.session(session_id)
+        status = kwargs.get("status")
+        if status == "ok" or (status != "error" and row.get("tool_error_streak", 0) < 1):
             return None
         line = situation_line(row, self.situation.clock(), mode == "facts+affordance")
+        if not line:
+            return None
         try:
             value = json.loads(result)
-        except ValueError:
+        except (ValueError, RecursionError):
             value = None
-        if isinstance(value, dict):
-            value["situation"] = line
-            transformed = json.dumps(value, ensure_ascii=False)
+        if isinstance(value, dict) and "situation" not in value:
+            # Splice the key in so the tool's formatting, number spellings and key order survive.
+            head = result.rstrip()[:-1].rstrip()
+            transformed = head + (", " if value else "") + '"situation": ' + json.dumps(line, ensure_ascii=False) + "}"
         else:
             transformed = result + "\n\nSituation: " + line
         self.situation.update(session_id, lambda row: row.update(last_situation=line))

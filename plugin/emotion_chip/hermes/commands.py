@@ -22,7 +22,7 @@ def make_handler(settings, situation, env):
                 values.pop("fish_model")
                 values.update(eleven_model=model, eleven_voice_id=settings.eleven_voice(settings.call_voice()))
             else:
-                values["fish_model"] = model
+                values["fish_model"] = settings.resolve_fish_model(settings.host("tts.model")).label
             values.update(session_id=session_id, dialect=str(dialect_for(backend, model)),
                           quiet="on" if situation.get("quiet", False) else "off",
                           delivery_log="on" if settings.get("delivery_log") else "off")
@@ -45,7 +45,7 @@ def make_handler(settings, situation, env):
         if args in (["quiet"], ["quiet", "on"], ["quiet", "off"]):
             quiet = not situation.get("quiet", False) if len(args) == 1 else args[1] == "on"
             situation.set("quiet", quiet)
-            return "Sounds quiet: " + ("on" if quiet else "off")
+            return "Sounds quiet: " + ("on" if quiet else "off") + " (every chat on this profile)"
         if args == ["register", "clear"]:
             situation.update(session_id, lambda row: row.update(register=""))
             return "Register cleared."

@@ -63,13 +63,17 @@ Under `plugins.entries.emotion-chip.settings` (also in Desktop ▸ Settings ▸ 
 | Setting | Default | What it does |
 |---|---|---|
 | `backend` | `fish` | `fish` or `eleven`. |
-| `fish_model` | `s2.1-pro` | The Fish model to request when neither Fish's `tts.fish-audio.model` nor the call names one. |
+| `fish_model` | `fish-default` | The Fish model to request when neither Fish's `tts.fish-audio.model` nor the call names one. `fish-default` lets Fish choose by your account (s2.1-pro, or s2.1-pro-free on free credit). |
 | `eleven_model` | `eleven_v4` | `eleven_v4`, `eleven_v4_turbo` or `eleven_v3`; a supported `tts.elevenlabs.model_id` takes precedence. |
 | `eleven_voice_id` | empty | Voice to use unless the call names one. It outranks `tts.elevenlabs.voice_id`. A voice is required. |
 | `eleven_style`, `eleven_speed`, `eleven_seed` | unset | Optional ElevenLabs voice settings; omitted from requests when unset. |
 | `guide_mode` | `generate` | `generate` adds the delivery guide to the system prompt and the `emotion-chip-voice` skill. `defer` leaves guidance to you. |
 | `signals` | `off` | `facts` gives the agent dated task facts (tool errors in a row, retries, session length); `facts+affordance` adds "stopping and reporting is fine". |
 | `delivery_log` | `true` | A local log of cue words, dialect, parameters and drops. It never stores the spoken text. |
+
+With `signals` on, the chip adds its line to a failing tool's result through Hermes' `transform_tool_result` hook.
+Hermes keeps only the first plugin's rewrite of a result, in plugin load order, so either another plugin's rewrite of
+that result or the chip's line is dropped. With `signals` off (the default) the chip never rewrites tool results.
 
 ## Use
 
@@ -98,6 +102,8 @@ On the chip's own provider path `/chip why` shows every drop and why, and the de
   spoken text.
 - Hermes's GPT-Live voice chat mode speaks through OpenAI's live voice model, not a speech provider, so the plugin
   does not reach it.
+- When Hermes compresses the conversation in the middle of a reply, sounds after that point start without the earlier
+  cue's voice settings, and `/chip why` shows only the renders made after the compression.
 
 ## Disclosure
 
