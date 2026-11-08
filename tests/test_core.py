@@ -710,6 +710,28 @@ def test_real_sentence_boundaries_still_cross_a_span_with_code(inner, data):
     assert not any(isinstance(t, Span) for s in score.sentences for t in s.tokens)
 
 
+@pytest.mark.parametrize("abbrev", ["Dr. Smith", "e.g. this one", "vs. g", "St. Louis"])
+def test_an_abbreviation_against_code_inside_a_span_is_not_a_sentence_end(abbrev, data):
+    # The top-level rule: "see x[i]Dr. Smith now" is one sentence; inside a span it must stay one span.
+    inner = f"see x[i]{abbrev} now"
+    assert len(parse(inner, data).sentences) == 1
+    score = parse(f"[soft: {inner}]", data)
+    assert len(score.sentences) == 1
+    assert score.sentences[0].tokens == [Span("soft", inner, f"soft: {inner}")]
+    assert not score.dropped
+
+
+def test_a_text_holding_every_private_use_candidate_still_parses(data):
+    plane15 = "".join(chr(cp) for cp in range(0xf0000, 0xffffe))
+    # Plane 15 is taken, so the escapes come from plane 16 and code inside the span is still span text.
+    score = parse(plane15 + " [soft: call items[index] now]", data)
+    assert score.sentences[-1].tokens[-1] == Span("soft", "call items[index] now", "soft: call items[index] now")
+    # With both planes taken there is nothing to escape with: no crash, and the span parses as it did before #34.
+    both = plane15 + "".join(chr(cp) for cp in range(0x100000, 0x10fffe))
+    out = render(both + " [soft: call items[index] now]", "tagless", data=data)
+    assert out.text == both + " call items now"
+
+
 @pytest.mark.parametrize("dialect", DIALECTS)
 def test_single_character_span_escapes_and_barrier_never_leak(dialect, data):
     text = 'Okay[soft: [sigh] call items[index] and d["a. b"] now]'

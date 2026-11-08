@@ -94,7 +94,7 @@ def _flatten(op, inner, dropped, protect, header_shaped):
     for kind, piece in _top_level(inner):
         size = len(piece)
         if kind == "group":
-            code = _in_code(inner, pos, kept) and not SPAN_OPEN.search(piece)
+            code = protect is not None and _in_code(inner, pos, kept) and not SPAN_OPEN.search(piece)
             # Same order as the top-level "[[" branch, for groups in code position only: nested-list code stays text,
             # a header-shaped group is a misplaced header. Elsewhere in a span, "[[...]]" keeps its old handling.
             if (code and piece.startswith("[[") and piece.endswith("]]")
@@ -191,28 +191,39 @@ def parse(text: str, data=None) -> Score:
     dropped = []
     body = text
     # Single-character escapes preserve scan positions; only characters absent from agent text are decoded.
+    # They come from the supplementary private use planes (15, then 16). A text that already uses all but two of
+    # those code points parses as before this rule: code inside a span is read as score syntax again.
     used = set(text)
-    candidates = (chr(cp) for cp in range(0xf0000, 0xffffe) if chr(cp) not in used)
-    escapes = {"[": next(candidates), "]": next(candidates)}
-    barrier = next(candidates)
-    encode = str.maketrans(escapes)
-    decode = str.maketrans({**{escape: bracket for bracket, escape in escapes.items()}, barrier: ""})
-
-    def protect(s):
-        return s.translate(encode)
-
-    def restore(s):
-        return s.translate(decode)
+    free = (chr(cp) for plane in (range(0xf0000, 0xffffe), range(0x100000, 0x10fffe)) for cp in plane
+            if chr(cp) not in used)
+    picked = [char for _, char in zip(range(4), free)]
+    if len(picked) == 4:
+        escapes, barrier, neutral = {"[": picked[0], "]": picked[1]}, picked[2], picked[3]
+        encode = str.maketrans(escapes)
+        decode = str.maketrans({**{escape: bracket for bracket, escape in escapes.items()}, barrier: ""})
+        protect, restore = (lambda s: s.translate(encode)), (lambda s: s.translate(decode))
+    else:
+        escapes, barrier, neutral, protect, restore = {}, GAP, None, None, (lambda s: s)
 
     def mask_code(s):
-        """Ignore punctuation inside protected code without shifting sentence-boundary offsets."""
+        """Hide the characters inside protected code from the sentence-boundary checks, keeping every offset.
+
+        The escapes themselves stay, so the edge of the code reads like a bracket: "x[i]Dr. Smith" keeps the word
+        boundary that the abbreviation guard needs. The filler is a private-use character: not a word, space,
+        punctuation or closer character.
+        """
+        if not escapes:
+            return s
         masked, depth = [], 0
         for char in s:
             if char == escapes["["]:
                 depth += 1
-            masked.append("x" if depth else char)
-            if char == escapes["]"]:
-                depth -= 1
+                masked.append(char)
+            elif char == escapes["]"]:
+                depth = max(0, depth - 1)
+                masked.append(char)
+            else:
+                masked.append(neutral if depth else char)
         return "".join(masked)
 
     def header_shaped(inner):
