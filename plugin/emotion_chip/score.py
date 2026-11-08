@@ -64,14 +64,53 @@ def _top_level(text):
     return [(k, v) for k, v in pieces if v]
 
 
-def _flatten(op, inner, dropped):
+def _ident(body, i):
+    """Whether the character before i ends an ASCII identifier; CJK puts cues against words."""
+    return bool(i) and (body[i - 1] < "\x80" and (body[i - 1].isalnum() or body[i - 1] == "_"))
+
+
+def _in_code(body, i, kept):
+    """Whether a group continues an identifier, a kept subscript, or a call."""
+    if _ident(body, i) or (i and body[i - 1] == "]" and kept == i - 1):
+        return True
+    if not i or body[i - 1] != ")":
+        return False
+    # A call's "(" sits against a word, unlike prose "(He laughed)".
+    depth = 0
+    for j in range(i - 1, max(-1, i - 202), -1):
+        depth += {")": 1, "(": -1}.get(body[j], 0)
+        if depth == 0:
+            return _ident(body, j)
+    return False
+
+
+def _flatten(op, inner, dropped, protect, header_shaped):
     """Rewrite a span body that holds bracket tokens as a flat run of leaf tokens, at any depth.
 
     Text takes the nearest enclosing span (or stays plain text when op is None); sounds and cues stay where they
-    were written. The result has no nested brackets, so no operator word can end up spoken.
+    were written. Code brackets are protected from the rescan; score brackets are flattened.
     """
-    parts = []
+    pieces, pos, kept = [], 0, -1
     for kind, piece in _top_level(inner):
+        size = len(piece)
+        if kind == "group":
+            code = protect is not None and _in_code(inner, pos, kept) and not SPAN_OPEN.search(piece)
+            # Same order as the top-level "[[" branch, for groups in code position only: nested-list code stays text,
+            # a header-shaped group is a misplaced header. Elsewhere in a span, "[[...]]" keeps its old handling.
+            if (code and piece.startswith("[[") and piece.endswith("]]")
+                    and "[" not in piece[2:-2] and header_shaped(piece[2:-2])):
+                dropped.append(Dropped("header", "misplaced"))
+                kind, piece = "text", GAP
+            elif code:
+                kept = pos + size - 1
+                kind, piece = "text", protect(piece)
+        pos += size
+        if kind == "text" and pieces and pieces[-1][0] == "text":
+            pieces[-1] = ("text", pieces[-1][1] + piece)
+        else:
+            pieces.append((kind, piece))
+    parts = []
+    for kind, piece in pieces:
         if kind == "text":
             if "[" in piece or "]" in piece:
                 dropped.append(Dropped("syntax", "[", "nested"))
@@ -81,15 +120,15 @@ def _flatten(op, inner, dropped):
             continue
         child = SPAN_OPEN.match(piece)
         if child:
-            parts.extend(_flatten(child[1].lower(), piece[child.end():-1], dropped))
+            parts.extend(_flatten(child[1].lower(), piece[child.end():-1], dropped, protect, header_shaped))
         elif "[" in piece[1:-1] or "]" in piece[1:-1]:
-            parts.extend(_unwrap(piece[1:-1], op, dropped))
+            parts.extend(_unwrap(piece[1:-1], op, dropped, protect, header_shaped))
         else:
             parts.append(piece)
     return parts
 
 
-def _unwrap(body, op, dropped):
+def _unwrap(body, op, dropped, protect, header_shaped):
     """A cue that wraps other tokens: its own words become one cue, then its inner tokens follow.
 
     Fragments are joined with a space, so pieces split by a token ("hap[laugh]py") never fuse into a new word.
@@ -98,7 +137,7 @@ def _unwrap(body, op, dropped):
     words = " ".join(re.sub(r"[\[\]]", "", v).strip(" ,") for k, v in pieces if k == "text" and v.strip(" ,"))
     words = re.sub(r"\s+", " ", words).strip()
     parts = [f"[{words}]"] if words else []
-    return parts + _flatten(op, "".join(v for k, v in pieces if k == "group"), dropped)
+    return parts + _flatten(op, "".join(v for k, v in pieces if k == "group"), dropped, protect, header_shaped)
 
 
 @lru_cache(maxsize=16)
@@ -151,6 +190,45 @@ def parse(text: str, data=None) -> Score:
     header = None
     dropped = []
     body = text
+    # Single-character escapes preserve scan positions; only characters absent from agent text are decoded.
+    # They come from the supplementary private use planes (15, then 16). A text that already uses all but two of
+    # those code points parses as before this rule: code inside a span is read as score syntax again.
+    used = set(text)
+    free = (chr(cp) for plane in (range(0xf0000, 0xffffe), range(0x100000, 0x10fffe)) for cp in plane
+            if chr(cp) not in used)
+    picked = [char for _, char in zip(range(4), free)]
+    if len(picked) == 4:
+        escapes, barrier, neutral = {"[": picked[0], "]": picked[1]}, picked[2], picked[3]
+        encode = str.maketrans(escapes)
+        decode = str.maketrans({**{escape: bracket for bracket, escape in escapes.items()}, barrier: ""})
+        protect, restore = (lambda s: s.translate(encode)), (lambda s: s.translate(decode))
+    else:
+        escapes, barrier, neutral, protect, restore = {}, GAP, None, None, (lambda s: s)
+
+    def mask_code(s):
+        """Hide the characters inside protected code from the sentence-boundary checks, keeping every offset.
+
+        The escapes themselves stay, so the edge of the code reads like a bracket: "x[i]Dr. Smith" keeps the word
+        boundary that the abbreviation guard needs. The filler is a private-use character: not a word, space,
+        punctuation or closer character.
+        """
+        if not escapes:
+            return s
+        masked, depth = [], 0
+        for char in s:
+            if char == escapes["["]:
+                depth += 1
+                masked.append(char)
+            elif char == escapes["]"]:
+                depth = max(0, depth - 1)
+                masked.append(char)
+            else:
+                masked.append(neutral if depth else char)
+        return "".join(masked)
+
+    def header_shaped(inner):
+        return _header_shaped(inner, events, data)
+
     start = re.match(r"\s*\[\[([^\[\]]*)\]\]", body)
     # A leading wiki link ("[[Project Plan]] is ready.") is text, parsed below like one anywhere else. Delivery words
     # outside the lexicon ("[[conversational]]") still open the reply: only a capitalised name reads as a link.
@@ -169,6 +247,7 @@ def parse(text: str, data=None) -> Score:
     tokens = []
 
     def append_text(s):
+        s = restore(s)
         if not s:
             return
         if tokens and isinstance(tokens[-1], Text):
@@ -179,7 +258,7 @@ def parse(text: str, data=None) -> Score:
     def plain(s):
         nonlocal tokens
         pos = 0
-        for match in BOUNDARY.finditer(s):
+        for match in BOUNDARY.finditer(mask_code(s)):
             append_text(s[pos:match.start()])
             if tokens:
                 sentences.append(Sentence(tokens))
@@ -191,25 +270,10 @@ def parse(text: str, data=None) -> Score:
         """A boundary before a rewrite that starts against a word, so its cue is not read as part of that word."""
         return GAP if i and (body[i - 1].isalnum() or body[i - 1] == "_") else ""
 
-    def ident(i):
-        """Whether the character before i ends an identifier. ASCII only: CJK text puts cues against words."""
-        return bool(i) and (body[i - 1] < "\x80" and (body[i - 1].isalnum() or body[i - 1] == "_"))
-
     kept = -1  # where the last bracket group kept as text ends, so a chained subscript ("x[i][j]") stays text too
 
     def in_code(i):
-        """Whether the group at i continues a word or a code expression: x[k], x[i][j], f()[k], items[0][k]."""
-        if ident(i) or (i and body[i - 1] == "]" and kept == i - 1):
-            return True
-        if not i or body[i - 1] != ")":
-            return False
-        # A call's closing parenthesis: its "(" sits against a word ("factory()"), unlike prose "(He laughed)".
-        depth = 0
-        for j in range(i - 1, max(-1, i - 202), -1):
-            depth += {")": 1, "(": -1}.get(body[j], 0)
-            if depth == 0:
-                return ident(j)
-        return False
+        return _in_code(body, i, kept)
 
     def guard(i):
         """The boundary a rewrite leads with, so its first cue is read as a cue, not as part of a word or code."""
@@ -269,7 +333,12 @@ def parse(text: str, data=None) -> Score:
                 continue
             if "[" in inner or "]" in inner:
                 # A sound or cue inside a span splits the span around it: [soft: a [laugh] b] → [soft: a] [laugh] [soft: b].
-                body = body[:i] + guard(i) + " ".join(_flatten(op, inner, dropped)) + body[close + 1:]
+                parts = _flatten(op, inner, dropped, protect, header_shaped)
+                boundary = guard(i)
+                # GAP would leak into Score text here; the separator after this cue already keeps words apart.
+                if boundary and len(parts) > 1 and not SPAN_OPEN.match(parts[0]):
+                    boundary = barrier
+                body = body[:i] + boundary + " ".join(parts) + body[close + 1:]
                 continue
         end = _find_after(_scan(body)[1], i + 1)
         nested = body.find("[", i + 1, end if end != -1 else len(body))
@@ -285,7 +354,8 @@ def parse(text: str, data=None) -> Score:
             close = _close(body, i)
             if close != -1:
                 # [happy [laugh]] → [happy] [laugh]: the cue's words stay a cue instead of being spoken.
-                body = body[:i] + guard(i) + " ".join(_unwrap(body[i + 1:close], None, dropped)) + body[close + 1:]
+                parts = _unwrap(body[i + 1:close], None, dropped, protect, header_shaped)
+                body = body[:i] + guard(i) + " ".join(parts) + body[close + 1:]
                 continue
         if end == -1 or nested != -1:
             # Drop only this bracket and keep scanning, so a later opener is still parsed.
@@ -311,16 +381,17 @@ def parse(text: str, data=None) -> Score:
             tokens.append(Event(events[low], raw))
         elif span:
             op = span[1].lower()
-            if BOUNDARY.search(span[2]):
+            masked = mask_code(span[2])
+            if BOUNDARY.search(masked):
                 tokens.append(cue(op))
                 plain(" " + span[2])
                 dropped.append(Dropped("span", op, "crossed sentence"))
             else:
-                tokens.append(Span(op, span[2], raw))
+                tokens.append(Span(op, restore(span[2]), restore(raw)))
             # A span that ends its sentence ("[soft: Two.] Three.") holds the punctuation; the space after it is
             # outside, so the boundary is checked here, for a crossed span too.
             gap = SPACE.match(body, end + 1)
-            if gap and BOUNDARY.match(span[2] + " ", len(span[2])):
+            if gap and BOUNDARY.match(masked + " ", len(masked)):
                 sentences.append(Sentence(tokens))
                 tokens = []
                 i = gap.end()

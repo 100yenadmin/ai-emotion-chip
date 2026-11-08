@@ -261,6 +261,23 @@ def test_middleware_dialects(rig, provider, model, expected):
     assert ("<soft>" in expected) == (provider == "fish-audio" and model == "drama-3")
 
 
+def test_middleware_default_provider_keeps_code_inside_a_span(rig):
+    ctx, _, host, *_ = rig
+    host.pop("tts.provider")
+    args = {"text": "[whisper: call items[index] now]", "output_path": "fixture.mp3"}
+    assert ctx.middleware(tool_name="text_to_speech", args=args) == {
+        "args": {"text": "call items[index] now", "output_path": "fixture.mp3"}}
+    assert args["text"] == "[whisper: call items[index] now]"
+
+
+def test_span_code_placeholders_do_not_reach_why(rig):
+    ctx, fish, *_ = rig
+    ctx.provider.synthesize("[whisper: call items[index] now]", "fixture.mp3")
+    assert fish.calls[-1][1] == "[whispering] call items[index] now"
+    why = ctx.command("why")
+    assert "\ue000" not in why and "\ue001" not in why
+
+
 # Hermes runs a command provider for a non-built-in name whose config (tts.providers.<name>, else tts.<name>) has a
 # non-empty command and an empty or "command" type; the chip leaves that text alone and renders everything else.
 @pytest.mark.parametrize("provider, config, untouched", [
