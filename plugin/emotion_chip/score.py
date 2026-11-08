@@ -84,7 +84,7 @@ def _in_code(body, i, kept):
     return False
 
 
-def _flatten(op, inner, dropped, protect):
+def _flatten(op, inner, dropped, protect, header_shaped):
     """Rewrite a span body that holds bracket tokens as a flat run of leaf tokens, at any depth.
 
     Text takes the nearest enclosing span (or stays plain text when op is None); sounds and cues stay where they
@@ -93,9 +93,17 @@ def _flatten(op, inner, dropped, protect):
     pieces, pos, kept = [], 0, -1
     for kind, piece in _top_level(inner):
         size = len(piece)
-        if kind == "group" and _in_code(inner, pos, kept) and not SPAN_OPEN.search(piece):
-            kept = pos + size - 1
-            kind, piece = "text", protect(piece)
+        if kind == "group":
+            code = _in_code(inner, pos, kept) and not SPAN_OPEN.search(piece)
+            # Same order as the top-level "[[" branch, for groups in code position only: nested-list code stays text,
+            # a header-shaped group is a misplaced header. Elsewhere in a span, "[[...]]" keeps its old handling.
+            if (code and piece.startswith("[[") and piece.endswith("]]")
+                    and "[" not in piece[2:-2] and header_shaped(piece[2:-2])):
+                dropped.append(Dropped("header", "misplaced"))
+                kind, piece = "text", GAP
+            elif code:
+                kept = pos + size - 1
+                kind, piece = "text", protect(piece)
         pos += size
         if kind == "text" and pieces and pieces[-1][0] == "text":
             pieces[-1] = ("text", pieces[-1][1] + piece)
@@ -112,15 +120,15 @@ def _flatten(op, inner, dropped, protect):
             continue
         child = SPAN_OPEN.match(piece)
         if child:
-            parts.extend(_flatten(child[1].lower(), piece[child.end():-1], dropped, protect))
+            parts.extend(_flatten(child[1].lower(), piece[child.end():-1], dropped, protect, header_shaped))
         elif "[" in piece[1:-1] or "]" in piece[1:-1]:
-            parts.extend(_unwrap(piece[1:-1], op, dropped, protect))
+            parts.extend(_unwrap(piece[1:-1], op, dropped, protect, header_shaped))
         else:
             parts.append(piece)
     return parts
 
 
-def _unwrap(body, op, dropped, protect):
+def _unwrap(body, op, dropped, protect, header_shaped):
     """A cue that wraps other tokens: its own words become one cue, then its inner tokens follow.
 
     Fragments are joined with a space, so pieces split by a token ("hap[laugh]py") never fuse into a new word.
@@ -129,7 +137,7 @@ def _unwrap(body, op, dropped, protect):
     words = " ".join(re.sub(r"[\[\]]", "", v).strip(" ,") for k, v in pieces if k == "text" and v.strip(" ,"))
     words = re.sub(r"\s+", " ", words).strip()
     parts = [f"[{words}]"] if words else []
-    return parts + _flatten(op, "".join(v for k, v in pieces if k == "group"), dropped, protect)
+    return parts + _flatten(op, "".join(v for k, v in pieces if k == "group"), dropped, protect, header_shaped)
 
 
 @lru_cache(maxsize=16)
@@ -182,21 +190,33 @@ def parse(text: str, data=None) -> Score:
     header = None
     dropped = []
     body = text
-    # GAP already uses U+E000. Choose a prefix absent from agent text and decode only our own escapes.
-    prefix = "\ue001"
-    while prefix in text:
-        prefix += "\ue001"
-    escapes = {"[": prefix + "\ue002", "]": prefix + "\ue003"}
-    barrier = prefix + "\ue004"
+    # Single-character escapes preserve scan positions; only characters absent from agent text are decoded.
+    used = set(text)
+    candidates = (chr(cp) for cp in range(0xf0000, 0xffffe) if chr(cp) not in used)
+    escapes = {"[": next(candidates), "]": next(candidates)}
+    barrier = next(candidates)
+    encode = str.maketrans(escapes)
+    decode = str.maketrans({**{escape: bracket for bracket, escape in escapes.items()}, barrier: ""})
 
     def protect(s):
-        return s.translate(str.maketrans(escapes))
+        return s.translate(encode)
 
     def restore(s):
-        s = s.replace(barrier, "")
-        for bracket, escape in escapes.items():
-            s = s.replace(escape, bracket)
-        return s
+        return s.translate(decode)
+
+    def mask_code(s):
+        """Ignore punctuation inside protected code without shifting sentence-boundary offsets."""
+        masked, depth = [], 0
+        for char in s:
+            if char == escapes["["]:
+                depth += 1
+            masked.append("x" if depth else char)
+            if char == escapes["]"]:
+                depth -= 1
+        return "".join(masked)
+
+    def header_shaped(inner):
+        return _header_shaped(inner, events, data)
 
     start = re.match(r"\s*\[\[([^\[\]]*)\]\]", body)
     # A leading wiki link ("[[Project Plan]] is ready.") is text, parsed below like one anywhere else. Delivery words
@@ -227,7 +247,7 @@ def parse(text: str, data=None) -> Score:
     def plain(s):
         nonlocal tokens
         pos = 0
-        for match in BOUNDARY.finditer(s):
+        for match in BOUNDARY.finditer(mask_code(s)):
             append_text(s[pos:match.start()])
             if tokens:
                 sentences.append(Sentence(tokens))
@@ -302,9 +322,9 @@ def parse(text: str, data=None) -> Score:
                 continue
             if "[" in inner or "]" in inner:
                 # A sound or cue inside a span splits the span around it: [soft: a [laugh] b] → [soft: a] [laugh] [soft: b].
-                parts = _flatten(op, inner, dropped, protect)
+                parts = _flatten(op, inner, dropped, protect, header_shaped)
                 boundary = guard(i)
-                # A leading cue/sound needs a scan barrier, but its following separator keeps words apart.
+                # GAP would leak into Score text here; the separator after this cue already keeps words apart.
                 if boundary and len(parts) > 1 and not SPAN_OPEN.match(parts[0]):
                     boundary = barrier
                 body = body[:i] + boundary + " ".join(parts) + body[close + 1:]
@@ -323,7 +343,8 @@ def parse(text: str, data=None) -> Score:
             close = _close(body, i)
             if close != -1:
                 # [happy [laugh]] → [happy] [laugh]: the cue's words stay a cue instead of being spoken.
-                body = body[:i] + guard(i) + " ".join(_unwrap(body[i + 1:close], None, dropped, protect)) + body[close + 1:]
+                parts = _unwrap(body[i + 1:close], None, dropped, protect, header_shaped)
+                body = body[:i] + guard(i) + " ".join(parts) + body[close + 1:]
                 continue
         if end == -1 or nested != -1:
             # Drop only this bracket and keep scanning, so a later opener is still parsed.
@@ -349,7 +370,8 @@ def parse(text: str, data=None) -> Score:
             tokens.append(Event(events[low], raw))
         elif span:
             op = span[1].lower()
-            if BOUNDARY.search(span[2]):
+            masked = mask_code(span[2])
+            if BOUNDARY.search(masked):
                 tokens.append(cue(op))
                 plain(" " + span[2])
                 dropped.append(Dropped("span", op, "crossed sentence"))
@@ -358,7 +380,7 @@ def parse(text: str, data=None) -> Score:
             # A span that ends its sentence ("[soft: Two.] Three.") holds the punctuation; the space after it is
             # outside, so the boundary is checked here, for a crossed span too.
             gap = SPACE.match(body, end + 1)
-            if gap and BOUNDARY.match(span[2] + " ", len(span[2])):
+            if gap and BOUNDARY.match(masked + " ", len(masked)):
                 sentences.append(Sentence(tokens))
                 tokens = []
                 i = gap.end()

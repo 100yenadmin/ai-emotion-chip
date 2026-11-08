@@ -620,6 +620,108 @@ def test_span_code_does_not_decode_agent_private_use_characters(dialect, data):
         Span("whisper", inner, f"whisper: {inner}")]
 
 
+@pytest.mark.parametrize("dialect", DIALECTS)
+def test_span_rewrite_preserves_call_lookback_positions(dialect, data):
+    prefix = "f(" + "a" * 181 + "w"
+    # Captured on 380eb93, in DIALECTS order.
+    expected = ("[sighing] [soft tone] x)[k] done", "[sighing] <soft>x</soft>)[k] done",
+                "[sighs] [softly] x)[k] done", " x)[k] done", " x)[k] done")
+    out = render(prefix + "[soft: [sigh] x])[k] done", dialect, data=data)
+    assert out.text == prefix + expected[DIALECTS.index(dialect)]
+
+
+@pytest.mark.parametrize("dialect", DIALECTS)
+def test_span_code_lookback_with_agent_private_use_prefix(dialect, data):
+    prefix = "\ue001" * 300 + " f(a "
+    # OLD (380eb93) kept [k] on every dialect, but split/dropped [i]: the intended #34 fix retains x[i].
+    old = ("[soft tone] x [i] [soft tone] y)[k] done", "<soft>x</soft> [i] <soft>y</soft>)[k] done",
+           "[softly] x [i] [softly] y)[k] done", "x y)[k] done", "x y)[k] done")
+    expected = ("[soft tone] x[i] y)[k] done", "<soft>x[i] y</soft>)[k] done",
+                "[softly] x[i] y)[k] done", "x[i] y)[k] done", "x[i] y)[k] done")
+    out = render(prefix + "[soft: x[i] y])[k] done", dialect, data=data)
+    index = DIALECTS.index(dialect)
+    assert out.text == prefix + expected[index]
+    assert out.text.endswith(old[index][old[index].index(")[k]"):])
+
+
+def test_agent_private_use_prefix_parses_in_linear_time(data):
+    import time
+    text = "\ue001" * 200000
+    start = time.perf_counter()
+    score = parse(text, data)
+    assert time.perf_counter() - start < 1
+    assert score.sentences[0].tokens == [Text(text)]
+
+
+@pytest.mark.parametrize("dialect", DIALECTS)
+def test_span_code_preserves_agent_supplementary_private_use(dialect, data):
+    markers = "\U000f0000\U000f0001\U000f0002\U000ffffd\U00100000\ue000\ue001\ue002\ue003\ue004"
+    # Captured on 380eb93: only GAP (U+E000) disappears from rendered agent text.
+    old_text = "\U000f0000\U000f0001\U000f0002\U000ffffd\U00100000\ue001\ue002\ue003\ue004"
+    assert render(markers + " keep", dialect, data=data).text == old_text + " keep"
+    inner = f"call items[index] {markers} now"
+    score = parse(f"[whisper: {inner}]", data)
+    assert score.sentences[0].tokens == [Span("whisper", inner, f"whisper: {inner}")]
+    expected = render("[whisper: call items[index] now]", dialect, data=data).text
+    out = render(score, dialect, data=data)
+    assert out.text == expected.replace(" now", f" {old_text} now")
+
+
+@pytest.mark.parametrize("dialect", DIALECTS)
+@pytest.mark.parametrize("header", ["sigh", "happy", "pause; a"])
+def test_header_shaped_code_inside_a_span_is_misplaced(header, dialect, data):
+    text = f"[soft: x[[{header}]] ok]"
+    score = parse(text, data)
+    out = render(score, dialect, data=data)
+    spans = [t for s in score.sentences for t in s.tokens if isinstance(t, Span)]
+    assert len(spans) == 1
+    assert all(word not in spans[0].text for word in ("[[", "sigh", "happy", "pause"))
+    assert "[[" not in out.text and out.plan.segments[0].text == "x ok"
+    assert score.dropped == [Dropped("header", "misplaced")]
+    assert Dropped("header", "misplaced") in out.dropped
+
+
+@pytest.mark.parametrize("dialect", DIALECTS)
+@pytest.mark.parametrize("inner", ['use df[["a", "b"]] now', "use df[[names[pause]]] now"])
+def test_nested_list_code_inside_a_span_is_not_a_header(inner, dialect, data):
+    score = parse(f"[soft: {inner}]", data)
+    assert score.sentences[0].tokens == [Span("soft", inner, f"soft: {inner}")]
+    assert not score.dropped
+    assert inner in render(score, dialect, data=data).text
+
+
+@pytest.mark.parametrize("dialect", DIALECTS)
+@pytest.mark.parametrize("inner", ['read d["a. b"] now', "x[a.  b] ok"])
+def test_sentence_boundaries_ignore_code_inside_a_span(inner, dialect, data):
+    score = parse(f"[soft: {inner}]", data)
+    assert len(score.sentences) == 1
+    assert score.sentences[0].tokens == [Span("soft", inner, f"soft: {inner}")]
+    assert not score.dropped
+    out = render(score, dialect, data=data)
+    assert len(out.plan.segments) == 1 and out.plan.segments[0].text == " ".join(inner.split())
+    assert Dropped("span", "soft", "crossed sentence") not in out.dropped
+
+
+@pytest.mark.parametrize("inner", ["Use x[i]. Then go.", 'read d["a. b"] now. Then go.'])
+def test_real_sentence_boundaries_still_cross_a_span_with_code(inner, data):
+    score = parse(f"[soft: {inner}]", data)
+    assert score.dropped == [Dropped("span", "soft", "crossed sentence")]
+    assert len(score.sentences) == 2
+    assert not any(isinstance(t, Span) for s in score.sentences for t in s.tokens)
+
+
+@pytest.mark.parametrize("dialect", DIALECTS)
+def test_single_character_span_escapes_and_barrier_never_leak(dialect, data):
+    text = 'Okay[soft: [sigh] call items[index] and d["a. b"] now]'
+    score = parse(text, data)
+    out = render(score, dialect, data=data)
+    values = [out.text] + [s.text for s in out.plan.segments]
+    values += [v for s in score.sentences for t in s.tokens for v in vars(t).values() if isinstance(v, str)]
+    values += [t.raw for s in out.plan.segments for t in s.spans]
+    assert all(not any(0xf0000 <= ord(c) <= 0xffffd for c in v) for v in values)
+    assert 'call items[index] and d["a. b"] now' in out.text
+
+
 @pytest.mark.parametrize("text, kinds", [
     ("(He laughed)[laugh] ok.", ["Text", "Event", "Text"]),
     ("Fine. [sad][laugh] Yes.", ["Cue", "Event", "Text"]),
