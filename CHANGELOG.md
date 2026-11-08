@@ -1,6 +1,9 @@
 # Changelog
 
-## Unreleased
+## 0.1.1 — 2026-11-08
+
+Fixes from the first release's review backlog (#3, #4, #34). No new features; the Fish model setting gains a
+real `fish-default` choice.
 
 - Fix: code inside a span stays span text in every dialect, by the same rule as outside spans:
   `[whisper: call items[index] now]` is one whispered segment, no longer split around `[index]` (#34).
@@ -8,10 +11,11 @@
   single-spaced, no letter, a bracket, or span-shaped; such a sound was read as a cue, past the sound cap and
   `/chip quiet`), and a dialect `notes` value that is not a string (the guide would fail to build) (#4).
 - Fix: after `/new`, `/chip status`, `/chip why` and `/chip register` show the new conversation (Hermes 0.22.2); the
-  plugin now registers `on_session_reset` (#3).
-- Fix: with `signals` on, the situation line goes on a failing tool's own result, keeps a JSON result's formatting
-  and its own `situation` key, never raises on deeply nested JSON, and reads no plugin state while `signals` is off
-  (#3).
+  plugin now registers `on_session_reset`. When several chats share the old session (after `/resume` from a second
+  chat), each one follows from its next message (#3).
+- Fix: with `signals` on, the situation line goes on a failing tool's own result, counts that failure (it used to lag
+  one call on Hermes's serial tool path), keeps a JSON result's formatting and its own `situation` key, never raises on
+  deeply nested JSON, and reads no plugin state while `signals` is off (#3).
 - Fix: the `emotion-chip-voice` skill follows a live Fish model or backend change without a restart (#3).
 - Change: `fish_model` has a real `fish-default` choice, now the default. Fish still picks the model by your account
   when nothing names one, and `/chip`, the delivery log and Desktop now say so instead of claiming `s2.1-pro` (#3).
