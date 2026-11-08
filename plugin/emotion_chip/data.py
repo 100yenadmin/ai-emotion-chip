@@ -93,9 +93,13 @@ def _parser_form(name):
             and LETTER.search(name) is not None and "[" not in name and "]" not in name)
 
 
+# The parser matches span and speaker openers case-insensitively (re.I), which also folds "ſ" to "s" and "ı" to "i".
+_SCORE_OPENER = re.compile(rf"(?:{'|'.join(SPAN_OPS + ('speaker',))})", re.I)
+
+
 def _shadows_score(data, name):
     """True when a sound name would capture a cue or a span/speaker form, since events are matched first."""
-    return _cue_like(data, name) or name.partition(":")[0].strip().lower() in SPAN_OPS + ("speaker",)
+    return _cue_like(data, name) or _SCORE_OPENER.fullmatch(name.partition(":")[0].strip()) is not None
 
 
 def validate(data):
