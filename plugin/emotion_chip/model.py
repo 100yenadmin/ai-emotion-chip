@@ -6,6 +6,8 @@ from typing import Literal
 Rung = Literal["slightly", "plain", "very"]
 # The span operators the score grammar parses; dialect tables may only define templates for these.
 SPAN_OPS = ("soft", "stress", "slow", "fast", "whisper", "smiling", "emphasis", "forceful")
+# A bracket group with no letter ("[1]", "[...]") is text, never score syntax.
+LETTER = re.compile(r"[^\W\d_]")
 
 
 @dataclass(frozen=True)

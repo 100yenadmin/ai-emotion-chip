@@ -495,6 +495,10 @@ def _damaged(tmp_path, name, edit):
     ("sounds.yaml", lambda v: v.setdefault("aliases", {}).update({" giggly": "laugh"}), "lowercase"),
     ("sounds.yaml", lambda v: (v["events"].update(Purr={"kind": "affect"}),
                                v.setdefault("aliases", {}).update(purr="laugh")), "lowercase"),
+    ("sounds.yaml", lambda v: v["events"].update({"123": {"kind": "affect"}}), "with a letter and no brackets"),
+    ("sounds.yaml", lambda v: v["events"].update({"a]b": {"kind": "affect"}}), "with a letter and no brackets"),
+    ("sounds.yaml", lambda v: v.setdefault("aliases", {}).update({"hum[foo]": "laugh"}), "with a letter and no brackets"),
+    ("sounds.yaml", lambda v: v.setdefault("aliases", {}).update(giggly=["laugh"]), "not an event"),
     # #4: a dialect note that is not a string would raise TypeError when the guide is built.
     ("dialects/fish_s2.yaml", lambda v: v.update(notes=None), "notes must be a string"),
     ("dialects/fish_s2.yaml", lambda v: v.update(notes=["a"]), "notes must be a string"),

@@ -7,7 +7,7 @@ import json
 import re
 import string
 
-from .model import SPAN_OPS
+from .model import LETTER, SPAN_OPS
 
 DIALECTS = ("fish_s2", "fish_drama3", "eleven_v4", "tagless", "prose")
 LITERALS = re.compile(r"\[[^\[\]]+\]|</?\w+>")
@@ -87,8 +87,10 @@ def _cue_like(data, text):
 
 
 def _parser_form(name):
-    """True when a sound id is already in the form the parser looks it up by: lowercase, stripped, single spaces."""
-    return isinstance(name, str) and bool(name) and name == re.sub(r"\s+", " ", name).strip().lower()
+    """True when the parser can read "[name]" as this sound: lowercase, stripped and single-spaced as it looks sounds
+    up, with a letter (a group without one is text) and no bracket (a bracket is syntax)."""
+    return (isinstance(name, str) and name == re.sub(r"\s+", " ", name).strip().lower()
+            and LETTER.search(name) is not None and "[" not in name and "]" not in name)
 
 
 def _shadows_score(data, name):
@@ -128,12 +130,12 @@ def validate(data):
     sounds = _mapping(data.sounds, "sounds")
     for name, row in _mapping(sounds.get("events"), "events").items():
         # The parser looks events up by the bracket text lowercased with single spaces; any other id never matches.
-        _require(_parser_form(name), f"event {name!r}: id must be lowercase with single spaces, as the parser reads it")
+        _require(_parser_form(name), f"event {name!r}: id must be lowercase and single-spaced, with a letter and no brackets, as the parser reads it")
         _require(isinstance(row, dict) and row.get("kind") in {"affect", "structural"}, f"event {name}: invalid kind")
         _require(not _shadows_score(data, name), f"event {name} would capture an emotion cue or score form")
     for alias, target in _mapping(sounds.get("aliases", {}), "sound aliases").items():
-        _require(_parser_form(alias), f"sound alias {alias!r}: id must be lowercase with single spaces, as the parser reads it")
-        _require(isinstance(alias, str) and alias.strip() and target in sounds["events"],
+        _require(_parser_form(alias), f"sound alias {alias!r}: id must be lowercase and single-spaced, with a letter and no brackets, as the parser reads it")
+        _require(isinstance(target, str) and target in sounds["events"],
                  f"sound alias {alias}: target {target} is not an event")
         _require(alias.lower() not in sounds["events"], f"sound alias {alias} would override the event {alias}")
         _require(not _shadows_score(data, alias), f"sound alias {alias} would capture an emotion cue or score form")
