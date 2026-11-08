@@ -86,6 +86,11 @@ def _cue_like(data, text):
     return any(data.lookup(word) for word in _cue(text).words)
 
 
+def _parser_form(name):
+    """True when a sound id is already in the form the parser looks it up by: lowercase, stripped, single spaces."""
+    return isinstance(name, str) and bool(name) and name == re.sub(r"\s+", " ", name).strip().lower()
+
+
 def _shadows_score(data, name):
     """True when a sound name would capture a cue or a span/speaker form, since events are matched first."""
     return _cue_like(data, name) or name.partition(":")[0].strip().lower() in SPAN_OPS + ("speaker",)
@@ -122,9 +127,12 @@ def validate(data):
         _require(_number(row.get("arousal_bucket")), f"alias {word}: invalid arousal_bucket")
     sounds = _mapping(data.sounds, "sounds")
     for name, row in _mapping(sounds.get("events"), "events").items():
+        # The parser looks events up by the bracket text lowercased with single spaces; any other id never matches.
+        _require(_parser_form(name), f"event {name!r}: id must be lowercase with single spaces, as the parser reads it")
         _require(isinstance(row, dict) and row.get("kind") in {"affect", "structural"}, f"event {name}: invalid kind")
         _require(not _shadows_score(data, name), f"event {name} would capture an emotion cue or score form")
     for alias, target in _mapping(sounds.get("aliases", {}), "sound aliases").items():
+        _require(_parser_form(alias), f"sound alias {alias!r}: id must be lowercase with single spaces, as the parser reads it")
         _require(isinstance(alias, str) and alias.strip() and target in sounds["events"],
                  f"sound alias {alias}: target {target} is not an event")
         _require(alias.lower() not in sounds["events"], f"sound alias {alias} would override the event {alias}")
@@ -134,6 +142,7 @@ def validate(data):
         _require(isinstance(dialect.get("dialect_version"), str), f"dialect {name}: missing dialect_version")
         phrases = dialect.get("phrases")
         _require(isinstance(phrases, list) and all(isinstance(x, str) for x in phrases), f"dialect {name}: missing phrases")
+        _require(isinstance(dialect.get("notes", ""), str), f"dialect {name}: notes must be a string")
         inverse = _mapping(dialect.get("inverse"), f"dialect {name} inverse")
         for kind in ("spans", "events"):
             for op, template in _mapping(dialect.get(kind), f"dialect {name} {kind}").items():
