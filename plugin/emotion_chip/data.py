@@ -7,7 +7,7 @@ import json
 import re
 import string
 
-from .model import SPAN_OPS
+from .model import LETTER, SPAN_OPS
 
 DIALECTS = ("fish_s2", "fish_drama3", "eleven_v4", "tagless", "prose")
 LITERALS = re.compile(r"\[[^\[\]]+\]|</?\w+>")
@@ -86,9 +86,20 @@ def _cue_like(data, text):
     return any(data.lookup(word) for word in _cue(text).words)
 
 
+def _parser_form(name):
+    """True when the parser can read "[name]" as this sound: lowercase, stripped and single-spaced as it looks sounds
+    up, with a letter (a group without one is text) and no bracket (a bracket is syntax)."""
+    return (isinstance(name, str) and name == re.sub(r"\s+", " ", name).strip().lower()
+            and LETTER.search(name) is not None and "[" not in name and "]" not in name)
+
+
+# The parser matches span and speaker openers case-insensitively (re.I), which also folds "ſ" to "s" and "ı" to "i".
+_SCORE_OPENER = re.compile(rf"(?:{'|'.join(SPAN_OPS + ('speaker',))})", re.I)
+
+
 def _shadows_score(data, name):
     """True when a sound name would capture a cue or a span/speaker form, since events are matched first."""
-    return _cue_like(data, name) or name.partition(":")[0].strip().lower() in SPAN_OPS + ("speaker",)
+    return _cue_like(data, name) or _SCORE_OPENER.fullmatch(name.partition(":")[0].strip()) is not None
 
 
 def validate(data):
@@ -122,10 +133,13 @@ def validate(data):
         _require(_number(row.get("arousal_bucket")), f"alias {word}: invalid arousal_bucket")
     sounds = _mapping(data.sounds, "sounds")
     for name, row in _mapping(sounds.get("events"), "events").items():
+        # The parser looks events up by the bracket text lowercased with single spaces; any other id never matches.
+        _require(_parser_form(name), f"event {name!r}: id must be lowercase and single-spaced, with a letter and no brackets, as the parser reads it")
         _require(isinstance(row, dict) and row.get("kind") in {"affect", "structural"}, f"event {name}: invalid kind")
         _require(not _shadows_score(data, name), f"event {name} would capture an emotion cue or score form")
     for alias, target in _mapping(sounds.get("aliases", {}), "sound aliases").items():
-        _require(isinstance(alias, str) and alias.strip() and target in sounds["events"],
+        _require(_parser_form(alias), f"sound alias {alias!r}: id must be lowercase and single-spaced, with a letter and no brackets, as the parser reads it")
+        _require(isinstance(target, str) and target in sounds["events"],
                  f"sound alias {alias}: target {target} is not an event")
         _require(alias.lower() not in sounds["events"], f"sound alias {alias} would override the event {alias}")
         _require(not _shadows_score(data, alias), f"sound alias {alias} would capture an emotion cue or score form")
@@ -134,6 +148,7 @@ def validate(data):
         _require(isinstance(dialect.get("dialect_version"), str), f"dialect {name}: missing dialect_version")
         phrases = dialect.get("phrases")
         _require(isinstance(phrases, list) and all(isinstance(x, str) for x in phrases), f"dialect {name}: missing phrases")
+        _require(isinstance(dialect.get("notes", ""), str), f"dialect {name}: notes must be a string")
         inverse = _mapping(dialect.get("inverse"), f"dialect {name} inverse")
         for kind in ("spans", "events"):
             for op, template in _mapping(dialect.get(kind), f"dialect {name} {kind}").items():
