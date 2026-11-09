@@ -9,7 +9,7 @@ Whether Hermes will voice a reply is Hermes's own decision, asked at ingress in 
 the inbound event and, in process, the gateway runner: ``_should_send_voice_reply(event, …, already_sent=True)``
 answers it for the chat's /voice mode (keyed by the bot that owns the chat), ``voice.auto_tts`` and the message's
 type. The answer is kept in memory under the chat and message id, and ``pre_llm_call`` turns it into one line for that
-message's turn. Anything unknown (an isolated plugin host, a missing method, an error) means no line, which is what
+message's turn, once. Anything unknown (an isolated plugin host, a missing method, an error) means no line, which is what
 Hermes does without the chip.
 """
 import threading
@@ -38,7 +38,8 @@ class VoiceReplies:
         chat = str(getattr(source, "chat_id", "") or "")
         if not platform or not chat:
             return
-        message = str(getattr(source, "message_id", "") or getattr(event, "message_id", "") or "")
+        # The id the turn exports as HERMES_SESSION_MESSAGE_ID (gateway/run.py: source.message_id), never event.message_id.
+        message = str(getattr(source, "message_id", "") or "")
         decide = getattr(gateway, "_should_send_voice_reply", None)
         voiced = False
         if platform not in NOT_COVERED and callable(decide):
@@ -46,26 +47,27 @@ class VoiceReplies:
                 voiced = decide(event, "reply", [], already_sent=True) is True
             except Exception:
                 voiced = False
+        now = self.clock()
         with self._lock:
-            self._pending.pop((platform, chat), None)
-            self._pending[(platform, chat)] = (message, voiced, self.clock())
-            while len(self._pending) > MAX_PENDING:
+            # Keyed by message, so other messages in the chat (a group, a topic, a refused sender) never overwrite it.
+            self._pending.pop((platform, chat, message), None)
+            self._pending[(platform, chat, message)] = (voiced, now)
+            while self._pending and (len(self._pending) > MAX_PENDING
+                                     or now - next(iter(self._pending.values()))[1] > TTL_SECONDS):
                 self._pending.pop(next(iter(self._pending)))
 
     def voiced(self, env):
-        """For the turn in *env*'s session: True when Hermes said it will voice this message's reply."""
-        key = (str(env("HERMES_SESSION_PLATFORM") or ""), str(env("HERMES_SESSION_CHAT_ID") or ""))
-        message = str(env("HERMES_SESSION_MESSAGE_ID") or "")
+        """For the turn in *env*'s session: True when Hermes said it will voice this message's reply. Each decision is
+        used once: a queued or interrupting follow-up never passes the ingress hook and keeps the first message's id,
+        so it must not inherit that message's answer."""
+        key = (str(env("HERMES_SESSION_PLATFORM") or ""), str(env("HERMES_SESSION_CHAT_ID") or ""),
+               str(env("HERMES_SESSION_MESSAGE_ID") or ""))
         with self._lock:
-            entry = self._pending.get(key)
-            if entry is None:
-                return False
-            recorded, voiced, stamp = entry
-            if self.clock() - stamp > TTL_SECONDS or (message or recorded) and message != recorded:
-                return False
-            if not message:
-                self._pending.pop(key, None)  # no id to match: use the decision once
-            return voiced
+            entry = self._pending.pop(key, None)
+        if entry is None:
+            return False
+        voiced, stamp = entry
+        return voiced and self.clock() - stamp <= TTL_SECONDS
 
 
 def voice_fact(settings, replies, env):

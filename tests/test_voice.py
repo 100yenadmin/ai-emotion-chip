@@ -42,8 +42,9 @@ def test_records_hermes_decision_for_that_message():
     replies, gateway = VoiceReplies(clock=lambda: 100.0), Gateway(True)
     replies.observe(event(), gateway)
     assert gateway.calls == [("reply", [], True)]          # no agent messages, so Hermes's own dedup does not apply
-    assert replies.voiced(env()) is True
     assert replies.voiced(env(message="8")) is False        # another message's turn
+    assert replies.voiced(env()) is True
+    assert replies.voiced(env()) is False                   # used once: a queued follow-up keeps this message's id
     assert replies.voiced(env(chat="43")) is False
     replies.observe(event(message="8"), Gateway(False))
     assert replies.voiced(env(message="8")) is False
@@ -70,7 +71,7 @@ def test_stale_and_id_less_decisions():
     assert replies.voiced(env()) is False
     replies.observe(event(message=""), Gateway(True))
     assert replies.voiced(env(message="")) is True
-    assert replies.voiced(env(message="")) is False          # without an id the decision is used once
+    assert replies.voiced(env(message="")) is False
     replies.observe(event(message=""), Gateway(True))
     assert replies.voiced(env(message="7")) is False          # one side has an id: no match
 
@@ -80,8 +81,9 @@ def test_bounded_and_missing_source():
     for n in range(MAX_PENDING + 10):
         replies.observe(event(chat=str(n)), Gateway(True))
     assert len(replies._pending) == MAX_PENDING and replies.voiced(env(chat=str(MAX_PENDING + 9), message="7"))
+    assert replies.voiced(env(chat="0", message="7")) is False   # the oldest were dropped
     replies.observe(SimpleNamespace(source=None), Gateway(True))
-    assert len(replies._pending) == MAX_PENDING
+    assert len(replies._pending) == MAX_PENDING - 1             # one was used; a sourceless event adds nothing
 
 
 def test_fact_only_with_the_chip_guide():
@@ -118,3 +120,36 @@ def test_hermes_voice_contract():
     run = (root / "gateway" / "run.py").read_text()
     assert "message_id=str(source.message_id) if source.message_id else \"\"," in run
     assert "def _append_auto_media_tags" in (root / "gateway" / "run_turn_runner.py").read_text()
+
+
+def test_other_messages_do_not_overwrite_and_stale_entries_go():
+    now = [0.0]
+    replies = VoiceReplies(clock=lambda: now[0])
+    replies.observe(event(message="7"), Gateway(True))
+    replies.observe(event(message="8"), Gateway(False))      # another sender in the group, before turn 7 runs
+    assert replies.voiced(env(message="7")) is True
+    now[0] = TTL_SECONDS + 5
+    replies.observe(event(message="9"), Gateway(True))
+    assert list(replies._pending) == [("telegram", "42", "9")]
+
+
+def test_dispatch_hook_registered_only_for_the_voice_line(tmp_path):
+    from emotion_chip.hermes.registration import register_all
+    for host, plugin, expected in (({"tts.provider": "emotion-chip"}, {}, True),
+                                   ({"tts.provider": "edge"}, {}, False),
+                                   ({"tts.provider": "emotion-chip"}, {"guide_mode": "defer"}, False)):
+        ctx = FakeContext(plugin)
+        register_all(ctx, reader=lambda key, default=None, host=host: host.get(key, default),
+                     data_dir=lambda: tmp_path / "data")
+        assert ("pre_gateway_dispatch" in ctx.hooks) is expected
+
+
+def test_identity_is_the_exported_source_message_id():
+    # BlueBubbles sets event.message_id but not source.message_id; the turn exports an empty id.
+    replies = VoiceReplies()
+    ev = event(message="")
+    ev.message_id = "evt-1"
+    replies.observe(ev, Gateway(True))
+    assert replies.voiced(env(message="evt-1")) is False
+    replies.observe(ev, Gateway(True))
+    assert replies.voiced(env(message="")) is True

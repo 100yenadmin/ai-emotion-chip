@@ -154,9 +154,12 @@ directory.
   per-session state in its own namespaced folder under `plugin-data/`: task counters and timestamps, the ids of the
   last 16 tool calls counted, the map from Hermes session keys to session ids, the messaging sender id and platform,
   the last situation and register lines, and the quiet switch, for the 50 most recent sessions. Audio goes to the path Hermes supplies.
-- **Incoming messages.** The plugin registers `pre_gateway_dispatch`. For each incoming message it asks the gateway
-  whether it will read the reply aloud, and keeps the answer in memory under the chat and message id until that turn,
-  at most 256 chats and 15 minutes. It never skips, changes or delays a message.
+- **Incoming messages.** While the chip is the speech provider with `guide_mode: generate` (at gateway start), the
+  plugin registers `pre_gateway_dispatch`. For each incoming message it asks the gateway whether it will read the reply
+  aloud, and keeps the answer in memory under the chat and message id. The answer is used once, by that message's
+  turn; answers older than 15 minutes are never used and are dropped as new messages arrive, at most 256 kept. It
+  never skips or changes a message; the check adds a little work per message.
+  Registering this hook routes webhook and relay deliveries through Hermes's hooked ingress path.
 - No background processes, no shell commands, no telemetry.
 
 ## Grounding
