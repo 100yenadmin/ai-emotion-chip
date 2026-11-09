@@ -110,7 +110,7 @@ class Hooks:
         fact = ""
         if not (kwargs.get("parent_session_id") or kwargs.get("platform") == "subagent"):
             try:
-                fact = voice_fact(self.settings, self.env, self.voice_home)
+                fact = voice_fact(self.settings, self.env, self.voice_home, kwargs.get("user_message"))
             except Exception:
                 fact = ""  # an unreadable voice setting never costs the turn
         context = "\n".join(part for part in (line, fact) if part)

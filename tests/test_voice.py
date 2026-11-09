@@ -8,7 +8,7 @@ import pytest
 from emotion_chip.hermes.hooks import Hooks
 from emotion_chip.hermes.settings import Settings
 from emotion_chip.hermes.situation import Situation
-from emotion_chip.hermes.voice import FACTS, voice_fact, voice_replies
+from emotion_chip.hermes.voice import FACTS, looks_like_voice, voice_fact, voice_replies
 from fakes import FakeContext
 
 
@@ -57,17 +57,34 @@ def test_missing_file_uses_auto_tts(tmp_path):
 
 def test_fact_only_with_the_chip_guide(tmp_path):
     path = home(tmp_path, {"chipsmoke:telegram:42": "all"})
-    assert voice_fact(settings(), env(), path) == FACTS["all"]
-    assert voice_fact(settings(guide_mode="defer"), env(), path) == ""      # defer stays a passthrough
+    assert voice_fact(settings(), env(), path, "typed") == FACTS["all"]           # "all" voices every reply
+    assert voice_fact(settings(guide_mode="defer"), env(), path) == ""          # defer stays a passthrough
     assert voice_fact(settings({"tts.provider": "elevenlabs"}), env(), path) == ""
     path = home(tmp_path, {"chipsmoke:telegram:42": "voice_only"})
-    assert "quoted transcript" in voice_fact(settings(), env(), path)
+    assert voice_fact(settings(), env(), path, '"What time is it in Lisbon?"') == FACTS["voice"]
+    assert voice_fact(settings(), env(), path, "What time is it in Lisbon?") == ""  # typed: Hermes sends text only
+    assert "text_to_speech" in FACTS["voice"] and "no voice note of its own" in FACTS["all"]
+
+
+@pytest.mark.parametrize("message, expected", [
+    ('"What time zone is Lisbon in?"', True),
+    ('"Check the deploy."\n\nand the logs too', True),           # transcript, then the caption
+    ('"One."\n\n"Two."', True),                                   # two clips
+    ("[The user sent a voice message: /cache/a.ogg (duration: 0:03)]", True),
+    ("[voice message could not be transcribed automatically; the audio is available at: /cache/a.ogg]", True),
+    ([{"type": "text", "text": '"Hi there."'}, {"type": "image_url"}], True),
+    ("What time zone is Lisbon in?", False),
+    ('He said "hi" to me.', False),
+    ('"', False), ("", False), (None, False), ([{"type": "image_url"}], False),
+])
+def test_looks_like_voice(message, expected):
+    assert looks_like_voice(message) is expected
 
 
 def test_pre_llm_call_adds_the_fact(tmp_path):
     path = home(tmp_path, {"chipsmoke:telegram:42": "all"})
     hooks = Hooks(settings(), Situation({}, lambda: 1000.0), env(), voice_home=path)
-    assert hooks.pre_llm_call(session_id="s1", platform="telegram") == {"context": FACTS["all"]}
+    assert hooks.pre_llm_call(session_id="s1", platform="telegram", user_message="typed") == {"context": FACTS["all"]}
     assert hooks.pre_llm_call(session_id="s2", platform="telegram", parent_session_id="s1") is None
     hooks = Hooks(settings(signals="facts"), Situation({}, lambda: 1000.0), env(), voice_home=path)
     hooks.situation.update("s3", lambda row: row.update(tool_error_streak=3))
@@ -93,3 +110,6 @@ def test_hermes_voice_contract():
     assert 'base = f"{platform.value}:{chat_id}"' in voice
     assert 'return base if not profile or profile == "default" else f"{profile}:{base}"' in voice
     assert '"auto_tts": False' in (root / "hermes_cli" / "config_defaults.py").read_text()
+    inbound = (root / "gateway" / "run_inbound_transcription.py").read_text()
+    assert "return transcript, f'\"{transcript}\"'" in inbound                  # the transcript as a quoted line
+    assert '"[The user sent a voice message' in inbound and '"[voice message could not be transcribed' in inbound

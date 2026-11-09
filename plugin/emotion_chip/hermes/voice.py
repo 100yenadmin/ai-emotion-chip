@@ -3,8 +3,9 @@
 Hermes speaks a reply itself (auto voice reply) when the chat's /voice mode says so, kept in
 gateway_voice_mode.json under ``[<profile>:]<platform>:<chat_id>``: "all" voices every reply, "voice_only" only
 replies to voice messages, "off" none. A chat with no mode falls back to ``voice.auto_tts``, which voices replies
-to voice messages only. Those replies reach the voice without cues, so the agent is told; it can say the answer
-itself with text_to_speech, and Hermes then sends no voice note of its own.
+to voice messages only. Those replies reach the voice without cues, so the agent is told, on the turn, to say the
+answer itself with text_to_speech; Hermes then sends no voice note of its own (it skips its auto voice reply when the
+agent called text_to_speech this turn, and when the reply already carries audio).
 """
 import json
 import sys
@@ -14,11 +15,15 @@ VOICE_MODE_FILE = "gateway_voice_mode.json"
 # Sessions with no chat that can get a voice note: the CLI and Desktop speak through their own clients.
 NO_VOICE_NOTES = {"", "cli", "local", "desktop", "a2a", "subagent", "cron", "kanban", "api_server", "webhook"}
 
+SAY_IT = ("Say it yourself with text_to_speech, score included, and keep code and long lists to the written "
+          "reply; Hermes then sends no voice note of its own.")
 FACTS = {
-    "all": "Voice replies are on in this chat: Hermes reads every reply aloud.",
-    "voice": "Voice replies are on in this chat for voice messages: Hermes reads a reply to a voice message aloud. "
-             "A voice message arrives as a quoted transcript.",
+    "all": "Hermes reads your reply in this chat aloud, without cues. " + SAY_IT,
+    "voice": "This is a voice message, and Hermes reads your reply to it aloud, without cues. " + SAY_IT,
 }
+# How Hermes hands the agent a voice message (gateway/run_inbound_transcription.py): the transcript as a quoted
+# line, or a note when there is no transcript; a caption follows after a blank line.
+VOICE_NOTES = ("[The user sent a voice message", "[voice message could not be transcribed")
 
 
 def _mode_file(home=None):
@@ -65,8 +70,23 @@ def voice_replies(settings, env, home=None):
     return "voice" if settings.host("voice.auto_tts") is True else None
 
 
-def voice_fact(settings, env, home=None):
-    """The fact line for the agent, only where the chip's guide is in the prompt (the guide says what to do)."""
+def looks_like_voice(message):
+    """Whether the user's message has the shape Hermes gives a voice message."""
+    if isinstance(message, list):
+        message = "\n\n".join(part.get("text") or "" for part in message
+                               if isinstance(part, dict) and part.get("type") == "text")
+    if not isinstance(message, str):
+        return False
+    first = message.strip().split("\n\n", 1)[0].strip()
+    return (len(first) >= 2 and first[0] == first[-1] == '"') or first.startswith(VOICE_NOTES)
+
+
+def voice_fact(settings, env, home=None, message=None):
+    """The line for the agent when Hermes will read this reply aloud; only where the chip is the speech provider and
+    supplies the guide. With voice replies for voice messages only, just on a message shaped like a voice message."""
     if settings.get("guide_mode") != "generate" or settings.tts_provider() != "emotion-chip":
         return ""
-    return FACTS.get(voice_replies(settings, env, home), "")
+    mode = voice_replies(settings, env, home)
+    if mode == "voice" and not looks_like_voice(message):
+        return ""
+    return FACTS.get(mode, "")
