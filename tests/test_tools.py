@@ -10,7 +10,7 @@ import pytest
 from emotion_chip import cli
 from emotion_chip.hermes import provider as provider_module
 from emotion_chip.hermes.registration import register_all
-from fakes import FakeContext, FakeFish
+from fakes import FakeContext, FakeFish, fish_like_adapt_tags
 
 
 @pytest.fixture
@@ -24,7 +24,7 @@ def rig(tmp_path, monkeypatch):
         provider_module.last_render.clear()
     register_all(ctx, reader=lambda key, default=None: host.get(key, default),
                  data_dir=lambda: tmp_path / "plugin-data", env=lambda key: session.get(key, ""), clock=lambda: now[0])
-    ctx.provider.tag_adapter = lambda text: text
+    ctx.provider.tag_adapter = lambda text, family: text
     return ctx, host, session, now, tmp_path / "plugin-data"
 
 
@@ -183,6 +183,223 @@ def test_preview_quiet_and_no_side_effects(rig):
     call(ctx, "chip_preview", score=score, dialect="prose")
     assert provider_module.last_render == before and ctx.state == state
     assert (directory / "delivery.jsonl").read_bytes() == logged
+
+
+def preview_without_side_effects(rig, **args):
+    ctx, _, _, _, directory = rig
+    state = deepcopy(ctx.state)
+    before = deepcopy(provider_module.last_render)
+    carried = deepcopy(ctx.provider._carried)
+    result = call(ctx, "chip_preview", **args)
+    assert not (directory / "delivery.jsonl").exists()
+    assert ctx.state == state and provider_module.last_render == before
+    assert ctx.provider._carried == carried
+    assert set(result) == {"dialect", "rendered", "cue_words", "dropped", "params", "notes", "chars"}
+    return result
+
+
+def assert_preview_matches_render(result, rendered):
+    assert result["rendered"] == rendered.text
+    assert result["dropped"] == [dict(kind=d.kind, raw=d.value, reason=d.reason) for d in rendered.dropped]
+    assert result["params"] == rendered.params
+    assert result["notes"] == rendered.notes
+    assert result["chars"] == len(rendered.text)
+
+
+def assert_preview_matches_provider(rig, score, **args):
+    result = preview_without_side_effects(rig, score=score, **args)
+    # Hermes calls a plugin provider with tts.model and tts.speed (None when unset).
+    host = rig[1]
+    rendered, _, _ = rig[0].provider._prepare(score, host.get("tts.model") or None, host.get("tts.speed"))
+    assert_preview_matches_render(result, rendered)
+    assert result["cue_words"] == provider_module.last_render["tools-session"]["cue_words"]
+    return result
+
+
+@pytest.mark.parametrize("speed", [1.5, 10.0])
+def test_preview_fish_host_speed_matches_provider(rig, speed):
+    from emotion_chip.render import render
+
+    rig[1]["tts.fish-audio.speed"] = speed
+    score = "[sad] Sorry."
+    group_speed = render(score, "fish_s2").params["speed"]
+    assert group_speed != 1.0
+    result = assert_preview_matches_provider(rig, score)
+    assert result["params"]["speed"] == max(0.5, min(2.0, speed * group_speed))
+
+
+def test_preview_fish_s1_dialect_notes_match_provider(rig):
+    ctx, host, _, _, _ = rig
+    host["tts.model"] = "s1"
+    host.pop("tts.fish-audio.model")
+    result = assert_preview_matches_provider(rig, "[warm] Hello.")
+    assert result["dialect"] == "tagless" == call(ctx, "chip_status")["dialect"]
+    assert "fish s1 takes fixed cues only; rendering tagless" in result["notes"]
+
+
+def test_preview_fish_hermes_call_speed_matches_provider(rig):
+    from emotion_chip.render import render
+
+    rig[1]["tts.speed"] = 1.25
+    score = "[sad] Sorry."
+    group_speed = render(score, "fish_s2").params["speed"]
+    result = assert_preview_matches_provider(rig, score)
+    assert result["params"]["speed"] == max(0.5, min(2.0, 1.25 * group_speed))
+
+
+def test_preview_fish_pinned_model_note_matches_provider(rig):
+    rig[0].settings["fish_model"] = "s1"
+    result = assert_preview_matches_provider(rig, "[warm] Hello.")
+    assert "Fish pinned model wins: s2.1-pro over requested s1" in result["notes"]
+
+
+def test_preview_eleven_overrides_match_provider(rig):
+    rig[0].settings.update(backend="eleven", eleven_style=0.75, eleven_speed=1.2)
+    result = assert_preview_matches_provider(rig, "[warm] Hello.")
+    assert result["params"]["style"] == 0.75
+    assert result["params"]["speed"] == 1.2
+
+
+def test_preview_fish_after_render_adapter_failure_matches_provider(rig):
+    calls = []
+
+    def adapter(text, family):
+        calls.append(text)
+        if len(calls) > 2:
+            raise RuntimeError("fixture adapter fails after pre-parse adaptation")
+        return text.replace("(laughs)", "[laughs]")
+
+    ctx = rig[0]
+    ctx.provider.tag_adapter = adapter
+    score = "(laughs) Hi. [pause] (laughs) Sorry."
+    result = preview_without_side_effects(rig, score=score)
+    assert len(calls) == 3
+    assert "Fish adapt_tags failed after render; output not re-checked" in result["notes"]
+    calls.clear()
+    rendered, _, _ = ctx.provider._prepare(score, None, None)
+    assert_preview_matches_render(result, rendered)
+    assert result["cue_words"] == provider_module.last_render["tools-session"]["cue_words"]
+
+
+def test_provider_preview_skips_eleven_length_check(rig):
+    ctx = rig[0]
+    ctx.settings.update(backend="eleven", eleven_model="eleven_v3")
+    score = "x" * 5001
+    result = preview_without_side_effects(rig, score=score)
+    assert result["chars"] == 5001
+    with pytest.raises(ValueError, match="exceeds 5000"):
+        ctx.provider._prepare(score, None, None)
+
+
+@pytest.mark.parametrize("dialect", [{}, {"dialect": None}, {"dialect": "fish_s2"}])
+@pytest.mark.parametrize("quiet", [False, True])
+def test_preview_fish_parens_match_provider(rig, dialect, quiet):
+    ctx = rig[0]
+    calls = []
+
+    def adapter(text, family):
+        calls.append(family)
+        return text.replace("(laughs)", "[laughs]")
+
+    ctx.provider.tag_adapter = adapter
+    if quiet:
+        ctx.command("quiet on")
+    score = "(laughs) It passed."
+    result = preview_without_side_effects(rig, score=score, **dialect)
+    assert calls and set(calls) == {"S2"}
+    # A laugh is a sound event, not a cue word; the adapter shows in the render or, quiet, in the drops.
+    assert result["cue_words"] == []
+    if quiet:
+        assert any(d["kind"] == "event" and d["raw"] == "laugh" for d in result["dropped"])
+        assert result["rendered"] == "It passed."
+    else:
+        assert result["rendered"] == "[laughing] It passed."
+    rendered, _, _ = ctx.provider._prepare(score, None, None)
+    assert_preview_matches_render(result, rendered)
+    assert result["cue_words"] == provider_module.last_render["tools-session"]["cue_words"]
+
+
+def test_preview_other_dialect_does_not_adapt(rig, capsys):
+    ctx = rig[0]
+    calls = []
+    ctx.provider.tag_adapter = lambda text, family: calls.append(family) or text.replace("(laughs)", "[laughs]")
+    score = "(laughs) It passed."
+    result = preview_without_side_effects(rig, score=score, dialect="eleven_v4")
+    assert calls == []
+    args = cli.add_commands(argparse.ArgumentParser()).parse_args(
+        ["render", "--json", "--dialect", "eleven_v4", score])
+    assert cli.run(args) == 0
+    expected = json.loads(capsys.readouterr().out)
+    assert result == dict(dialect="eleven_v4", rendered=expected["text"], cue_words=[],
+                          dropped=[dict(kind=d["kind"], raw=d["value"], reason=d["reason"])
+                                   for d in expected["dropped"]],
+                          params=expected["params"], notes=expected["notes"], chars=len(expected["text"]))
+
+
+@pytest.mark.parametrize("missing", [False, True])
+def test_preview_fish_adapter_failure_matches_provider(rig, monkeypatch, missing):
+    ctx = rig[0]
+
+    def unavailable(*args):
+        raise RuntimeError("fixture adapter unavailable")
+
+    ctx.provider.tag_adapter = None if missing else unavailable
+    if missing:
+        monkeypatch.setattr(provider_module, "fish_adapter", unavailable)
+    score = "(laughs) It passed."
+    result = preview_without_side_effects(rig, score=score)
+    assert result["rendered"] == score and result["cue_words"] == []
+    assert result["notes"] == ["Fish adapt_tags unavailable; skipped pre-parse adaptation"]
+    rendered, _, _ = ctx.provider._prepare(score, None, None)
+    assert_preview_matches_render(result, rendered)
+
+
+def test_preview_fish_uses_loaded_adapter_without_provider(rig, monkeypatch):
+    from emotion_chip.hermes.tools import register_tools
+
+    ctx = rig[0]
+    fish = provider_module._fish()
+    resolved = []
+
+    def factory(loaded):
+        resolved.append(loaded)
+        return lambda text, family: text.replace("(laughs)", "[laughs]")
+
+    monkeypatch.setattr(provider_module, "fish_adapter", factory)
+    # Existing direct callers need not supply the newly optional provider.
+    register_tools(ctx, ctx.provider.settings, ctx.provider.situation, ctx.provider.env)
+    result = preview_without_side_effects(rig, score="(laughs) It passed.")
+    assert resolved == [fish] and result["cue_words"] == []
+    assert result["rendered"] == "[laughing] It passed."
+    rendered, _, _ = ctx.provider._prepare("[laughs] It passed.", None, None)
+    assert_preview_matches_render(result, rendered)
+
+
+def test_preview_fish_includes_words_added_after_render(rig):
+    ctx = rig[0]
+    ctx.provider.tag_adapter = fish_like_adapt_tags
+    score = "[[register: steady]] [warm] Hi. [speaker: 2] (happy) Bye."
+    result = preview_without_side_effects(rig, score=score)
+    rendered, _, _ = ctx.provider._prepare(score, None, None)
+    assert_preview_matches_render(result, rendered)
+    assert result["cue_words"] == provider_module.last_render["tools-session"]["cue_words"] == ["steady", "warm", "happy"]
+
+
+def test_preview_eleven_never_calls_fish_adapter_or_consults_carry(rig):
+    from emotion_chip.render import render
+
+    ctx = rig[0]
+    ctx.settings["backend"] = "eleven"
+    calls = []
+    ctx.provider.tag_adapter = lambda text, family: calls.append(family) or text.replace("(laughs)", "[laughs]")
+    ctx.provider._carried["tools-session"] = ("not-a-group", 10000.0)
+    score = "(laughs) It passed."
+    result = preview_without_side_effects(rig, score=score)
+    assert calls == [] and result["cue_words"] == []
+    assert_preview_matches_render(result, render(score, "eleven_v4"))
+    ctx.settings["backend"] = "fish"
+    result = preview_without_side_effects(rig, score="It passed.")
+    assert_preview_matches_render(result, render("It passed.", "fish_s2"))
 
 
 @pytest.mark.parametrize("args", [{}, {"score": 1}, {"score": "x" * 10001},

@@ -15,7 +15,10 @@ def add_commands(parser):
     commands = parser.add_subparsers(dest="chip_command", metavar="COMMAND", required=True)
     render_cmd = commands.add_parser("render", help="render a delivery score for one voice engine",
                                      description="Render a delivery score for one voice engine. "
-                                                 "The score comes from the argument, else from stdin.")
+                                                 "The score comes from the argument, else from stdin. "
+                                                 "This offline command renders the score as written; the speech "
+                                                 "provider and chip_preview apply Fish's paren-cue adaptation "
+                                                 "on the Fish backend for the profile's own dialect.")
     render_cmd.add_argument("text", nargs="?", help='the score, e.g. "[whisper] It passed."')
     render_cmd.add_argument("--dialect", required=True, choices=DIALECTS)
     render_cmd.add_argument("--model")

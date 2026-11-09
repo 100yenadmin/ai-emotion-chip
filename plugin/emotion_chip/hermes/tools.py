@@ -2,10 +2,9 @@
 import json
 
 from ..cli import DIALECTS
-from ..model import Cue
-from ..render import dialect_for, render
-from ..score import header_cue, parse
+from ..render import dialect_for
 from .commands import build_status
+from .provider import PreparedScore
 from .settings import sounds_on
 
 DESCRIPTIONS = {
@@ -16,7 +15,7 @@ DESCRIPTIONS = {
 }
 
 
-def register_tools(ctx, settings, situation, env, voice_replies=None):
+def register_tools(ctx, settings, situation, env, voice_replies=None, provider=None):
     def available():
         return settings.get("guide_mode") == "generate"
 
@@ -37,16 +36,18 @@ def register_tools(ctx, settings, situation, env, voice_replies=None):
         text = args["score"]
         if len(text) > 10000:
             return json.dumps({"error": "score exceeds 10000 characters"})
-        dialect = args.get("dialect") or str(dialect_for(
-            settings.get("backend"), settings.model(settings.host("tts.model"))))
+        backend = settings.get("backend")
+        profile_dialect = str(provider.preview_dialect() if provider is not None else
+                              dialect_for(backend, settings.model(settings.host("tts.model"))))
+        dialect = args.get("dialect") or profile_dialect
         if dialect not in DIALECTS:
             return json.dumps({"error": "unknown dialect"})
-        score = parse(text)
-        result = render(score, dialect, {"sounds": sounds_on(situation), "allow_speakers": False})
-        opener = header_cue(score.header)
-        words = (list(opener.words) if opener else []) + [
-            word for sentence in score.sentences for token in sentence.tokens if isinstance(token, Cue)
-            for word in token.words]
+        if provider is not None and dialect == profile_dialect:
+            result, words = provider.preview(text)
+        else:
+            adapt_fish = backend == "fish" and dialect == profile_dialect
+            prepared = PreparedScore(text, "fish" if adapt_fish else None)
+            result, words = prepared.render(dialect, {"sounds": sounds_on(situation), "allow_speakers": False})
         return json.dumps(dict(dialect=result.dialect, rendered=result.text, cue_words=words,
                                dropped=[dict(kind=d.kind, raw=d.value, reason=d.reason) for d in result.dropped],
                                params=result.params, notes=result.notes, chars=len(result.text)))

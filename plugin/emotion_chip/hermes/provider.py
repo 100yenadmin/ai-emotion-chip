@@ -36,6 +36,34 @@ def _fish():
     return get_provider("fish-audio")
 
 
+class PreparedScore:
+    """Pure score preparation and rendering, with room for the provider to choose carry between them."""
+
+    def __init__(self, text, backend, tag_adapter=None):
+        self.adapt = None
+        self.notes = []
+        # Fish performs (cue) parens natively on S1 and adapts them to tags again on S2. Translating them on every Fish
+        # model (drama-3 and the tagless S1 route too) renders each paren cue like a bracket cue.
+        if backend == "fish":
+            try:
+                self.adapt = tag_adapter or fish_adapter(_fish())
+                text = adapt_all(text, self.adapt)
+            except Exception:
+                self.adapt = None
+                self.notes.append("Fish adapt_tags unavailable; skipped pre-parse adaptation")
+        self.data = load_data()
+        self.score = parse(text, self.data)
+
+    def render(self, dialect, options):
+        opener = header_cue(self.score.header)
+        words = (list(opener.words) if opener else []) + [
+            word for sentence in self.score.sentences for token in sentence.tokens if isinstance(token, Cue)
+            for word in token.words]
+        rendered, added = settled_render(self.score, dialect, options, self.data, self.adapt)
+        rendered.notes.extend(self.notes)
+        return rendered, words + added
+
+
 class EmotionChipTTSProvider(TTSProvider):
     name = "emotion-chip"
     display_name = "Hermes Emotion Chip"
@@ -85,43 +113,26 @@ class EmotionChipTTSProvider(TTSProvider):
         with self._lock:
             self._carried.pop(session_id, None)
 
-    def _prepare(self, text, model, speed, streaming=False):
+    def _resolve_model(self, model=None):
         backend = self.settings.get("backend")
         models = self.settings.resolve_fish_model(model) if backend == "fish" else None
         effective = models.effective if models else self.settings.eleven_model()
-        label = models.label if models else effective
-        dialect = dialect_for(backend, effective)
-        session_id = session_identity(self.env, self.situation)
-        platform = self.env("HERMES_SESSION_PLATFORM")
-        options = {"sounds": sounds_on(self.situation), "allow_speakers": False}
-        notes = []
-        original_chars = len(text)
-        # Fish performs (cue) parens natively on S1 and adapts them to tags again on S2. Translating them on every Fish
-        # model (drama-3 and the tagless S1 route too) renders each paren cue like a bracket cue.
-        adapt = None
-        if backend == "fish":
-            try:
-                adapt = self.tag_adapter or fish_adapter(_fish())
-                text = adapt_all(text, adapt)
-            except Exception:
-                adapt = None
-                notes.append("Fish adapt_tags unavailable; skipped pre-parse adaptation")
-        data = load_data()
-        score = parse(text, data)
-        opener = header_cue(score.header)
-        words = (list(opener.words) if opener else []) + [
-            word for sentence in score.sentences for token in sentence.tokens if isinstance(token, Cue) for word in token.words]
-        has_cue = any(isinstance(token, Cue) for sentence in score.sentences for token in sentence.tokens)
-        now = self.clock()
-        with self._lock:
-            self._carried = {k: v for k, v in self._carried.items() if 0 <= now - v[1] <= 120}
-            if streaming and not has_cue and score.header is None and session_id and session_id in self._carried:
-                options["params_from"] = self._carried[session_id][0]
-            rendered, added = settled_render(score, dialect, options, data, adapt)
-            # A carried piece refreshes the carry too, so a long reply keeps its opening cue's params.
-            if session_id and rendered.group is not None:
-                self._carried[session_id] = (rendered.group, now)
-        words += added
+        return backend, models, effective, dialect_for(backend, effective)
+
+    def _hermes_call(self):
+        """The model and speed Hermes passes a plugin provider: tts.model and tts.speed, else None
+        (tools/tts_tool_plugins.py _plugin_voice_kwargs)."""
+        model, speed = self.settings.host("tts.model"), self.settings.host("tts.speed")
+        return (model if isinstance(model, str) and model else None,
+                float(speed) if isinstance(speed, (int, float)) else None)
+
+    def preview_dialect(self):
+        return self._resolve_model(self._hermes_call()[0])[3]
+
+    def _finish_plan(self, rendered, models, speed):
+        """Finish the backend parameters and notes of a freshly rendered result (its notes list gains the pinned note).
+
+        Changes no provider state; callers pass a render they own."""
         final = None
         if models:
             base = _base_speed(self.settings.host("tts.fish-audio.speed", 1.0) if speed is None else speed)
@@ -130,8 +141,41 @@ class EmotionChipTTSProvider(TTSProvider):
         else:
             rendered = replace(rendered, params=self._eleven_params(rendered))
         if models and models.pinned and models.requested and models.pinned != models.requested:
-            notes.append(f"Fish pinned model wins: {models.pinned} over requested {models.requested}")
-        rendered.notes.extend(notes)
+            rendered.notes.append(f"Fish pinned model wins: {models.pinned} over requested {models.requested}")
+        return rendered, final
+
+    def _score_plan(self, text, backend):
+        options = {"sounds": sounds_on(self.situation), "allow_speakers": False}
+        return PreparedScore(text, backend, self.tag_adapter), options
+
+    def preview(self, text):
+        """What _prepare would send for a call from Hermes, without carry, state updates, logging or a length check."""
+        model, speed = self._hermes_call()
+        backend, models, _, dialect = self._resolve_model(model)
+        prepared, options = self._score_plan(text, backend)
+        rendered, words = prepared.render(dialect, options)
+        rendered, _ = self._finish_plan(rendered, models, speed)
+        return rendered, words
+
+    def _prepare(self, text, model, speed, streaming=False):
+        backend, models, effective, dialect = self._resolve_model(model)
+        label = models.label if models else effective
+        session_id = session_identity(self.env, self.situation)
+        platform = self.env("HERMES_SESSION_PLATFORM")
+        original_chars = len(text)
+        prepared, options = self._score_plan(text, backend)
+        score = prepared.score
+        has_cue = any(isinstance(token, Cue) for sentence in score.sentences for token in sentence.tokens)
+        now = self.clock()
+        with self._lock:
+            self._carried = {k: v for k, v in self._carried.items() if 0 <= now - v[1] <= 120}
+            if streaming and not has_cue and score.header is None and session_id and session_id in self._carried:
+                options["params_from"] = self._carried[session_id][0]
+            rendered, words = prepared.render(dialect, options)
+            # A carried piece refreshes the carry too, so a long reply keeps its opening cue's params.
+            if session_id and rendered.group is not None:
+                self._carried[session_id] = (rendered.group, now)
+        rendered, final = self._finish_plan(rendered, models, speed)
         self.situation.update(session_id, lambda row: row.update(
             {"register": "[[" + score.header.raw + "]]"} if score.header else {}), platform=platform or None)
         with last_render_lock:
