@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.3.1 — 2026-11-10
+
+Bug fixes. No new features.
+
+- **Fix: `chip_preview` shows what the voice is actually sent** (#48). For the profile's own dialect the preview now
+  runs the speech provider's own preparation for a call from Hermes. On the Fish backend that includes Fish's tag
+  adapter, which turns Fish-native cues in parentheses such as `(laughs)` into bracket cues; the preview used to skip
+  it. It also shows the final speed (Hermes's `tts.speed`, or Fish's speed, times the cue's), the provider's notes
+  (the S1 tagless route, a pinned Fish model) and ElevenLabs style and speed settings. It still writes nothing. Any
+  other dialect, and the offline `hermes chip render`, render the score as written.
+- **Docs: a front page you can act on.** The README opens with what the plugin does, true badges, the install line
+  that works on every Hermes (the catalog name fails on Hermes 0.23.0), three steps to a first result, voice setup for
+  Fish Audio and ElevenLabs, where the agent's delivery is and is not heard, a privacy and cost summary, troubleshooting
+  and how to report a bug.
+
 ## 0.3.0 — 2026-11-09
 
 The agent can see its own voice. Until now it wrote a score, called `text_to_speech` and learned nothing back.
