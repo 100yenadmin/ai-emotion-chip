@@ -18,9 +18,12 @@ plain speech is always a valid choice.
 Requires Hermes 0.22.2 or newer.
 
 ```bash
-hermes plugins install emotion-chip --enable                         # from the Hermes plugin catalog, once listed
 hermes plugins install 100yenadmin/ai-emotion-chip/plugin --enable   # straight from the repository
+hermes plugins install emotion-chip --enable                         # from the Hermes plugin catalog
 ```
+
+On a fresh Hermes 0.23.0 the catalog name may not resolve yet (Hermes falls back to the catalog copy it shipped with;
+[hermes-agent#151856](https://github.com/NousResearch/hermes-agent/issues/151856)); the repository line works everywhere.
 
 Then make the Emotion Chip the speech provider and pick a backend.
 
