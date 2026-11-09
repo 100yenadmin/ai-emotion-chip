@@ -1,5 +1,5 @@
 name: emotion-chip
-version: 0.2.1
+version: 0.3.0
 description: "Hermes Emotion Chip renders the agent's own voice delivery score with Fish Audio or ElevenLabs. It measures nothing about feelings. Synthesis calls are billed to your backend account."
 kind: standalone
 manifest_version: 2
