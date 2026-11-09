@@ -90,6 +90,7 @@ def test_fact_only_with_the_chip_guide():
     replies = VoiceReplies()
     replies.observe(event(), Gateway(True))
     assert voice_fact(settings(), replies, env()) == FACT and "text_to_speech" in FACT
+    assert "even when that call fails" in FACT and "try once more" in FACT
     assert voice_fact(settings(guide_mode="defer"), replies, env()) == ""
     assert voice_fact(settings({"tts.provider": "elevenlabs"}), replies, env()) == ""
 
