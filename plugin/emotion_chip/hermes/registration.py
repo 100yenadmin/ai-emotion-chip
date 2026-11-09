@@ -110,7 +110,7 @@ def register_all(ctx, *, reader=None, data_dir=None, env=None, clock=None):
         ctx.register_middleware("tool_request", make_middleware(settings, situation, environment))
     if hasattr(ctx, "register_tool"):
         if settings.get("guide_mode") == "generate":
-            register_tools(ctx, settings, situation, environment, voice_replies)
+            register_tools(ctx, settings, situation, environment, voice_replies, provider=provider)
     if hasattr(ctx, "register_command"):
         ctx.register_command("chip", make_handler(settings, situation, environment, voice_replies),
                              description="Hermes Emotion Chip voice delivery",

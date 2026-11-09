@@ -36,6 +36,34 @@ def _fish():
     return get_provider("fish-audio")
 
 
+class PreparedScore:
+    """Pure score preparation and rendering, with room for the provider to choose carry between them."""
+
+    def __init__(self, text, backend, tag_adapter=None):
+        self.adapt = None
+        self.notes = []
+        # Fish performs (cue) parens natively on S1 and adapts them to tags again on S2. Translating them on every Fish
+        # model (drama-3 and the tagless S1 route too) renders each paren cue like a bracket cue.
+        if backend == "fish":
+            try:
+                self.adapt = tag_adapter or fish_adapter(_fish())
+                text = adapt_all(text, self.adapt)
+            except Exception:
+                self.adapt = None
+                self.notes.append("Fish adapt_tags unavailable; skipped pre-parse adaptation")
+        self.data = load_data()
+        self.score = parse(text, self.data)
+
+    def render(self, dialect, options):
+        opener = header_cue(self.score.header)
+        words = (list(opener.words) if opener else []) + [
+            word for sentence in self.score.sentences for token in sentence.tokens if isinstance(token, Cue)
+            for word in token.words]
+        rendered, added = settled_render(self.score, dialect, options, self.data, self.adapt)
+        rendered.notes.extend(self.notes)
+        return rendered, words + added
+
+
 class EmotionChipTTSProvider(TTSProvider):
     name = "emotion-chip"
     display_name = "Hermes Emotion Chip"
@@ -96,32 +124,18 @@ class EmotionChipTTSProvider(TTSProvider):
         options = {"sounds": sounds_on(self.situation), "allow_speakers": False}
         notes = []
         original_chars = len(text)
-        # Fish performs (cue) parens natively on S1 and adapts them to tags again on S2. Translating them on every Fish
-        # model (drama-3 and the tagless S1 route too) renders each paren cue like a bracket cue.
-        adapt = None
-        if backend == "fish":
-            try:
-                adapt = self.tag_adapter or fish_adapter(_fish())
-                text = adapt_all(text, adapt)
-            except Exception:
-                adapt = None
-                notes.append("Fish adapt_tags unavailable; skipped pre-parse adaptation")
-        data = load_data()
-        score = parse(text, data)
-        opener = header_cue(score.header)
-        words = (list(opener.words) if opener else []) + [
-            word for sentence in score.sentences for token in sentence.tokens if isinstance(token, Cue) for word in token.words]
+        prepared = PreparedScore(text, backend, self.tag_adapter)
+        score = prepared.score
         has_cue = any(isinstance(token, Cue) for sentence in score.sentences for token in sentence.tokens)
         now = self.clock()
         with self._lock:
             self._carried = {k: v for k, v in self._carried.items() if 0 <= now - v[1] <= 120}
             if streaming and not has_cue and score.header is None and session_id and session_id in self._carried:
                 options["params_from"] = self._carried[session_id][0]
-            rendered, added = settled_render(score, dialect, options, data, adapt)
+            rendered, words = prepared.render(dialect, options)
             # A carried piece refreshes the carry too, so a long reply keeps its opening cue's params.
             if session_id and rendered.group is not None:
                 self._carried[session_id] = (rendered.group, now)
-        words += added
         final = None
         if models:
             base = _base_speed(self.settings.host("tts.fish-audio.speed", 1.0) if speed is None else speed)
