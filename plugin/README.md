@@ -94,6 +94,21 @@ On the chip's own provider path `/chip why` shows every drop and why, and the de
 | `/chip quiet [on\|off]` | Drop laughs, sighs and other sounds; cues and speech stay. One switch for the whole profile. |
 | `/chip register [clear]` | Show or clear the register the agent last wrote in this session |
 
+### See a render without a voice
+
+`hermes chip render` shows what the chip sends each engine. It runs offline: no keys, no network.
+
+```bash
+hermes chip render --dialect eleven_v4   "[whisper] Ten thousand users! [pause] Cheer when the baby's [stress: awake]."
+hermes chip render --dialect fish_s2     "[whisper] Ten thousand users! [pause] Cheer when the baby's [stress: awake]."
+hermes chip render --dialect fish_drama3 "[whisper] Ten thousand users! [pause] Cheer when the baby's [stress: awake]."
+hermes chip render --dialect tagless --json "[whisper] It passed."   # a voice without cues: the drop is listed
+hermes chip guide --dialect eleven_v4 --model claude-opus-5-5         # the guide the agent gets
+```
+
+The score can also come on stdin. Without Hermes, `python -m emotion_chip` runs the same commands from the `plugin/`
+directory.
+
 ### Coverage
 
 - Full cues reach the voice on the `text_to_speech` tool path.

@@ -42,6 +42,10 @@ class FakeContext:
         self.command = handler
         self.command_info = (description, args_hint)
 
+    def register_cli_command(self, name, help, setup_fn, handler_fn=None, description=""):
+        self.calls.append(("cli_command", name))
+        self.cli_command = (help, setup_fn, handler_fn, description)
+
 
 class FakeFish(TTSProvider):
     name = "fish-audio"
