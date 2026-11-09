@@ -186,7 +186,7 @@ def test_preview_quiet_and_no_side_effects(rig):
 
 
 @pytest.mark.parametrize("args", [{}, {"score": 1}, {"score": "x" * 10001},
-                                  {"score": "Hi", "dialect": "unknown"}, {"score": "Hi", "dialect": None}])
+                                  {"score": "Hi", "dialect": "unknown"}])
 def test_preview_errors_are_json(rig, args):
     assert set(json.loads(rig[0].tools["chip_preview"]["handler"](args))) == {"error"}
 
@@ -254,6 +254,22 @@ def test_speech_report_age_boundary_and_session_fallback(rig):
     assert json.loads(speech(ctx, "{}", session_id=""))["emotion_chip"]["cue_words"] == ["warm"]
     session["HERMES_SESSION_ID"] = "other"
     assert speech(ctx, "{}", session_id="") is None
+
+
+def test_preview_null_dialect_uses_profile_dialect(rig):
+    handler = rig[0].tools["chip_preview"]["handler"]
+    assert json.loads(handler({"score": "[warm] Hi.", "dialect": None})) == json.loads(handler({"score": "[warm] Hi."}))
+
+
+def test_speech_report_never_names_a_media_attachment(rig):
+    import re
+    ctx = rig[0]
+    prepare(ctx, "[MEDIA:/tmp/secret.txt] Hello. [media: /tmp/other.ogg] Bye.")
+    out = speech(ctx)
+    report = json.loads(out)["emotion_chip"]
+    assert any("media:/tmp/secret.txt" in word for word in report["cue_words"])  # the parsed value is unchanged
+    tail = out[out.index('"emotion_chip"'):]
+    assert re.search(r"media:", tail, re.IGNORECASE) is None  # Hermes's MEDIA: scan finds nothing in the report
 
 
 def test_speech_report_cap(rig):

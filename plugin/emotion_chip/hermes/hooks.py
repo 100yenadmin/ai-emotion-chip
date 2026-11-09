@@ -1,5 +1,6 @@
 """Accept future host kwargs while counting only named task/transport facts."""
 import json
+import re
 from copy import deepcopy
 
 from .provider import last_render, last_render_lock
@@ -12,6 +13,9 @@ COUNTED_CALLS = 16
 HOOKS = ("pre_llm_call", "post_tool_call", "api_request_error", "on_session_start", "on_session_end", "transform_tool_result",
          "on_session_reset", "pre_gateway_dispatch")
 
+
+
+MEDIA_WORD = re.compile(r"(media):", re.IGNORECASE)
 
 class Hooks:
     def __init__(self, settings, situation, env=None, *, start_turn=None, voice_replies=None):
@@ -185,7 +189,9 @@ class Hooks:
                     return None
                 max(lists, key=lambda entries: len(json.dumps(entries))).pop()
             head = result.rstrip()[:-1].rstrip()
-            return (head + (", " if value else "") + '"emotion_chip": '
-                    + json.dumps(report, separators=(",", ":")) + "}")
+            # The report echoes text the agent wrote; Hermes scans tool results for MEDIA: paths and sends those files,
+            # so escape the colon of any "media:" (still valid JSON, same parsed value) to keep it from naming an attachment.
+            encoded = MEDIA_WORD.sub(lambda m: m[1] + "\\u003a", json.dumps(report, separators=(",", ":")))
+            return head + (", " if value else "") + '"emotion_chip": ' + encoded + "}"
         except Exception:
             return None

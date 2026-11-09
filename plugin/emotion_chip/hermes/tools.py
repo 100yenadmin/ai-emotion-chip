@@ -37,8 +37,8 @@ def register_tools(ctx, settings, situation, env, voice_replies=None):
         text = args["score"]
         if len(text) > 10000:
             return json.dumps({"error": "score exceeds 10000 characters"})
-        dialect = args.get("dialect", str(dialect_for(
-            settings.get("backend"), settings.model(settings.host("tts.model")))))
+        dialect = args.get("dialect") or str(dialect_for(
+            settings.get("backend"), settings.model(settings.host("tts.model"))))
         if dialect not in DIALECTS:
             return json.dumps({"error": "unknown dialect"})
         score = parse(text)
