@@ -206,6 +206,91 @@ def assert_preview_matches_render(result, rendered):
     assert result["chars"] == len(rendered.text)
 
 
+def assert_preview_matches_provider(rig, score, **args):
+    result = preview_without_side_effects(rig, score=score, **args)
+    # Hermes calls a plugin provider with tts.model and tts.speed (None when unset).
+    host = rig[1]
+    rendered, _, _ = rig[0].provider._prepare(score, host.get("tts.model") or None, host.get("tts.speed"))
+    assert_preview_matches_render(result, rendered)
+    assert result["cue_words"] == provider_module.last_render["tools-session"]["cue_words"]
+    return result
+
+
+@pytest.mark.parametrize("speed", [1.5, 10.0])
+def test_preview_fish_host_speed_matches_provider(rig, speed):
+    from emotion_chip.render import render
+
+    rig[1]["tts.fish-audio.speed"] = speed
+    score = "[sad] Sorry."
+    group_speed = render(score, "fish_s2").params["speed"]
+    assert group_speed != 1.0
+    result = assert_preview_matches_provider(rig, score)
+    assert result["params"]["speed"] == max(0.5, min(2.0, speed * group_speed))
+
+
+def test_preview_fish_s1_dialect_notes_match_provider(rig):
+    ctx, host, _, _, _ = rig
+    host["tts.model"] = "s1"
+    host.pop("tts.fish-audio.model")
+    result = assert_preview_matches_provider(rig, "[warm] Hello.")
+    assert result["dialect"] == "tagless" == call(ctx, "chip_status")["dialect"]
+    assert "fish s1 takes fixed cues only; rendering tagless" in result["notes"]
+
+
+def test_preview_fish_hermes_call_speed_matches_provider(rig):
+    from emotion_chip.render import render
+
+    rig[1]["tts.speed"] = 1.25
+    score = "[sad] Sorry."
+    group_speed = render(score, "fish_s2").params["speed"]
+    result = assert_preview_matches_provider(rig, score)
+    assert result["params"]["speed"] == max(0.5, min(2.0, 1.25 * group_speed))
+
+
+def test_preview_fish_pinned_model_note_matches_provider(rig):
+    rig[0].settings["fish_model"] = "s1"
+    result = assert_preview_matches_provider(rig, "[warm] Hello.")
+    assert "Fish pinned model wins: s2.1-pro over requested s1" in result["notes"]
+
+
+def test_preview_eleven_overrides_match_provider(rig):
+    rig[0].settings.update(backend="eleven", eleven_style=0.75, eleven_speed=1.2)
+    result = assert_preview_matches_provider(rig, "[warm] Hello.")
+    assert result["params"]["style"] == 0.75
+    assert result["params"]["speed"] == 1.2
+
+
+def test_preview_fish_after_render_adapter_failure_matches_provider(rig):
+    calls = []
+
+    def adapter(text, family):
+        calls.append(text)
+        if len(calls) > 2:
+            raise RuntimeError("fixture adapter fails after pre-parse adaptation")
+        return text.replace("(laughs)", "[laughs]")
+
+    ctx = rig[0]
+    ctx.provider.tag_adapter = adapter
+    score = "(laughs) Hi. [pause] (laughs) Sorry."
+    result = preview_without_side_effects(rig, score=score)
+    assert len(calls) == 3
+    assert "Fish adapt_tags failed after render; output not re-checked" in result["notes"]
+    calls.clear()
+    rendered, _, _ = ctx.provider._prepare(score, None, None)
+    assert_preview_matches_render(result, rendered)
+    assert result["cue_words"] == provider_module.last_render["tools-session"]["cue_words"]
+
+
+def test_provider_preview_skips_eleven_length_check(rig):
+    ctx = rig[0]
+    ctx.settings.update(backend="eleven", eleven_model="eleven_v3")
+    score = "x" * 5001
+    result = preview_without_side_effects(rig, score=score)
+    assert result["chars"] == 5001
+    with pytest.raises(ValueError, match="exceeds 5000"):
+        ctx.provider._prepare(score, None, None)
+
+
 @pytest.mark.parametrize("dialect", [{}, {"dialect": None}, {"dialect": "fish_s2"}])
 @pytest.mark.parametrize("quiet", [False, True])
 def test_preview_fish_parens_match_provider(rig, dialect, quiet):

@@ -18,7 +18,7 @@ def add_commands(parser):
                                                  "The score comes from the argument, else from stdin. "
                                                  "This offline command renders the score as written; the speech "
                                                  "provider and chip_preview apply Fish's paren-cue adaptation "
-                                                 "on the Fish backend.")
+                                                 "on the Fish backend for the profile's own dialect.")
     render_cmd.add_argument("text", nargs="?", help='the score, e.g. "[whisper] It passed."')
     render_cmd.add_argument("--dialect", required=True, choices=DIALECTS)
     render_cmd.add_argument("--model")

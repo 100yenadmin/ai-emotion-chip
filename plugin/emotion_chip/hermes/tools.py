@@ -37,14 +37,17 @@ def register_tools(ctx, settings, situation, env, voice_replies=None, provider=N
         if len(text) > 10000:
             return json.dumps({"error": "score exceeds 10000 characters"})
         backend = settings.get("backend")
-        profile_dialect = str(dialect_for(backend, settings.model(settings.host("tts.model"))))
+        profile_dialect = str(provider.preview_dialect() if provider is not None else
+                              dialect_for(backend, settings.model(settings.host("tts.model"))))
         dialect = args.get("dialect") or profile_dialect
         if dialect not in DIALECTS:
             return json.dumps({"error": "unknown dialect"})
-        adapt_fish = backend == "fish" and dialect == profile_dialect
-        prepared = PreparedScore(text, "fish" if adapt_fish else None,
-                                 provider.tag_adapter if provider is not None and adapt_fish else None)
-        result, words = prepared.render(dialect, {"sounds": sounds_on(situation), "allow_speakers": False})
+        if provider is not None and dialect == profile_dialect:
+            result, words = provider.preview(text)
+        else:
+            adapt_fish = backend == "fish" and dialect == profile_dialect
+            prepared = PreparedScore(text, "fish" if adapt_fish else None)
+            result, words = prepared.render(dialect, {"sounds": sounds_on(situation), "allow_speakers": False})
         return json.dumps(dict(dialect=result.dialect, rendered=result.text, cue_words=words,
                                dropped=[dict(kind=d.kind, raw=d.value, reason=d.reason) for d in result.dropped],
                                params=result.params, notes=result.notes, chars=len(result.text)))
