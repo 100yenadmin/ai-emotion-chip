@@ -130,7 +130,9 @@ class EmotionChipTTSProvider(TTSProvider):
         return self._resolve_model(self._hermes_call()[0])[3]
 
     def _finish_plan(self, rendered, models, speed):
-        """Finish the backend parameters and notes without changing provider state."""
+        """Finish the backend parameters and notes of a freshly rendered result (its notes list gains the pinned note).
+
+        Changes no provider state; callers pass a render they own."""
         final = None
         if models:
             base = _base_speed(self.settings.host("tts.fish-audio.speed", 1.0) if speed is None else speed)

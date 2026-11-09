@@ -104,8 +104,10 @@ With `guide_mode: generate` at startup, the plugin registers two read-only, offl
 readiness, fixes, unchecked items, engine, model, dialect, voice and session settings, including voice-reply coverage
 and the agent's last authored register. `chip_preview` takes a delivery score and optional dialect and returns the
 rendered text, cue words, drops with reasons, parameters, notes and character count without synthesizing or logging.
-For the profile's own dialect it returns what the speech provider would send for a call from Hermes, including Fish's
-paren-cue adaptation, the final speed and the provider's notes; any other dialect renders the score as written.
+For the profile's own dialect it returns what the speech provider would send for one unstreamed call from Hermes,
+including Fish's paren-cue adaptation, the final speed and the provider's notes (a streamed piece without a cue keeps
+the previous piece's voice settings, and ElevenLabs refuses text over the model's length limit, which the preview still
+shows); any other dialect renders the score as written.
 Switching to `guide_mode: defer` hides the tools.
 
 ### See a render without a voice
