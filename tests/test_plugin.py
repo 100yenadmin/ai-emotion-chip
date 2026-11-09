@@ -1194,3 +1194,36 @@ def test_settling_applies_the_quiet_switch(fish_tags):
     ctx.command("quiet on")
     ctx.provider.synthesize("[excited] Hi. ] (sighing) Bye.", "out.mp3")
     assert fish.spoken[-1] == "[excited] Hi. Bye."
+
+
+def test_status_ready(rig, monkeypatch):
+    ctx, fish, host, _, _, _ = rig
+    status = ctx.command("status")
+    assert status.startswith("ready: yes; backend: fish")
+    fish.available = False
+    assert "ready: no (the fish-audio plugin is not ready; check its FISH_API_KEY)" in ctx.command("status")
+    monkeypatch.setattr(provider_module, "_fish", lambda: None)
+    host["tts.provider"] = "edge"
+    status = ctx.command("status")
+    assert status.startswith("ready: no (the speech provider is edge; set tts.provider: emotion-chip; "
+                             "install and enable the fish-audio plugin, or set backend: eleven)")
+    host["tts.provider"] = "emotion-chip"
+    ctx.settings.update(backend="eleven", eleven_voice_id="")
+    monkeypatch.delenv("ELEVENLABS_API_KEY", raising=False)
+    status = ctx.command("status")
+    assert "add ELEVENLABS_API_KEY to the profile's .env" in status and "set the plugin's eleven_voice_id" in status
+    monkeypatch.setenv("ELEVENLABS_API_KEY", "test-key")
+    ctx.settings.update(eleven_voice_id="voice-1")
+    assert ctx.command("status").startswith("ready: yes; backend: eleven")
+
+
+def test_status_key_unknown_in_unscoped_multiplex(monkeypatch):
+    import types
+    from emotion_chip.hermes import commands
+    class Unscoped(RuntimeError):
+        pass
+    def get_secret(name):
+        raise Unscoped()
+    module = types.SimpleNamespace(UnscopedSecretError=Unscoped, get_secret=get_secret)
+    monkeypatch.setitem(sys.modules, "agent.secret_scope", module)
+    assert commands._has_eleven_key() is None
