@@ -31,7 +31,7 @@ def setup_problems(settings):
         # Another voice speaks; the chip only adapts cues for it, so its own backend does not matter here.
         return [f"the speech provider is {provider}; set tts.provider: emotion-chip"]
     if settings.command_provider("emotion-chip"):
-        return ["a command provider named emotion-chip in tts.providers hides the plugin; rename it"]
+        return ["a command provider named emotion-chip (tts.providers or tts.emotion-chip) hides the plugin; rename it"]
     problems = []
     if settings.get("backend") == "eleven":
         if _has_secret("ELEVENLABS_API_KEY") is False:
