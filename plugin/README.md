@@ -152,6 +152,9 @@ directory.
   per-session state in its own namespaced folder under `plugin-data/`: task counters and timestamps, the ids of the
   last 16 tool calls counted, the map from Hermes session keys to session ids, the messaging sender id and platform,
   the last situation and register lines, and the quiet switch, for the 50 most recent sessions. Audio goes to the path Hermes supplies.
+- **Hermes's voice setting.** While the chip is the speech provider with `guide_mode: generate`, each turn on a messaging
+  platform reads Hermes's `gateway_voice_mode.json` (the chats' saved `/voice` modes) and `voice.auto_tts`, to tell the
+  agent whether this chat's replies are read aloud. It never writes that file.
 - No background processes, no shell commands, no telemetry.
 
 ## Grounding
