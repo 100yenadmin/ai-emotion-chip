@@ -446,6 +446,16 @@ def test_delivery_log_and_rotation(rig, monkeypatch):
     assert path.read_bytes() == before
 
 
+def test_delivery_log_failure_never_stops_speech(rig, caplog):
+    ctx, fish, _, _, _, directory = rig
+    (directory / "delivery.jsonl").mkdir(parents=True)  # a folder where the log file should be: every write fails
+    for _ in range(2):
+        assert ctx.provider.synthesize("[sad] Still spoken.", "out.mp3") == "out.mp3"
+        assert list(ctx.provider.stream("[sad] Streamed too.")) == [b"pcm"]
+    assert [call[0] for call in fish.calls] == ["synthesize", "stream"] * 2
+    assert caplog.text.count("delivery log not written") == 1
+
+
 def test_delivery_log_off_creates_no_file(rig):
     ctx, _, _, _, _, directory = rig
     ctx.set_config("delivery_log", False)
