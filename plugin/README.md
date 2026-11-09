@@ -112,13 +112,14 @@ directory.
 ### Coverage
 
 - Full cues reach the voice on the `text_to_speech` tool path.
-- Voice replies on Telegram and the other messaging platforms (`/voice on`, `/voice tts` or `voice.auto_tts`): Hermes
-  would read the reply aloud without cues. On a turn where it will, the chip adds one line after the user's message
-  telling the agent so, and asking it to say the answer itself with `text_to_speech` and its cues. Hermes delivers that
-  voice note with the reply and sends none of its own. The chip reads the chat's saved `/voice` setting; when voice
-  replies cover only voice messages, it adds the line only to a message shaped like one (a quoted transcript). With
-  voice replies off nothing changes, and the system prompt is the same either way. Only with the chip as the speech
-  provider and `guide_mode: generate`.
+- Voice replies on Telegram and the other messaging platforms (`/voice on`, `/voice tts`, or `voice.auto_tts`): Hermes
+  would read the reply aloud without cues. When a message comes in, the chip asks Hermes whether it will voice the
+  reply, by Hermes's own rule for the chat and the message. On that message's turn it then adds one line after the
+  user's message, asking the agent to say the answer itself with `text_to_speech` and its cues. Hermes delivers that
+  voice note with the reply and sends none of its own. Otherwise nothing changes, and the system prompt is the same
+  either way. Only with the chip as the speech provider and `guide_mode: generate`, and only when the plugin runs
+  inside the gateway process. Not on Discord: in a voice channel Hermes plays its own reply, which the agent's clip
+  would replace with a file in the text channel.
 - Read-aloud and voice mode speak the reply text, without cues: a cue written in a reply would also show in the chat.
   Hermes has no seam yet that splits displayed text from spoken text.
 - Hermes's GPT-Live voice chat mode speaks through OpenAI's live voice model, not a speech provider, so the plugin
@@ -153,9 +154,9 @@ directory.
   per-session state in its own namespaced folder under `plugin-data/`: task counters and timestamps, the ids of the
   last 16 tool calls counted, the map from Hermes session keys to session ids, the messaging sender id and platform,
   the last situation and register lines, and the quiet switch, for the 50 most recent sessions. Audio goes to the path Hermes supplies.
-- **Hermes's voice setting.** While the chip is the speech provider with `guide_mode: generate`, each turn on a messaging
-  platform reads Hermes's `gateway_voice_mode.json` (the chats' saved `/voice` modes) and `voice.auto_tts`, to tell the
-  agent whether this chat's replies are read aloud. It never writes that file.
+- **Incoming messages.** The plugin registers `pre_gateway_dispatch`. For each incoming message it asks the gateway
+  whether it will read the reply aloud, and keeps the answer in memory under the chat and message id until that turn,
+  at most 256 chats and 15 minutes. It never skips, changes or delays a message.
 - No background processes, no shell commands, no telemetry.
 
 ## Grounding
