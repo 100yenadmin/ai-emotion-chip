@@ -1,11 +1,56 @@
 """Plain-text /chip controls and authored-delivery explanations."""
 from copy import deepcopy
 
+import os
+
 from ..render import dialect_for
+from . import provider as provider_module
 from .provider import last_render, last_render_lock
 from .settings import session_identity
 
 USAGE = "Usage: /chip [status|why|quiet [on|off]|register [clear]]"
+
+
+def _has_secret(name):
+    """True or False for the active profile's secret *name*; None when this context cannot tell (a multiplexed gateway
+    with no profile scope bound), so status never reports a key missing that a turn would find."""
+    try:
+        from agent.secret_scope import UnscopedSecretError, get_secret
+    except ImportError:
+        return bool(os.environ.get(name, "").strip())
+    try:
+        return bool((get_secret(name) or "").strip())
+    except UnscopedSecretError:
+        return None
+
+
+def setup_problems(settings):
+    """What stops the chip from speaking with this profile's settings, each with its fix."""
+    provider = settings.tts_provider()
+    if provider != "emotion-chip":
+        # Another voice speaks; the chip only adapts cues for it, so its own backend does not matter here.
+        return [f"the speech provider is {provider}; set tts.provider: emotion-chip"]
+    if settings.command_provider("emotion-chip"):
+        return ["a command provider named emotion-chip (tts.providers or tts.emotion-chip) hides the plugin; rename it"]
+    problems = []
+    if settings.get("backend") == "eleven":
+        if _has_secret("ELEVENLABS_API_KEY") is False:
+            problems.append("add ELEVENLABS_API_KEY to the profile's .env")
+        if not settings.eleven_voice(settings.call_voice()):
+            problems.append("set the plugin's eleven_voice_id")
+        return problems
+    fish = provider_module._fish()
+    if fish is None:
+        return ["install and enable the fish-audio plugin, or set backend: eleven"]
+    if _has_secret("FISH_API_KEY") is None:
+        return problems  # Fish reads its key the same way; this context cannot tell
+    try:
+        available = fish.is_available()
+    except Exception:
+        return problems
+    if not available:
+        problems.append("the fish-audio plugin is not ready; check its FISH_API_KEY")
+    return problems
 
 
 def make_handler(settings, situation, env):
@@ -15,7 +60,9 @@ def make_handler(settings, situation, env):
             args = ["status"]
         session_id = session_identity(env, situation)
         if args == ["status"]:
-            values = {key: settings.get(key) for key in ("backend", "fish_model", "guide_mode", "signals")}
+            problems = setup_problems(settings)
+            values = {"ready": "yes" if not problems else "no (" + "; ".join(problems) + ")"}
+            values.update({key: settings.get(key) for key in ("backend", "fish_model", "guide_mode", "signals")})
             backend = settings.get("backend")
             model = settings.model(settings.host("tts.model"))
             if backend == "eleven":
