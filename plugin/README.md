@@ -117,8 +117,8 @@ directory.
   reply, by Hermes's own rule for the chat and the message. On that message's turn it then adds one line after the
   user's message, asking the agent to say the answer itself with `text_to_speech` and its cues. Hermes delivers that
   voice note with the reply and sends none of its own. If the agent's call fails, Hermes sends no voice note after a
-  text message and reads the reply without cues after a voice message, so the line also asks the agent to fix the
-  cause and try once more. Otherwise nothing changes, and the system prompt is the same
+  text message, and after a voice message it may read the reply without cues or send nothing, so the line also asks
+  the agent to fix the cause and try once more. Otherwise nothing changes, and the system prompt is the same
   either way. Only with the chip as the speech provider and `guide_mode: generate`, and only when the plugin runs
   inside the gateway process. Not on Discord: in a voice channel Hermes plays its own reply, which the agent's clip
   would replace with a file in the text channel.

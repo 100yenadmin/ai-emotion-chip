@@ -22,8 +22,9 @@ TTL_SECONDS = 900  # a decision older than this is not used (a turn queued that 
 MAX_PENDING = 256
 
 # Hermes's runner skips its own voice reply after any text_to_speech call in the turn, a failed one too. After a text
-# message that leaves the chat with no voice note; after a voice message the adapter still reads the reply, without cues.
-# Either way a failed call loses the delivery, so the line asks the agent to recover it once.
+# message, or a voice message whose reply was streamed, that leaves the chat with no voice note; after a voice message
+# with an unstreamed reply the adapter may still read the reply, without cues. Either way a failed call loses the cues or
+# the voice note, so the line asks the agent to recover it once.
 FACT = ("Hermes will read your reply to this message aloud, without cues. Say it yourself with text_to_speech, score "
         "included, and keep code and long lists to the written reply; Hermes then sends no voice note of its own. If "
         "that call fails, fix the cause, such as text that is too long, and try once more: a failed call can leave no "
