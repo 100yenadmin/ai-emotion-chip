@@ -112,9 +112,16 @@ directory.
 ### Coverage
 
 - Full cues reach the voice on the `text_to_speech` tool path.
-- Spoken replies, read-aloud and voice mode speak the reply text, without cues: a cue written in a reply would also
-  show in the chat, so the guide asks for cues in the tool text. Hermes has no seam yet that splits displayed text from
-  spoken text.
+- Voice replies on Telegram and the other messaging platforms (`/voice on`, `/voice tts`, or `voice.auto_tts`): Hermes
+  would read the reply aloud without cues. When a message comes in, the chip asks Hermes whether it will voice the
+  reply, by Hermes's own rule for the chat and the message. On that message's turn it then adds one line after the
+  user's message, asking the agent to say the answer itself with `text_to_speech` and its cues. Hermes delivers that
+  voice note with the reply and sends none of its own. Otherwise nothing changes, and the system prompt is the same
+  either way. Only with the chip as the speech provider and `guide_mode: generate`, and only when the plugin runs
+  inside the gateway process. Not on Discord: in a voice channel Hermes plays its own reply, which the agent's clip
+  would replace with a file in the text channel.
+- Read-aloud and voice mode speak the reply text, without cues: a cue written in a reply would also show in the chat.
+  Hermes has no seam yet that splits displayed text from spoken text.
 - Hermes's GPT-Live voice chat mode speaks through OpenAI's live voice model, not a speech provider, so the plugin
   does not reach it.
 - When Hermes compresses the conversation in the middle of a reply, sounds after that point start without the earlier
@@ -147,6 +154,12 @@ directory.
   per-session state in its own namespaced folder under `plugin-data/`: task counters and timestamps, the ids of the
   last 16 tool calls counted, the map from Hermes session keys to session ids, the messaging sender id and platform,
   the last situation and register lines, and the quiet switch, for the 50 most recent sessions. Audio goes to the path Hermes supplies.
+- **Incoming messages.** While the chip is the speech provider with `guide_mode: generate` (at gateway start), the
+  plugin registers `pre_gateway_dispatch`. For each incoming message it asks the gateway whether it will read the reply
+  aloud, and keeps the answer in memory under the chat and message id. The answer is used once, by that message's
+  turn; answers older than 15 minutes are never used and are dropped as new messages arrive, at most 256 kept. It
+  never skips or changes a message; the check adds a little work per message.
+  Registering this hook routes webhook and relay deliveries through Hermes's hooked ingress path.
 - No background processes, no shell commands, no telemetry.
 
 ## Grounding

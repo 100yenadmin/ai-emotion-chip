@@ -97,8 +97,11 @@ def register_all(ctx, *, reader=None, data_dir=None, env=None, clock=None):
         ctx.register_skill("emotion-chip-voice", path, description=description)
     if hasattr(ctx, "register_hook"):
         hooks = Hooks(settings, situation, environment, start_turn=provider.start_turn)
+        # pre_gateway_dispatch only serves the voice-replies line; leave Hermes's ingress untouched where it cannot apply.
+        voice_line = settings.get("guide_mode") == "generate" and settings.tts_provider() == "emotion-chip"
         for name in HOOKS:
-            ctx.register_hook(name, getattr(hooks, name))
+            if name != "pre_gateway_dispatch" or voice_line:
+                ctx.register_hook(name, getattr(hooks, name))
     if hasattr(ctx, "register_middleware"):
         ctx.register_middleware("tool_request", make_middleware(settings, situation, environment))
     if hasattr(ctx, "register_command"):
