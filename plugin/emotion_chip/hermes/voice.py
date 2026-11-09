@@ -21,8 +21,14 @@ NOT_COVERED = {"discord"}
 TTL_SECONDS = 900  # a decision older than this is not used (a turn queued that long is a new situation)
 MAX_PENDING = 256
 
+# Hermes's runner skips its own voice reply after any text_to_speech call in the turn, a failed one too. After a text
+# message, or a voice message whose reply was streamed, that leaves the chat with no voice note; after a voice message
+# with an unstreamed reply the adapter may still read the reply, without cues. Either way a failed call loses the cues or
+# the voice note, so the line asks the agent to recover it once.
 FACT = ("Hermes will read your reply to this message aloud, without cues. Say it yourself with text_to_speech, score "
-        "included, and keep code and long lists to the written reply; Hermes then sends no voice note of its own.")
+        "included, and keep code and long lists to the written reply; Hermes then sends no voice note of its own. If "
+        "that call fails, fix the cause, such as text that is too long, and try once more: a failed call can leave no "
+        "voice note at all.")
 
 
 class VoiceReplies:
@@ -30,6 +36,7 @@ class VoiceReplies:
         self.clock = clock or time.monotonic
         self._pending = {}
         self._lock = threading.Lock()
+        self.check = None  # Hermes's voice-reply check at the last message: None (none seen), "ok", "missing", "error"
 
     def observe(self, event, gateway):
         """pre_gateway_dispatch: record whether Hermes will voice the reply to *event*. Never changes dispatch."""
@@ -42,11 +49,16 @@ class VoiceReplies:
         message = str(getattr(source, "message_id", "") or "")
         decide = getattr(gateway, "_should_send_voice_reply", None)
         voiced = False
-        if platform not in NOT_COVERED and callable(decide):
-            try:
-                voiced = decide(event, "reply", [], already_sent=True) is True
-            except Exception:
-                voiced = False
+        if platform not in NOT_COVERED:
+            if not callable(decide):
+                self.check = "missing"
+            else:
+                try:
+                    voiced = decide(event, "reply", [], already_sent=True) is True
+                    self.check = "ok"
+                except Exception:
+                    voiced = False
+                    self.check = "error"
         now = self.clock()
         with self._lock:
             # Keyed by message, so other messages in the chat (a group, a topic, a refused sender) never overwrite it.
@@ -75,3 +87,16 @@ def voice_fact(settings, replies, env):
     if settings.get("guide_mode") != "generate" or settings.tts_provider() != "emotion-chip":
         return ""
     return FACT if replies.voiced(env) else ""
+
+
+def voice_coverage(settings, replies):
+    """One status value: whether the voice-replies line can reach this profile's chats, and if not, why."""
+    provider = settings.tts_provider()
+    if provider != "emotion-chip" or settings.get("guide_mode") != "generate":
+        return "off (needs tts.provider: emotion-chip and guide_mode: generate)"
+    if replies is None:
+        return "off until Hermes restarts (the chip read other settings when it started)"
+    return {None: "not checked yet (the chip has seen no message from a covered platform in this process)",
+            "ok": "covered, except on Discord",
+            "missing": "not covered (this Hermes has no voice-reply check)",
+            "error": "not covered (Hermes's voice-reply check failed)"}[replies.check]

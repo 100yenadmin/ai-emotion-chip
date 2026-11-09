@@ -7,6 +7,7 @@ from ..render import dialect_for
 from . import provider as provider_module
 from .provider import last_render, last_render_lock
 from .settings import session_identity
+from .voice import voice_coverage
 
 USAGE = "Usage: /chip [status|why|quiet [on|off]|register [clear]]"
 
@@ -24,44 +25,61 @@ def _has_secret(name):
         return None
 
 
-def setup_problems(settings):
-    """What stops the chip from speaking with this profile's settings, each with its fix."""
+def readiness(settings):
+    """(problems, unchecked): what stops the chip from speaking with this profile's settings, each with its fix, and
+    what this context could not check, so status never calls an unchecked setup ready."""
     provider = settings.tts_provider()
     if provider != "emotion-chip":
         # Another voice speaks; the chip only adapts cues for it, so its own backend does not matter here.
-        return [f"the speech provider is {provider}; set tts.provider: emotion-chip"]
+        return [f"the speech provider is {provider}; set tts.provider: emotion-chip"], []
     if settings.command_provider("emotion-chip"):
-        return ["a command provider named emotion-chip (tts.providers or tts.emotion-chip) hides the plugin; rename it"]
-    problems = []
+        return ["a command provider named emotion-chip (tts.providers or tts.emotion-chip) hides the plugin; rename it"], []
+    problems, unchecked = [], []
     if settings.get("backend") == "eleven":
-        if _has_secret("ELEVENLABS_API_KEY") is False:
+        key = _has_secret("ELEVENLABS_API_KEY")
+        if key is False:
             problems.append("add ELEVENLABS_API_KEY to the profile's .env")
+        elif key is None:
+            unchecked.append("the ElevenLabs key")
         if not settings.eleven_voice(settings.call_voice()):
             problems.append("set the plugin's eleven_voice_id")
-        return problems
+        return problems, unchecked
     fish = provider_module._fish()
     if fish is None:
-        return ["install and enable the fish-audio plugin, or set backend: eleven"]
+        return ["install and enable the fish-audio plugin, or set backend: eleven"], []
     if _has_secret("FISH_API_KEY") is None:
-        return problems  # Fish reads its key the same way; this context cannot tell
+        return problems, ["the Fish Audio key"]  # Fish reads its key the same way; this context cannot tell
     try:
         available = fish.is_available()
     except Exception:
-        return problems
+        return problems, ["the fish-audio plugin, whose readiness check raised an error"]
     if not available:
         problems.append("the fish-audio plugin is not ready; check its FISH_API_KEY")
-    return problems
+    return problems, unchecked
 
 
-def make_handler(settings, situation, env):
+def setup_problems(settings):
+    """What stops the chip from speaking with this profile's settings, each with its fix."""
+    return readiness(settings)[0]
+
+
+def ready_value(settings):
+    problems, unchecked = readiness(settings)
+    if problems:
+        return "no (" + "; ".join(problems) + ")"
+    if unchecked:
+        return "probably (not checked from here: " + ", ".join(unchecked) + ")"
+    return "yes"
+
+
+def make_handler(settings, situation, env, voice_replies=None):
     def handle(raw_args):
         args = (raw_args or "status").strip().split()
         if not args:
             args = ["status"]
         session_id = session_identity(env, situation)
         if args == ["status"]:
-            problems = setup_problems(settings)
-            values = {"ready": "yes" if not problems else "no (" + "; ".join(problems) + ")"}
+            values = {"ready": ready_value(settings)}
             values.update({key: settings.get(key) for key in ("backend", "fish_model", "guide_mode", "signals")})
             backend = settings.get("backend")
             model = settings.model(settings.host("tts.model"))
@@ -72,7 +90,8 @@ def make_handler(settings, situation, env):
                 values["fish_model"] = settings.resolve_fish_model(settings.host("tts.model")).label
             values.update(session_id=session_id, dialect=str(dialect_for(backend, model)),
                           quiet="on" if situation.get("quiet", False) else "off",
-                          delivery_log="on" if settings.get("delivery_log") else "off")
+                          delivery_log="on" if settings.get("delivery_log") else "off",
+                          voice_replies=voice_coverage(settings, voice_replies))
             return "; ".join(f"{key}: {value}" for key, value in values.items())
         if args == ["why"]:
             with last_render_lock:

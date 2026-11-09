@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.2.1 — 2026-11-09
+
+Fixes from an independent review of 0.2.0. No new features.
+
+- **Fix: the delivery log never stops speech** (#43). The log is written before synthesis, and a failed write (a full
+  disk, an unwritable `plugin-data/` folder) used to fail every render. It now logs one warning and speech goes on;
+  later rows are written once the folder is writable again.
+- **Fix: a failed voice reply is recovered** (#44). Hermes skips its own voice note after any `text_to_speech` call in
+  the turn, a failed one too. So when the agent's call failed (text over the model's limit, a bad argument), a chat with
+  voice replies on got no voice note, or the reply read without cues. On those turns the line now asks the agent to fix
+  the cause and try once more. The Hermes side is filed upstream (NousResearch/hermes-agent#151862).
+- **Fix: `/chip status` is honest about what it checked** (#45). When it cannot read the profile's key, or the
+  fish-audio plugin's own check fails, it says `ready: probably (not checked from here: …)` instead of `ready: yes`. A
+  new `voice_replies:` value says whether voice replies are covered and, if not, why: no message seen yet, no
+  voice-reply check in this Hermes, the wrong settings, or a restart needed after switching to the chip.
+- **Docs: install from the repository first.** On a fresh Hermes 0.23.0, installing by catalog name can fail: Hermes
+  falls back to the catalog copy it shipped with, which predates this plugin (NousResearch/hermes-agent#151856).
+
 ## 0.2.0 — 2026-11-09
 
 Voice replies on messaging platforms, a `hermes chip` command and a readiness check.

@@ -95,6 +95,7 @@ def register_all(ctx, *, reader=None, data_dir=None, env=None, clock=None):
         description = next((line.partition(":")[2].strip().strip("\"'") for line in frontmatter.splitlines()
                             if line.startswith("description:")), "")
         ctx.register_skill("emotion-chip-voice", path, description=description)
+    voice_replies = None  # set only when the voice-replies line is registered; /chip status reports it
     if hasattr(ctx, "register_hook"):
         hooks = Hooks(settings, situation, environment, start_turn=provider.start_turn)
         # pre_gateway_dispatch only serves the voice-replies line; leave Hermes's ingress untouched where it cannot apply.
@@ -102,10 +103,12 @@ def register_all(ctx, *, reader=None, data_dir=None, env=None, clock=None):
         for name in HOOKS:
             if name != "pre_gateway_dispatch" or voice_line:
                 ctx.register_hook(name, getattr(hooks, name))
+        if voice_line:
+            voice_replies = hooks.voice_replies
     if hasattr(ctx, "register_middleware"):
         ctx.register_middleware("tool_request", make_middleware(settings, situation, environment))
     if hasattr(ctx, "register_command"):
-        ctx.register_command("chip", make_handler(settings, situation, environment),
+        ctx.register_command("chip", make_handler(settings, situation, environment, voice_replies),
                              description="Hermes Emotion Chip voice delivery",
                              args_hint="[status|why|quiet|register]")
     if hasattr(ctx, "register_cli_command"):

@@ -22,9 +22,13 @@ never adds an emotion the agent did not write, and treats plain speech as a vali
 Requires Hermes 0.22.2 or newer.
 
 ```bash
-hermes plugins install emotion-chip --enable                         # from the Hermes plugin catalog, once listed
 hermes plugins install 100yenadmin/ai-emotion-chip/plugin --enable   # straight from this repository
+hermes plugins install emotion-chip --enable                         # from the Hermes plugin catalog
 ```
+
+On a fresh Hermes 0.23.0 the catalog name may not resolve yet: Hermes falls back to the catalog copy it shipped with,
+which predates this plugin ([hermes-agent#151856](https://github.com/NousResearch/hermes-agent/issues/151856)). The
+repository line works everywhere.
 
 Setup (ElevenLabs quick start, Fish Audio), settings, the `/chip` commands and the full disclosure of what the plugin
 sends where are in **[plugin/README.md](plugin/README.md)**.

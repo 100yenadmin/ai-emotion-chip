@@ -18,9 +18,12 @@ plain speech is always a valid choice.
 Requires Hermes 0.22.2 or newer.
 
 ```bash
-hermes plugins install emotion-chip --enable                         # from the Hermes plugin catalog, once listed
 hermes plugins install 100yenadmin/ai-emotion-chip/plugin --enable   # straight from the repository
+hermes plugins install emotion-chip --enable                         # from the Hermes plugin catalog
 ```
+
+On a fresh Hermes 0.23.0 the catalog name may not resolve yet (Hermes falls back to the catalog copy it shipped with;
+[hermes-agent#151856](https://github.com/NousResearch/hermes-agent/issues/151856)); the repository line works everywhere.
 
 Then make the Emotion Chip the speech provider and pick a backend.
 
@@ -89,7 +92,7 @@ On the chip's own provider path `/chip why` shows every drop and why, and the de
 
 | Command | What it does |
 |---|---|
-| `/chip status` | `ready: yes`, or `ready: no` with what to fix (speech provider, key, voice, Fish plugin); then the settings, the backend's model and dialect, the ElevenLabs voice when selected, and this session's id |
+| `/chip status` | `ready: yes`; `ready: probably` when this context cannot check the key or the Fish plugin; or `ready: no` with what to fix (speech provider, key, voice, Fish plugin). Then the settings, the backend's model and dialect, the ElevenLabs voice when selected, this session's id, and `voice_replies`: whether voice replies are covered and, if not, why |
 | `/chip why` | The last render in this session: the agent's own cue words, what was dropped and why, the parameters |
 | `/chip quiet [on\|off]` | Drop laughs, sighs and other sounds; cues and speech stay. One switch for the whole profile. |
 | `/chip register [clear]` | Show or clear the register the agent last wrote in this session |
@@ -116,7 +119,9 @@ directory.
   would read the reply aloud without cues. When a message comes in, the chip asks Hermes whether it will voice the
   reply, by Hermes's own rule for the chat and the message. On that message's turn it then adds one line after the
   user's message, asking the agent to say the answer itself with `text_to_speech` and its cues. Hermes delivers that
-  voice note with the reply and sends none of its own. Otherwise nothing changes, and the system prompt is the same
+  voice note with the reply and sends none of its own. If the agent's call fails, Hermes sends no voice note after a
+  text message, and after a voice message it may read the reply without cues or send nothing, so the line also asks
+  the agent to fix the cause and try once more. Otherwise nothing changes, and the system prompt is the same
   either way. Only with the chip as the speech provider and `guide_mode: generate`, and only when the plugin runs
   inside the gateway process. Not on Discord: in a voice channel Hermes plays its own reply, which the agent's clip
   would replace with a file in the text channel.

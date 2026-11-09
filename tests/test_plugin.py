@@ -446,6 +446,19 @@ def test_delivery_log_and_rotation(rig, monkeypatch):
     assert path.read_bytes() == before
 
 
+def test_delivery_log_failure_never_stops_speech(rig, caplog):
+    ctx, fish, _, _, _, directory = rig
+    (directory / "delivery.jsonl").mkdir(parents=True)  # a folder where the log file should be: every write fails
+    for _ in range(2):
+        assert ctx.provider.synthesize("[sad] Still spoken.", "out.mp3") == "out.mp3"
+        assert list(ctx.provider.stream("[sad] Streamed too.")) == [b"pcm"]
+    assert [call[0] for call in fish.calls] == ["synthesize", "stream"] * 2
+    assert caplog.text.count("delivery log not written") == 1
+    (directory / "delivery.jsonl").rmdir()  # writable again: later rows are written, not suppressed for good
+    ctx.provider.synthesize("[sad] Logged again.", "out.mp3")
+    assert json.loads((directory / "delivery.jsonl").read_text())["cue_words"] == ["sad"]
+
+
 def test_delivery_log_off_creates_no_file(rig):
     ctx, _, _, _, _, directory = rig
     ctx.set_config("delivery_log", False)
@@ -1229,10 +1242,12 @@ def test_status_key_unknown_in_unscoped_multiplex(rig, monkeypatch):
     monkeypatch.setitem(sys.modules, "agent.secret_scope",
                         types.SimpleNamespace(UnscopedSecretError=Unscoped, get_secret=get_secret))
     assert commands._has_secret("ELEVENLABS_API_KEY") is None
-    fish.available = False  # Fish would read an empty key here too; status must not blame it
-    assert ctx.command("status").startswith("ready: yes")
+    fish.available = False  # Fish would read an empty key here too; status must not blame it, nor call it ready
+    assert ctx.command("status").startswith("ready: probably (not checked from here: the Fish Audio key); backend")
     ctx.settings.update(backend="eleven", eleven_voice_id="voice-1")
-    assert ctx.command("status").startswith("ready: yes")
+    assert ctx.command("status").startswith("ready: probably (not checked from here: the ElevenLabs key); backend")
+    ctx.settings.update(eleven_voice_id="")
+    assert ctx.command("status").startswith("ready: no (set the plugin's eleven_voice_id); backend")
 
 
 def test_status_other_provider_and_command_provider(rig, monkeypatch):
@@ -1251,4 +1266,50 @@ def test_status_survives_a_broken_fish(rig):
     def boom():
         raise RuntimeError("provider bug")
     fish.is_available = boom
-    assert ctx.command("status").startswith("ready: yes")
+    assert ctx.command("status").startswith(
+        "ready: probably (not checked from here: the fish-audio plugin, whose readiness check raised an error); backend")
+
+
+def test_status_reports_voice_reply_coverage(rig):
+    from types import SimpleNamespace
+    ctx, _, host, _, _, _ = rig
+
+    def coverage():
+        return ctx.command("status").rsplit("voice_replies: ", 1)[1]
+
+    def message(platform="telegram"):
+        source = SimpleNamespace(platform=SimpleNamespace(value=platform), chat_id="42", message_id="7")
+        return SimpleNamespace(source=source, message_id="7")
+
+    class Gateway:
+        def __init__(self, answer):
+            self.answer = answer
+
+        def _should_send_voice_reply(self, event, response, agent_messages, already_sent=False):
+            if isinstance(self.answer, Exception):
+                raise self.answer
+            return self.answer
+
+    assert coverage() == "not checked yet (the chip has seen no message from a covered platform in this process)"
+    ctx.hooks["pre_gateway_dispatch"](event=message("discord"), gateway=SimpleNamespace())
+    assert coverage().startswith("not checked yet")  # Discord is never asked, so it proves nothing either way
+    ctx.hooks["pre_gateway_dispatch"](event=message(), gateway=Gateway(False))
+    assert coverage() == "covered, except on Discord"  # Hermes answered: this chat has voice replies off
+    ctx.hooks["pre_gateway_dispatch"](event=message(), gateway=SimpleNamespace())
+    assert coverage() == "not covered (this Hermes has no voice-reply check)"
+    ctx.hooks["pre_gateway_dispatch"](event=message(), gateway=Gateway(RuntimeError("bug")))
+    assert coverage() == "not covered (Hermes's voice-reply check failed)"
+    host["tts.provider"] = "elevenlabs"
+    assert coverage() == "off (needs tts.provider: emotion-chip and guide_mode: generate)"
+
+
+def test_status_voice_replies_need_a_restart_after_a_late_switch(tmp_path, monkeypatch):
+    ctx, fish = FakeContext(), FakeFish()
+    host = {"tts.provider": "edge"}
+    monkeypatch.setattr(provider_module, "_fish", lambda: fish)
+    register_all(ctx, reader=lambda key, default=None: host.get(key, default), data_dir=lambda: tmp_path / "plugin-data",
+                 env=lambda key: "", clock=lambda: 10000.0)
+    assert "pre_gateway_dispatch" not in ctx.hooks
+    host["tts.provider"] = "emotion-chip"
+    assert ctx.command("status").endswith(
+        "voice_replies: off until Hermes restarts (the chip read other settings when it started)")
