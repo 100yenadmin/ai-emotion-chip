@@ -5,6 +5,7 @@ from pathlib import Path
 import tempfile
 import threading
 
+from ..cli import add_commands, run
 from ..data import DIALECTS, load_data
 from ..guide import build_prompt_section, build_skill
 from ..render import dialect_for
@@ -104,3 +105,8 @@ def register_all(ctx, *, reader=None, data_dir=None, env=None, clock=None):
         ctx.register_command("chip", make_handler(settings, situation, environment),
                              description="Hermes Emotion Chip voice delivery",
                              args_hint="[status|why|quiet|register]")
+    if hasattr(ctx, "register_cli_command"):
+        ctx.register_cli_command("chip", "Hermes Emotion Chip: render a delivery score, print the guide",
+                                 add_commands, run,
+                                 description="Render a delivery score for ElevenLabs or Fish Audio, or print the "
+                                             "delivery guide the agent gets. Offline: no keys, no network.")

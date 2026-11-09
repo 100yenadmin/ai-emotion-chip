@@ -51,7 +51,7 @@ def test_registration(rig):
     ctx, _, _, _, _, directory = rig
     assert ctx.calls == [("provider", "emotion-chip"), ("section", "emotion-chip"),
                          ("skill", "emotion-chip-voice"), *[("hook", name) for name in HOOKS],
-                         ("middleware", "tool_request"), ("command", "chip")]
+                         ("middleware", "tool_request"), ("command", "chip"), ("cli_command", "chip")]
     path, description = ctx.skill
     assert path == directory / "skills" / "emotion-chip-voice" / "SKILL.md"
     assert description == path.read_text().split("description: ", 1)[1].splitlines()[0]
@@ -59,6 +59,35 @@ def test_registration(rig):
     assert ctx.command_info == ("Hermes Emotion Chip voice delivery", "[status|why|quiet|register]")
     assert all(f"{key}:" in ctx.command("status") for key in
                ("backend", "fish_model", "dialect", "guide_mode", "signals", "quiet", "delivery_log"))
+
+
+def test_hermes_cli_command(rig, capsys, monkeypatch):
+    # The way Hermes attaches a plugin command (hermes_cli/main.py): its own top-level dest="command",
+    # a "chip" subparser built by setup_fn, and set_defaults(func=handler_fn); rc = args.func(args).
+    import argparse
+    import io
+    ctx = rig[0]
+    help_text, setup_fn, handler_fn, description = ctx.cli_command
+    assert help_text.startswith("Hermes Emotion Chip") and "Offline" in description
+    top = argparse.ArgumentParser(prog="hermes")
+    chip = top.add_subparsers(dest="command").add_parser("chip")
+    setup_fn(chip)
+    chip.set_defaults(func=handler_fn)
+    args = top.parse_args(["chip", "render", "--dialect", "fish_drama3", "[stress: awake] Now."])
+    assert args.command == "chip" and args.func(args) == 0
+    assert capsys.readouterr().out == "<stress>awake</stress> Now.\n"
+    monkeypatch.setattr(sys, "stdin", io.StringIO("[pause] Hi."))
+    args = top.parse_args(["chip", "render", "--dialect", "eleven_v4"])
+    assert args.func(args) == 0 and capsys.readouterr().out == "[pause] Hi.\n"
+
+    class Tty(io.StringIO):
+        def isatty(self):
+            return True
+    monkeypatch.setattr(sys, "stdin", Tty(""))
+    args = top.parse_args(["chip", "render", "--dialect", "eleven_v4"])
+    assert args.func(args) == 2 and "give the score as an argument" in capsys.readouterr().err
+    args = top.parse_args(["chip", "guide", "--dialect", "eleven_v4", "--model", "claude-opus-5-5"])
+    assert args.func(args) == 0 and "Voice delivery" in capsys.readouterr().out
 
 
 def test_defer(tmp_path):
@@ -491,6 +520,7 @@ def test_hermes_source_contract():
         ("register_system_prompt_section", ["id", "content"], ["max_chars"]),
         ("register_middleware", ["kind", "callback"], []),
         ("register_command", ["name", "handler"], ["description", "args_hint"]),
+        ("register_cli_command", ["name", "help", "setup_fn", "handler_fn"], ["description"]),
         ("register_hook", ["hook_name", "callback"], []), ("get_config", ["key", "default"], []),
     ):
         args = methods[name].args
