@@ -3,21 +3,29 @@ import json
 
 from .settings import session_env, session_identity
 from .situation import situation_line
-from .voice import voice_fact
+from .voice import VoiceReplies, voice_fact
 
 # How many recent tool_call_ids a session row keeps (a concurrent batch runs up to 8 tools at once).
 COUNTED_CALLS = 16
 HOOKS = ("pre_llm_call", "post_tool_call", "api_request_error", "on_session_start", "on_session_end", "transform_tool_result",
-         "on_session_reset")
+         "on_session_reset", "pre_gateway_dispatch")
 
 
 class Hooks:
-    def __init__(self, settings, situation, env=None, *, start_turn=None, voice_home=None):
+    def __init__(self, settings, situation, env=None, *, start_turn=None, voice_replies=None):
         self.settings = settings
         self.situation = situation
         self.env = env or session_env
         self.start_turn = start_turn
-        self.voice_home = voice_home
+        self.voice_replies = voice_replies or VoiceReplies()
+
+    def pre_gateway_dispatch(self, event=None, gateway=None, **kwargs):
+        """Record whether Hermes will read the reply to this message aloud; never skips or rewrites it."""
+        try:
+            self.voice_replies.observe(event, gateway)
+        except Exception:
+            pass
+        return None
 
     def _remember(self, kwargs):
         # A delegated subagent runs with its parent's session key still bound; mapping the key to the child
@@ -110,7 +118,7 @@ class Hooks:
         fact = ""
         if not (kwargs.get("parent_session_id") or kwargs.get("platform") == "subagent"):
             try:
-                fact = voice_fact(self.settings, self.env, self.voice_home, kwargs.get("user_message"))
+                fact = voice_fact(self.settings, self.voice_replies, self.env)
             except Exception:
                 fact = ""  # an unreadable voice setting never costs the turn
         context = "\n".join(part for part in (line, fact) if part)

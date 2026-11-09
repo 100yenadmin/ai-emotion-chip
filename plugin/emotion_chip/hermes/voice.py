@@ -1,92 +1,75 @@
-"""Whether Hermes reads this chat's replies aloud, by the gateway's own rule (gateway/run_voice.py).
+"""Tell the agent when Hermes will read its reply aloud, so it can say the reply itself with its cues.
 
-Hermes speaks a reply itself (auto voice reply) when the chat's /voice mode says so, kept in
-gateway_voice_mode.json under ``[<profile>:]<platform>:<chat_id>``: "all" voices every reply, "voice_only" only
-replies to voice messages, "off" none. A chat with no mode falls back to ``voice.auto_tts``, which voices replies
-to voice messages only. Those replies reach the voice without cues, so the agent is told, on the turn, to say the
-answer itself with text_to_speech; Hermes then sends no voice note of its own (it skips its auto voice reply when the
-agent called text_to_speech this turn, and when the reply already carries audio).
+With voice replies on in a chat (/voice, or voice.auto_tts), Hermes speaks the reply text itself, without cues. When
+the agent calls text_to_speech in the turn instead, Hermes sends no voice note of its own: the runner skips its voice
+reply after a text_to_speech call (gateway/run_voice.py ``_should_send_voice_reply``), and the adapter's auto voice
+reply needs a reply without media, which the tool's audio gives it (``_append_auto_media_tags``).
+
+Whether Hermes will voice a reply is Hermes's own decision, asked at ingress in ``pre_gateway_dispatch``, which gets
+the inbound event and, in process, the gateway runner: ``_should_send_voice_reply(event, …, already_sent=True)``
+answers it for the chat's /voice mode (keyed by the bot that owns the chat), ``voice.auto_tts`` and the message's
+type. The answer is kept in memory under the chat and message id, and ``pre_llm_call`` turns it into one line for that
+message's turn. Anything unknown (an isolated plugin host, a missing method, an error) means no line, which is what
+Hermes does without the chip.
 """
-import json
-import sys
-from pathlib import Path
+import threading
+import time
 
-VOICE_MODE_FILE = "gateway_voice_mode.json"
-# Sessions with no chat that can get a voice note: the CLI and Desktop speak through their own clients.
-NO_VOICE_NOTES = {"", "cli", "local", "desktop", "a2a", "subagent", "cron", "kanban", "api_server", "webhook"}
+# Discord voice channels play Hermes's own voice reply in the channel; a clip from the agent would go to the text
+# channel instead, so Discord gets no line.
+NOT_COVERED = {"discord"}
+TTL_SECONDS = 900  # a decision older than this is not used (a turn queued that long is a new situation)
+MAX_PENDING = 256
 
-SAY_IT = ("Say it yourself with text_to_speech, score included, and keep code and long lists to the written "
-          "reply; Hermes then sends no voice note of its own.")
-FACTS = {
-    "all": "Hermes reads your reply in this chat aloud, without cues. " + SAY_IT,
-    "voice": "This is a voice message, and Hermes reads your reply to it aloud, without cues. " + SAY_IT,
-}
-# How Hermes hands the agent a voice message (gateway/run_inbound_transcription.py): the transcript as a quoted
-# line, or a note when there is no transcript; a caption follows after a blank line.
-VOICE_NOTES = ("[The user sent a voice message", "[voice message could not be transcribed")
+FACT = ("Hermes will read your reply to this message aloud, without cues. Say it yourself with text_to_speech, score "
+        "included, and keep code and long lists to the written reply; Hermes then sends no voice note of its own.")
 
 
-def _mode_file(home=None):
-    if home is not None:
-        return Path(home) / VOICE_MODE_FILE
-    runner = getattr(sys.modules.get("gateway.run"), "GatewayRunner", None)
-    path = getattr(runner, "_VOICE_MODE_PATH", None)
-    if path is not None:
-        return Path(path)
-    from hermes_constants import get_hermes_home
-    return Path(get_hermes_home()) / VOICE_MODE_FILE
+class VoiceReplies:
+    def __init__(self, clock=None):
+        self.clock = clock or time.monotonic
+        self._pending = {}
+        self._lock = threading.Lock()
+
+    def observe(self, event, gateway):
+        """pre_gateway_dispatch: record whether Hermes will voice the reply to *event*. Never changes dispatch."""
+        source = getattr(event, "source", None)
+        platform = str(getattr(getattr(source, "platform", None), "value", "") or "")
+        chat = str(getattr(source, "chat_id", "") or "")
+        if not platform or not chat:
+            return
+        message = str(getattr(source, "message_id", "") or getattr(event, "message_id", "") or "")
+        decide = getattr(gateway, "_should_send_voice_reply", None)
+        voiced = False
+        if platform not in NOT_COVERED and callable(decide):
+            try:
+                voiced = decide(event, "reply", [], already_sent=True) is True
+            except Exception:
+                voiced = False
+        with self._lock:
+            self._pending.pop((platform, chat), None)
+            self._pending[(platform, chat)] = (message, voiced, self.clock())
+            while len(self._pending) > MAX_PENDING:
+                self._pending.pop(next(iter(self._pending)))
+
+    def voiced(self, env):
+        """For the turn in *env*'s session: True when Hermes said it will voice this message's reply."""
+        key = (str(env("HERMES_SESSION_PLATFORM") or ""), str(env("HERMES_SESSION_CHAT_ID") or ""))
+        message = str(env("HERMES_SESSION_MESSAGE_ID") or "")
+        with self._lock:
+            entry = self._pending.get(key)
+            if entry is None:
+                return False
+            recorded, voiced, stamp = entry
+            if self.clock() - stamp > TTL_SECONDS or (message or recorded) and message != recorded:
+                return False
+            if not message:
+                self._pending.pop(key, None)  # no id to match: use the decision once
+            return voiced
 
 
-def _chat_mode(modes, platform, chat, profile):
-    keys = [f"{profile}:{platform}:{chat}"] if profile and profile != "default" else []
-    keys.append(f"{platform}:{chat}")
-    for key in keys:
-        if key in modes:
-            return modes[key]
-    # The gateway keys by the profile that owns the bot, which a session may name differently; take a lone match.
-    suffix = f":{platform}:{chat}"
-    matches = [mode for key, mode in modes.items() if key.endswith(suffix)]
-    return matches[0] if len(matches) == 1 else None
-
-
-def voice_replies(settings, env, home=None):
-    """ "all", "voice" (replies to voice messages) or None for this session's chat; None when unknown."""
-    platform = str(env("HERMES_SESSION_PLATFORM") or "").strip().lower()
-    chat = str(env("HERMES_SESSION_CHAT_ID") or "").strip()
-    if not chat or platform in NO_VOICE_NOTES:
-        return None
-    try:
-        modes = json.loads(_mode_file(home).read_text(encoding="utf-8-sig"))
-    except (OSError, ValueError, ImportError):
-        modes = {}
-    mode = _chat_mode(modes, platform, chat, str(env("HERMES_SESSION_PROFILE") or "").strip()) \
-        if isinstance(modes, dict) else None
-    if mode == "all":
-        return "all"
-    if mode == "voice_only":
-        return "voice"
-    if mode == "off":
-        return None
-    return "voice" if settings.host("voice.auto_tts") is True else None
-
-
-def looks_like_voice(message):
-    """Whether the user's message has the shape Hermes gives a voice message."""
-    if isinstance(message, list):
-        message = "\n\n".join(part.get("text") or "" for part in message
-                               if isinstance(part, dict) and part.get("type") == "text")
-    if not isinstance(message, str):
-        return False
-    first = message.strip().split("\n\n", 1)[0].strip()
-    return (len(first) >= 2 and first[0] == first[-1] == '"') or first.startswith(VOICE_NOTES)
-
-
-def voice_fact(settings, env, home=None, message=None):
-    """The line for the agent when Hermes will read this reply aloud; only where the chip is the speech provider and
-    supplies the guide. With voice replies for voice messages only, just on a message shaped like a voice message."""
+def voice_fact(settings, replies, env):
+    """The line for this turn, only where the chip is the speech provider and supplies the guide."""
     if settings.get("guide_mode") != "generate" or settings.tts_provider() != "emotion-chip":
         return ""
-    mode = voice_replies(settings, env, home)
-    if mode == "voice" and not looks_like_voice(message):
-        return ""
-    return FACTS.get(mode, "")
+    return FACT if replies.voiced(env) else ""
