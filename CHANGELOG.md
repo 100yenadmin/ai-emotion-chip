@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.2.0 — 2026-11-09
+
+Voice replies on messaging platforms, a `hermes chip` command and a readiness check.
+
+- **Voice replies carry the agent's delivery** (#40). With voice replies on in a chat (`/voice on`, `/voice tts` or
+  `voice.auto_tts`), Hermes read the reply aloud itself, without cues. When a message comes in, the chip now asks Hermes
+  whether it will voice the reply, and on that message's turn adds one line asking the agent to say its answer with
+  `text_to_speech` and its score; Hermes then sends no plain voice note of its own. Everything else is unchanged,
+  including the system prompt. Not on Discord, where Hermes plays its own reply in voice channels. Only with the chip
+  as the speech provider and `guide_mode: generate`.
+- **`hermes chip render` and `hermes chip guide`** (#39). See what the chip sends ElevenLabs v4, Fish S2 or Drama 3 for
+  any score, or the guide the agent gets, offline: no keys, no network.
+- **`/chip status` says whether the chip can speak** (#41): `ready: yes`, or `ready: no` with each fix (the speech
+  provider, the ElevenLabs key or voice, the Fish Audio plugin).
+
 ## 0.1.1 — 2026-11-08
 
 Fixes from the first release's review backlog (#3, #4, #34). No new features; the Fish model setting gains a

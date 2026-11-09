@@ -29,6 +29,16 @@ hermes plugins install 100yenadmin/ai-emotion-chip/plugin --enable   # straight 
 Setup (ElevenLabs quick start, Fish Audio), settings, the `/chip` commands and the full disclosure of what the plugin
 sends where are in **[plugin/README.md](plugin/README.md)**.
 
+See what the chip sends each engine, with no keys and no network:
+
+```bash
+hermes chip render --dialect fish_drama3 "[whisper] Ten thousand users! [pause] Cheer when the baby's [stress: awake]."
+```
+
+`/chip status` then says whether the chip can speak with your settings, and what to fix if not. With voice replies on
+in a chat (`/voice on`), the agent speaks its answer to a voice message itself, so the voice note carries its
+delivery.
+
 ## What is in this repository
 
 | Path | What it is |
