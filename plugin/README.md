@@ -76,7 +76,8 @@ Under `plugins.entries.emotion-chip.settings` (also in Desktop ▸ Settings ▸ 
 
 With `signals` on, the chip adds its line to a failing tool's result through Hermes' `transform_tool_result` hook.
 Hermes keeps only the first plugin's rewrite of a result, in plugin load order, so either another plugin's rewrite of
-that result or the chip's line is dropped. With `signals` off (the default) the chip never rewrites tool results.
+that result or the chip's line is dropped. With `signals` off (the default), only successful `text_to_speech` results
+on the chip's own provider path receive a render report, as described below.
 
 ## Use
 
@@ -96,6 +97,14 @@ On the chip's own provider path `/chip why` shows every drop and why, and the de
 | `/chip why` | The last render in this session: the agent's own cue words, what was dropped and why, the parameters |
 | `/chip quiet [on\|off]` | Drop laughs, sighs and other sounds; cues and speech stay. One switch for the whole profile. |
 | `/chip register [clear]` | Show or clear the register the agent last wrote in this session |
+
+### Agent tools
+
+With `guide_mode: generate` at startup, the plugin registers two read-only, offline tools. `chip_status` returns
+readiness, fixes, unchecked items, engine, model, dialect, voice and session settings, including voice-reply coverage
+and the agent's last authored register. `chip_preview` takes a delivery score and optional dialect and returns the
+rendered text, cue words, drops with reasons, parameters, notes and character count without synthesizing or logging.
+Switching to `guide_mode: defer` hides the tools.
 
 ### See a render without a voice
 
@@ -134,6 +143,10 @@ directory.
 
 ## Disclosure
 
+- **Agent tools and reports.** The plugin registers two read-only, offline agent tools with `guide_mode: generate`.
+  With the chip as the speech provider in that mode, each successful `text_to_speech` result gains an `emotion_chip`
+  report of the fresh render's dialect, the agent's cue words, drops and notes (capped at 600 characters). The report
+  stays in the conversation and is sent nowhere by the plugin.
 - **Network.** With `backend: eleven`, the plugin sends your ElevenLabs API key, the rendered text, the model id, voice
   id, voice settings, an optional seed and, on v4 models, up to three earlier request ids from the same session to
   `api.elevenlabs.io` over HTTPS. These are paid requests billed to your ElevenLabs account. With `backend: fish` the

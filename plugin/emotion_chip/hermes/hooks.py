@@ -1,6 +1,9 @@
 """Accept future host kwargs while counting only named task/transport facts."""
 import json
+import re
+from copy import deepcopy
 
+from .provider import last_render, last_render_lock
 from .settings import session_env, session_identity
 from .situation import situation_line
 from .voice import VoiceReplies, voice_fact
@@ -10,6 +13,9 @@ COUNTED_CALLS = 16
 HOOKS = ("pre_llm_call", "post_tool_call", "api_request_error", "on_session_start", "on_session_end", "transform_tool_result",
          "on_session_reset", "pre_gateway_dispatch")
 
+
+
+MEDIA_WORD = re.compile(r"(media):", re.IGNORECASE)
 
 class Hooks:
     def __init__(self, settings, situation, env=None, *, start_turn=None, voice_replies=None):
@@ -127,7 +133,9 @@ class Hooks:
     def transform_tool_result(self, **kwargs):
         mode = self.settings.get("signals")
         result = kwargs.get("result")
-        if mode == "off" or kwargs.get("tool_name") == "text_to_speech" or not isinstance(result, str):
+        if kwargs.get("tool_name") == "text_to_speech":
+            return self._speech_report(kwargs)
+        if mode == "off" or not isinstance(result, str):
             return None
         session_id = kwargs.get("session_id") or ""
         row = self.situation.session(session_id)
@@ -154,3 +162,36 @@ class Hooks:
             transformed = result + "\n\nSituation: " + line
         self.situation.update(session_id, lambda row: row.update(last_situation=line))
         return transformed
+
+    def _speech_report(self, kwargs):
+        """Add only a fresh render's metadata, without disturbing the tool's original JSON."""
+        try:
+            if (kwargs.get("status") == "error" or self.settings.tts_provider() != "emotion-chip"
+                    or self.settings.get("guide_mode") != "generate"):
+                return None
+            result = kwargs.get("result")
+            value = json.loads(result)
+            if not isinstance(value, dict) or "emotion_chip" in value:
+                return None
+            session_id = kwargs.get("session_id") or session_identity(self.env, self.situation)
+            with last_render_lock:
+                row = deepcopy(last_render.get(session_id, {}))
+            if not row or not 0 <= self.situation.clock() - row["ts"] <= 120:
+                return None
+            report = dict(dialect=row["dialect"], cue_words=row["cue_words"],
+                          dropped=[dict(kind=d["kind"], raw=d["value"], reason=d["reason"]) for d in row["dropped"]],
+                          notes=row["notes"])
+            # Bound even a single oversized cue/drop/note by removing whole list entries.
+            while len(json.dumps(report)) > 600:
+                report["truncated"] = True
+                lists = [report[key] for key in ("cue_words", "dropped", "notes") if report[key]]
+                if not lists:
+                    return None
+                max(lists, key=lambda entries: len(json.dumps(entries))).pop()
+            head = result.rstrip()[:-1].rstrip()
+            # The report echoes text the agent wrote; Hermes scans tool results for MEDIA: paths and sends those files,
+            # so escape the colon of any "media:" (still valid JSON, same parsed value) to keep it from naming an attachment.
+            encoded = MEDIA_WORD.sub(lambda m: m[1] + "\\u003a", json.dumps(report, separators=(",", ":")))
+            return head + (", " if value else "") + '"emotion_chip": ' + encoded + "}"
+        except Exception:
+            return None

@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.3.0 — 2026-11-09
+
+The agent can see its own voice. Until now it wrote a score, called `text_to_speech` and learned nothing back.
+
+- **Agent tool `chip_status`** (read-only): whether the voice can speak with this profile's settings, what to fix if
+  not, the engine, model, dialect and voice in use, whether voice replies are covered, and the register the agent last
+  wrote. The same facts as `/chip status`, from one shared source.
+- **Agent tool `chip_preview`** (offline, no cost): what the voice engine would receive for a score, and which cues it
+  would drop and why, without synthesizing. The same result as `hermes chip render --json`, with the profile's quiet
+  switch applied.
+- **A render report on each `text_to_speech` result**: with the chip as the speech provider, a successful result gains
+  an `emotion_chip` entry (dialect, the agent's cue words, drops and notes, at most 600 characters), so the agent learns
+  what the engine did with its score. It stays in the conversation and is sent nowhere; any `media:` in it is escaped so
+  Hermes never reads it as an attachment.
+- Both tools and the report appear only with `guide_mode: generate`; `defer` stays a byte-identical passthrough.
+
 ## 0.2.1 — 2026-11-09
 
 Fixes from an independent review of 0.2.0. No new features.

@@ -15,6 +15,7 @@ from .middleware import make_middleware
 from .provider import EmotionChipTTSProvider
 from .settings import Settings, plugin_data_dir, session_env
 from .situation import Situation
+from .tools import register_tools
 
 logger = logging.getLogger(__name__)
 
@@ -107,6 +108,9 @@ def register_all(ctx, *, reader=None, data_dir=None, env=None, clock=None):
             voice_replies = hooks.voice_replies
     if hasattr(ctx, "register_middleware"):
         ctx.register_middleware("tool_request", make_middleware(settings, situation, environment))
+    if hasattr(ctx, "register_tool"):
+        if settings.get("guide_mode") == "generate":
+            register_tools(ctx, settings, situation, environment, voice_replies)
     if hasattr(ctx, "register_command"):
         ctx.register_command("chip", make_handler(settings, situation, environment, voice_replies),
                              description="Hermes Emotion Chip voice delivery",

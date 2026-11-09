@@ -136,7 +136,7 @@ class EmotionChipTTSProvider(TTSProvider):
             {"register": "[[" + score.header.raw + "]]"} if score.header else {}), platform=platform or None)
         with last_render_lock:
             last_render.pop(session_id, None)
-            last_render[session_id] = dict(session_id=session_id, fish_model=label, backend=backend, dialect=rendered.dialect,
+            last_render[session_id] = dict(ts=now, session_id=session_id, fish_model=label, backend=backend, dialect=rendered.dialect,
                                            cue_words=words, group=rendered.group, params=dict(rendered.params),
                                            dropped=[asdict(d) for d in rendered.dropped], notes=list(rendered.notes))
             while len(last_render) > 50:
