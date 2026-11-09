@@ -43,7 +43,7 @@ its own, grounded in what happened, and audibly realised, without a persona laid
 7. **One score, every voice.** The agent writes one small bracket score. Each vendor gets it in its own dialect, at
    that vendor's documented ceiling.
 
-## Where we are (November 2026, release 0.1.1)
+## Where we are (November 2026, release 0.2.0)
 
 **Built:**
 - The score language and its renderers: Fish Audio S2, Fish Drama 3 and ElevenLabs v4.
