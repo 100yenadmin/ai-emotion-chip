@@ -1277,7 +1277,7 @@ def test_status_reports_voice_reply_coverage(rig):
                 raise self.answer
             return self.answer
 
-    assert coverage() == "not checked yet (no message has reached the chip since Hermes started)"
+    assert coverage() == "not checked yet (the chip has seen no message from a covered platform in this process)"
     ctx.hooks["pre_gateway_dispatch"](event=message("discord"), gateway=SimpleNamespace())
     assert coverage().startswith("not checked yet")  # Discord is never asked, so it proves nothing either way
     ctx.hooks["pre_gateway_dispatch"](event=message(), gateway=Gateway(False))

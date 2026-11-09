@@ -90,7 +90,7 @@ def voice_coverage(settings, replies):
         return "off (needs tts.provider: emotion-chip and guide_mode: generate)"
     if replies is None:
         return "off until Hermes restarts (the chip read other settings when it started)"
-    return {None: "not checked yet (no message has reached the chip since Hermes started)",
+    return {None: "not checked yet (the chip has seen no message from a covered platform in this process)",
             "ok": "covered, except on Discord",
             "missing": "not covered (this Hermes has no voice-reply check)",
             "error": "not covered (Hermes's voice-reply check failed)"}[replies.check]
