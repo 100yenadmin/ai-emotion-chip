@@ -6,6 +6,9 @@ renders them and the brackets are never shown or spoken as words.
 
 ### How to write it
 When you call the text_to_speech tool, write the score in its text.
+When a line says voice replies are on, Hermes reads those replies aloud without cues. Say the answer yourself
+with text_to_speech, score included, and keep code and long lists to the written reply; Hermes then sends no
+voice note of its own.
 {{GRAMMAR}}
 {{DIALECT_NOTES}}
 

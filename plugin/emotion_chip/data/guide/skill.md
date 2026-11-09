@@ -15,6 +15,9 @@ Use this pass for any reply that will be spoken.
    all.
 4. **Write the cues.** Sentence cues, spans, events and pauses:
 When you call the text_to_speech tool, write the score in its text.
+When a line says voice replies are on, Hermes reads those replies aloud without cues. Say the answer yourself
+with text_to_speech, score included, and keep code and long lists to the written reply; Hermes then sends no
+voice note of its own.
 {{GRAMMAR}}
 {{DIALECT_NOTES}}
 5. **Read it back stripped.** Remove every bracket and check that the words alone say what you mean. If a calm cue

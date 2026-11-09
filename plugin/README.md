@@ -97,9 +97,14 @@ On the chip's own provider path `/chip why` shows every drop and why, and the de
 ### Coverage
 
 - Full cues reach the voice on the `text_to_speech` tool path.
-- Spoken replies, read-aloud and voice mode speak the reply text, without cues: a cue written in a reply would also
-  show in the chat, so the guide asks for cues in the tool text. Hermes has no seam yet that splits displayed text from
-  spoken text.
+- Voice replies on Telegram and the other messaging platforms (`/voice on`, `/voice tts` or `voice.auto_tts`): Hermes
+  would read the reply aloud without cues. Where a chat has voice replies on, the chip tells the agent so in a one-line
+  fact, and the guide asks it to say the answer itself with `text_to_speech` and its cues. Hermes delivers that voice
+  note with the reply and sends none of its own. The fact is read from Hermes's saved `/voice` setting for the chat;
+  with voice replies off, nothing changes. It is added only when the chip is the speech provider and supplies the
+  guide (`guide_mode: generate`).
+- Read-aloud and voice mode speak the reply text, without cues: a cue written in a reply would also show in the chat.
+  Hermes has no seam yet that splits displayed text from spoken text.
 - Hermes's GPT-Live voice chat mode speaks through OpenAI's live voice model, not a speech provider, so the plugin
   does not reach it.
 - When Hermes compresses the conversation in the middle of a reply, sounds after that point start without the earlier
