@@ -1205,8 +1205,7 @@ def test_status_ready(rig, monkeypatch):
     monkeypatch.setattr(provider_module, "_fish", lambda: None)
     host["tts.provider"] = "edge"
     status = ctx.command("status")
-    assert status.startswith("ready: no (the speech provider is edge; set tts.provider: emotion-chip; "
-                             "install and enable the fish-audio plugin, or set backend: eleven)")
+    assert status.startswith("ready: no (the speech provider is edge; set tts.provider: emotion-chip); backend")
     host["tts.provider"] = "emotion-chip"
     ctx.settings.update(backend="eleven", eleven_voice_id="")
     monkeypatch.delenv("ELEVENLABS_API_KEY", raising=False)
@@ -1217,13 +1216,39 @@ def test_status_ready(rig, monkeypatch):
     assert ctx.command("status").startswith("ready: yes; backend: eleven")
 
 
-def test_status_key_unknown_in_unscoped_multiplex(monkeypatch):
+def test_status_key_unknown_in_unscoped_multiplex(rig, monkeypatch):
     import types
     from emotion_chip.hermes import commands
+    ctx, fish, host, _, _, _ = rig
+
     class Unscoped(RuntimeError):
         pass
+
     def get_secret(name):
         raise Unscoped()
-    module = types.SimpleNamespace(UnscopedSecretError=Unscoped, get_secret=get_secret)
-    monkeypatch.setitem(sys.modules, "agent.secret_scope", module)
-    assert commands._has_eleven_key() is None
+    monkeypatch.setitem(sys.modules, "agent.secret_scope",
+                        types.SimpleNamespace(UnscopedSecretError=Unscoped, get_secret=get_secret))
+    assert commands._has_secret("ELEVENLABS_API_KEY") is None
+    fish.available = False  # Fish would read an empty key here too; status must not blame it
+    assert ctx.command("status").startswith("ready: yes")
+    ctx.settings.update(backend="eleven", eleven_voice_id="voice-1")
+    assert ctx.command("status").startswith("ready: yes")
+
+
+def test_status_other_provider_and_command_provider(rig, monkeypatch):
+    ctx, fish, host, _, _, _ = rig
+    host["tts.provider"] = "elevenlabs"
+    monkeypatch.setattr(provider_module, "_fish", lambda: None)
+    assert ctx.command("status").startswith("ready: no (the speech provider is elevenlabs; set tts.provider: "
+                                            "emotion-chip); backend")
+    host["tts.provider"] = "emotion-chip"
+    host["tts.providers"] = {"emotion-chip": {"type": "command", "command": "say"}}
+    assert "a command provider named emotion-chip" in ctx.command("status")
+
+
+def test_status_survives_a_broken_fish(rig):
+    ctx, fish, _, _, _, _ = rig
+    def boom():
+        raise RuntimeError("provider bug")
+    fish.is_available = boom
+    assert ctx.command("status").startswith("ready: yes")

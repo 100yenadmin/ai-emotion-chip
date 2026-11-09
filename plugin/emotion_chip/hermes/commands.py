@@ -11,36 +11,45 @@ from .settings import session_identity
 USAGE = "Usage: /chip [status|why|quiet [on|off]|register [clear]]"
 
 
-def _has_eleven_key():
-    """True or False for the active profile's ElevenLabs key; None when this context cannot tell (a multiplexed
-    gateway with no profile scope bound), so status never reports a key missing that a turn would find."""
+def _has_secret(name):
+    """True or False for the active profile's secret *name*; None when this context cannot tell (a multiplexed gateway
+    with no profile scope bound), so status never reports a key missing that a turn would find."""
     try:
         from agent.secret_scope import UnscopedSecretError, get_secret
     except ImportError:
-        return bool(os.environ.get("ELEVENLABS_API_KEY", "").strip())
+        return bool(os.environ.get(name, "").strip())
     try:
-        return bool((get_secret("ELEVENLABS_API_KEY") or "").strip())
+        return bool((get_secret(name) or "").strip())
     except UnscopedSecretError:
         return None
 
 
 def setup_problems(settings):
     """What stops the chip from speaking with this profile's settings, each with its fix."""
-    problems = []
     provider = settings.tts_provider()
     if provider != "emotion-chip":
-        problems.append(f"the speech provider is {provider}; set tts.provider: emotion-chip")
+        # Another voice speaks; the chip only adapts cues for it, so its own backend does not matter here.
+        return [f"the speech provider is {provider}; set tts.provider: emotion-chip"]
+    if settings.command_provider("emotion-chip"):
+        return ["a command provider named emotion-chip in tts.providers hides the plugin; rename it"]
+    problems = []
     if settings.get("backend") == "eleven":
-        if _has_eleven_key() is False:
+        if _has_secret("ELEVENLABS_API_KEY") is False:
             problems.append("add ELEVENLABS_API_KEY to the profile's .env")
         if not settings.eleven_voice(settings.call_voice()):
             problems.append("set the plugin's eleven_voice_id")
-    else:
-        fish = provider_module._fish()
-        if fish is None:
-            problems.append("install and enable the fish-audio plugin, or set backend: eleven")
-        elif not fish.is_available():
-            problems.append("the fish-audio plugin is not ready; check its FISH_API_KEY")
+        return problems
+    fish = provider_module._fish()
+    if fish is None:
+        return ["install and enable the fish-audio plugin, or set backend: eleven"]
+    if _has_secret("FISH_API_KEY") is None:
+        return problems  # Fish reads its key the same way; this context cannot tell
+    try:
+        available = fish.is_available()
+    except Exception:
+        return problems
+    if not available:
+        problems.append("the fish-audio plugin is not ready; check its FISH_API_KEY")
     return problems
 
 
