@@ -21,11 +21,13 @@ NOT_COVERED = {"discord"}
 TTL_SECONDS = 900  # a decision older than this is not used (a turn queued that long is a new situation)
 MAX_PENDING = 256
 
-# Hermes skips its own voice note after any text_to_speech call in the turn, a failed one too, so the line asks the agent
-# to recover a failed call itself; otherwise the chat gets no voice note at all.
+# Hermes's runner skips its own voice reply after any text_to_speech call in the turn, a failed one too. After a text
+# message that leaves the chat with no voice note; after a voice message the adapter still reads the reply, without cues.
+# Either way a failed call loses the delivery, so the line asks the agent to recover it once.
 FACT = ("Hermes will read your reply to this message aloud, without cues. Say it yourself with text_to_speech, score "
-        "included, and keep code and long lists to the written reply. Hermes then sends no voice note of its own, even "
-        "when that call fails: if it fails, fix the cause, such as text that is too long, and try once more.")
+        "included, and keep code and long lists to the written reply; Hermes then sends no voice note of its own. If "
+        "that call fails, fix the cause, such as text that is too long, and try once more: a failed call can leave no "
+        "voice note at all.")
 
 
 class VoiceReplies:
