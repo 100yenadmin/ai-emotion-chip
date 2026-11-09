@@ -520,7 +520,7 @@ def test_hermes_source_contract():
         ("register_system_prompt_section", ["id", "content"], ["max_chars"]),
         ("register_middleware", ["kind", "callback"], []),
         ("register_command", ["name", "handler"], ["description", "args_hint"]),
-        ("register_cli_command", ["name", "help", "setup_fn"], ["handler_fn", "description"]),
+        ("register_cli_command", ["name", "help", "setup_fn", "handler_fn"], ["description"]),
         ("register_hook", ["hook_name", "callback"], []), ("get_config", ["key", "default"], []),
     ):
         args = methods[name].args
