@@ -89,7 +89,7 @@ On the chip's own provider path `/chip why` shows every drop and why, and the de
 
 | Command | What it does |
 |---|---|
-| `/chip status` | Settings, the backend's model and dialect, the ElevenLabs voice when selected, and this session's id |
+| `/chip status` | `ready: yes`, or `ready: no` with what to fix (speech provider, key, voice, Fish plugin); then the settings, the backend's model and dialect, the ElevenLabs voice when selected, and this session's id |
 | `/chip why` | The last render in this session: the agent's own cue words, what was dropped and why, the parameters |
 | `/chip quiet [on\|off]` | Drop laughs, sighs and other sounds; cues and speech stay. One switch for the whole profile. |
 | `/chip register [clear]` | Show or clear the register the agent last wrote in this session |
