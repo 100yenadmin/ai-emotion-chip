@@ -454,6 +454,9 @@ def test_delivery_log_failure_never_stops_speech(rig, caplog):
         assert list(ctx.provider.stream("[sad] Streamed too.")) == [b"pcm"]
     assert [call[0] for call in fish.calls] == ["synthesize", "stream"] * 2
     assert caplog.text.count("delivery log not written") == 1
+    (directory / "delivery.jsonl").rmdir()  # writable again: later rows are written, not suppressed for good
+    ctx.provider.synthesize("[sad] Logged again.", "out.mp3")
+    assert json.loads((directory / "delivery.jsonl").read_text())["cue_words"] == ["sad"]
 
 
 def test_delivery_log_off_creates_no_file(rig):
