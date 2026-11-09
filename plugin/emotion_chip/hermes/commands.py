@@ -63,13 +63,33 @@ def setup_problems(settings):
     return readiness(settings)[0]
 
 
-def ready_value(settings):
-    problems, unchecked = readiness(settings)
+def ready_value(settings, facts=None):
+    problems, unchecked = readiness(settings) if facts is None else facts
     if problems:
         return "no (" + "; ".join(problems) + ")"
     if unchecked:
         return "probably (not checked from here: " + ", ".join(unchecked) + ")"
     return "yes"
+
+
+def build_status(settings, situation, env, voice_replies=None):
+    """Shared status facts for the human command and the read-only agent tool."""
+    problems, unchecked = readiness(settings)
+    backend = settings.get("backend")
+    model = settings.model(settings.host("tts.model"))
+    session_id = session_identity(env, situation)
+    values = dict(ready=ready_value(settings, (problems, unchecked)).split(" ", 1)[0],
+                  problems=problems, not_checked=unchecked, backend=backend, model=model,
+                  dialect=str(dialect_for(backend, model)), guide_mode=settings.get("guide_mode"),
+                  signals=settings.get("signals"), quiet=bool(situation.get("quiet", False)),
+                  delivery_log=bool(settings.get("delivery_log")),
+                  voice_replies=voice_coverage(settings, voice_replies), session_id=session_id,
+                  register=situation.session(session_id).get("register", ""))
+    if backend == "eleven":
+        values["eleven_voice_id"] = settings.eleven_voice(settings.call_voice())
+    else:
+        values["fish_model"] = settings.resolve_fish_model(settings.host("tts.model")).label
+    return values
 
 
 def make_handler(settings, situation, env, voice_replies=None):
@@ -79,19 +99,15 @@ def make_handler(settings, situation, env, voice_replies=None):
             args = ["status"]
         session_id = session_identity(env, situation)
         if args == ["status"]:
-            values = {"ready": ready_value(settings)}
-            values.update({key: settings.get(key) for key in ("backend", "fish_model", "guide_mode", "signals")})
-            backend = settings.get("backend")
-            model = settings.model(settings.host("tts.model"))
-            if backend == "eleven":
+            facts = build_status(settings, situation, env, voice_replies)
+            values = {"ready": ready_value(settings, (facts["problems"], facts["not_checked"]))}
+            values.update({key: facts.get(key) for key in ("backend", "fish_model", "guide_mode", "signals")})
+            if facts["backend"] == "eleven":
                 values.pop("fish_model")
-                values.update(eleven_model=model, eleven_voice_id=settings.eleven_voice(settings.call_voice()))
-            else:
-                values["fish_model"] = settings.resolve_fish_model(settings.host("tts.model")).label
-            values.update(session_id=session_id, dialect=str(dialect_for(backend, model)),
-                          quiet="on" if situation.get("quiet", False) else "off",
-                          delivery_log="on" if settings.get("delivery_log") else "off",
-                          voice_replies=voice_coverage(settings, voice_replies))
+                values.update(eleven_model=facts["model"], eleven_voice_id=facts["eleven_voice_id"])
+            values.update(session_id=facts["session_id"], dialect=facts["dialect"],
+                          quiet="on" if facts["quiet"] else "off",
+                          delivery_log="on" if facts["delivery_log"] else "off", voice_replies=facts["voice_replies"])
             return "; ".join(f"{key}: {value}" for key, value in values.items())
         if args == ["why"]:
             with last_render_lock:

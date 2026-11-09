@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Add read-only `chip_status` and offline `chip_preview` agent tools with `guide_mode: generate`.
+- Add a bounded `emotion_chip` render report to successful `text_to_speech` results on the chip's provider path.
+
 ## 0.2.1 — 2026-11-09
 
 Fixes from an independent review of 0.2.0. No new features.

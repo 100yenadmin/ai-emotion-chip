@@ -9,6 +9,7 @@ class FakeContext:
         self.state = {}
         self.calls = []
         self.hooks = {}
+        self.tools = {}
 
     def get_config(self, key, default=None):
         return self.settings.get(key, default)
@@ -41,6 +42,11 @@ class FakeContext:
         self.calls.append(("command", name))
         self.command = handler
         self.command_info = (description, args_hint)
+
+    def register_tool(self, name, toolset, schema, handler, check_fn=None, requires_env=None,
+                      is_async=False, description="", emoji=""):
+        self.tools[name] = dict(toolset=toolset, schema=schema, handler=handler, check_fn=check_fn,
+                                requires_env=requires_env, is_async=is_async, description=description, emoji=emoji)
 
     def register_cli_command(self, name, help, setup_fn, handler_fn=None, description=""):
         self.calls.append(("cli_command", name))
