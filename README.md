@@ -36,6 +36,16 @@ shipped with, which predates this plugin
    With a voice set up, ask your agent to tell you, quietly, that the tests passed because the baby is asleep: it
    writes its own score and you hear it whisper. `/chip why` shows the cues it wrote and what the engine got.
 
+### Hear one line both ways
+
+The same words, the same ElevenLabs v4 voice and settings:
+[plain](docs/media/one-line-plain.mp3?raw=1), and
+[with the agent's score](docs/media/one-line-with-score.mp3?raw=1):
+
+```text
+[whisper, excited] Ten thousand users! [pause] You should be proud of that. [whisper] I'll save the cheering for when the baby's awake.
+```
+
 ![Hermes CLI: the agent whispers that the tests passed because a baby is asleep, /chip why shows the render, and the next turn is whispered excitement](docs/media/screenshot-cli.png)
 
 ## How it works
