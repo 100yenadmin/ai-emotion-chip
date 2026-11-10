@@ -13,7 +13,7 @@ Bug fixes. No new features.
 - **Docs: a front page you can act on.** The README opens with what the plugin does, true badges, the install line
   that works on every Hermes (the catalog name fails on Hermes 0.23.0), three steps to a first result, voice setup for
   Fish Audio and ElevenLabs, where the agent's delivery is and is not heard, a privacy and cost summary, troubleshooting
-  and how to report a bug.
+  and how to report a bug. It links the demo, and plays one line both ways: plain, and with the agent's score.
 
 ## 0.3.0 — 2026-11-09
 
