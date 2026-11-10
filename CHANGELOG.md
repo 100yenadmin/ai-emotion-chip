@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.2 — 2026-11-10
+
+Docs only. The plugin's code is unchanged from 0.3.1.
+
+- **Docs: the demo film plays on the front page.** The README shows the demo video under the demo link.
+
 ## 0.3.1 — 2026-11-10
 
 Bug fixes. No new features.
