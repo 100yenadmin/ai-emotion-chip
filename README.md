@@ -4,6 +4,8 @@
 
 **Your Hermes agent decides how to say it: the sighs, whispers and pauses it writes, voiced by ElevenLabs or Fish Audio.**
 
+[Watch the demo on X](https://x.com/ElectricSheepIO/status/2120173492553261309)
+
 [![Latest release](https://img.shields.io/github/v/release/100yenadmin/ai-emotion-chip)](https://github.com/100yenadmin/ai-emotion-chip/releases)
 [![License: Apache-2.0, data CC0](https://img.shields.io/badge/license-Apache--2.0%20%2B%20CC0%20data-blue)](#license)
 [![Hermes 0.22.2 or newer](https://img.shields.io/badge/Hermes-%E2%89%A5%200.22.2-6f42c1)](https://github.com/NousResearch/hermes-agent)
