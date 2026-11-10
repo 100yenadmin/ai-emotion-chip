@@ -9,6 +9,7 @@ build/
 .env
 *.wav
 *.mp3
+!docs/media/*.mp3
 *.ogg
 *.opus
 !tests/fixtures/**/*.wav
