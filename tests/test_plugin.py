@@ -513,6 +513,129 @@ def test_settings_defaults(rig):
     assert settings.host_fish_model() == "s2.1-pro"
 
 
+@pytest.mark.parametrize("raw, expected", [
+    ("Fish", "fish"), (" ELEVEN ", "eleven"), ("eleven\n", "eleven"),
+    (None, "fish"), (3, "fish"), ([], "fish"), ("elevenlabs", "fish"), ("", "fish"),
+])
+def test_backend_setting_normalization(raw, expected):
+    assert Settings(FakeContext({"backend": raw})).get("backend") == expected
+
+
+@pytest.mark.parametrize("config", [{}, {"backend": "fish"}, {"backend": "eleven"},
+                                    {"backend": "Fish"}, {"backend": " ELEVEN "}, {"backend": "eleven\n"}])
+def test_backend_problem_valid_settings(config):
+    assert Settings(FakeContext(config)).backend_problem() is None
+    assert Settings().backend_problem() is None
+
+
+@pytest.mark.parametrize("raw", ["elevenlabs", "", None, 3, []])
+def test_backend_problem_invalid_settings(raw):
+    assert Settings(FakeContext({"backend": raw})).backend_problem() == (
+        f"backend is {raw!r}; set backend: fish or eleven (using fish until then)")
+
+
+@pytest.mark.parametrize("raw", ["bad\nvalue", "bad\r\t\x00\x1bvalue", "bad; backend: eleven", "x" * 100])
+def test_backend_problem_safe_status_value(raw):
+    problem = Settings(FakeContext({"backend": raw})).backend_problem()
+    shown = problem.removeprefix("backend is ").removesuffix(
+        "; set backend: fish or eleven (using fish until then)")
+    assert len(shown) <= 40 and all(char.isprintable() for char in shown)
+    assert ";" not in shown
+    assert len(problem.splitlines()) == 1
+    if "\n" in raw:
+        assert r"\n" in shown
+
+
+@pytest.mark.parametrize("raw", ["Fish", "elevenlabs"])
+def test_fish_backend_normalization_preparation_and_synthesis(rig, raw):
+    ctx, fish, host, *_ = rig
+    ctx.provider.tag_adapter = fish_like_adapt_tags
+    ctx.set_config("fish_model", "drama-3")
+    fish.pinned_model = host["tts.fish-audio.model"]
+    text = "(sad) [soft: Again.] [sigh]"
+    ctx.set_config("backend", "fish")
+    canonical = ctx.provider._prepare(text, None, None)
+    models = ctx.provider._resolve_model()
+    explanation = dict(latest())
+    ctx.provider.synthesize(text, "out.mp3")
+    canonical_call = fish.calls[-1]
+    list(ctx.provider.stream(text))
+    canonical_stream = fish.calls[-1]
+
+    ctx.set_config("backend", raw)
+    assert ctx.provider._prepare(text, None, None) == canonical
+    assert ctx.provider._resolve_model() == models
+    assert latest() == explanation  # Includes dialect, params, notes and Fish model.
+    assert ctx.provider.synthesize(text, "out.mp3") == "out.mp3"
+    assert fish.calls[-1] == canonical_call
+    assert list(ctx.provider.stream(text)) == [b"pcm"]
+    assert fish.calls[-1] == canonical_stream
+    assert fish.effective_models[-1] == "s2.1-pro"
+
+
+def test_eleven_backend_normalization_preparation_and_synthesis(rig, monkeypatch):
+    from emotion_chip.hermes import eleven as eleven_module
+    from test_eleven import Response, payload
+    ctx, fish, _, _, _, directory = rig
+    calls = []
+
+    def opener(request, timeout):
+        calls.append((request, timeout))
+        return Response()
+
+    ctx.provider.eleven.opener = opener
+    monkeypatch.setattr(eleven_module, "eleven_api_key", lambda: "fixture-eleven-key")
+    monkeypatch.setattr(provider_module, "_fish", lambda: pytest.fail("Eleven must not resolve Fish"))
+    ctx.settings.update(backend="eleven", eleven_voice_id="setting-voice", eleven_style=0.3, eleven_speed=0.9)
+    text = "[sad] [soft: Again.] [sigh]"
+    canonical = ctx.provider._prepare(text, None, None)
+    ctx.set_config("backend", " Eleven ")
+    assert ctx.provider._prepare(text, None, None) == canonical
+    rendered, model, speed = canonical
+    assert rendered.dialect == "eleven_v4" and model == "eleven_v4" and speed is None
+    output = directory / "out.mp3"
+    assert ctx.provider.synthesize(text, output) == output
+    expected = {"text": rendered.text, "model_id": model, "voice_settings": rendered.params}
+    assert payload(calls) == expected and output.read_bytes() == b"\x01\x00" * 5000
+    assert b"".join(ctx.provider.stream(text)) == b"\x01\x00" * 5000
+    assert payload(calls) == expected and not fish.calls
+
+
+@pytest.mark.parametrize("fish_state", ["ready", "missing", "not_ready", "unknown_key", "raises"])
+def test_invalid_backend_status_preserves_fish_checks(rig, monkeypatch, fish_state):
+    from emotion_chip.hermes import commands
+    ctx, fish, *_ = rig
+    monkeypatch.setattr(commands, "_has_secret", lambda name: None if fish_state == "unknown_key" else True)
+    if fish_state == "missing":
+        monkeypatch.setattr(provider_module, "_fish", lambda: None)
+    elif fish_state == "not_ready":
+        fish.available = False
+    elif fish_state == "raises":
+        def boom():
+            raise RuntimeError("provider bug")
+        fish.is_available = boom
+    settings = ctx.provider.settings
+    problems, unchecked = commands.readiness(settings)
+    ctx.set_config("backend", "elevenlabs")
+    problem = "backend is 'elevenlabs'; set backend: fish or eleven (using fish until then)"
+    assert commands.readiness(settings) == ([problem, *problems], unchecked)
+    status = ctx.command("status")
+    assert status.startswith("ready: no (") and problem in status and "; backend: fish;" in status
+    facts = json.loads(ctx.tools["chip_status"]["handler"]({}))
+    assert facts["ready"] == "no" and facts["backend"] == "fish"
+    assert facts["problems"] == [problem, *problems] and facts["not_checked"] == unchecked
+
+
+def test_invalid_backend_does_not_affect_other_provider(rig, monkeypatch):
+    from emotion_chip.hermes.commands import readiness
+    ctx, _, host, *_ = rig
+    host["tts.provider"] = "edge"
+    ctx.set_config("backend", "elevenlabs")
+    monkeypatch.setattr(provider_module, "_fish", lambda: pytest.fail("Another provider must not check Fish"))
+    assert readiness(ctx.provider.settings) == (
+        ["the speech provider is edge; set tts.provider: emotion-chip"], [])
+
+
 def _literal_assignment(tree, name):
     for node in tree.body:
         if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) and node.target.id == name:
