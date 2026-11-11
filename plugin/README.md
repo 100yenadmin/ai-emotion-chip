@@ -74,7 +74,8 @@ Under `plugins.entries.emotion-chip.settings` (also in Desktop ▸ Settings ▸ 
 | `signals` | `off` | `facts` gives the agent dated task facts (tool errors in a row, retries, session length); `facts+affordance` adds "stopping and reporting is fine". |
 | `delivery_log` | `true` | A local log of cue words, dialect, parameters and drops. It never stores the spoken text. |
 
-With `signals` on, the chip adds its line to a failing tool's result through Hermes' `transform_tool_result` hook.
+With `signals` on, the chip adds its line to a failing tool's result through Hermes' `transform_tool_result` hook,
+except a failed `text_to_speech` call, whose error it leaves as Hermes returns it.
 Hermes keeps only the first plugin's rewrite of a result, in plugin load order, so either another plugin's rewrite of
 that result or the chip's line is dropped. With `signals` off (the default), only successful `text_to_speech` results
 on the chip's own provider path receive a render report, as described below.
