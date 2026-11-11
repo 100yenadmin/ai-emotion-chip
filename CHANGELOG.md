@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.3.3 — 2026-11-11
+
+Bug fixes. No new features.
+
+- **Fix: the `backend` setting picks the same engine everywhere** (#52). A value such as `Fish` used to send the
+  speech provider's preparation down an "unknown backend" path (tagless text, ElevenLabs-style parameters) while Fish
+  spoke. Case and spaces no longer matter; any other value falls back to `fish`, and `/chip status` names it with the
+  fix.
+- **Fix: with another speech provider, the chip reports what that provider gets** (#51). When Fish Audio,
+  ElevenLabs or Hermes's default Edge voice speaks instead of the chip, `chip_preview`, `chip_status`, `/chip status`
+  and the generated skill now show the dialect the chip actually renders for it (for Edge: plain text), and
+  `chip_preview` returns exactly that text. They used to show the chip's own Fish dialect.
+- **Fix: a Markdown link inside a delivery span keeps its words.** `[whisper: See [docs](https://x.io) now.]` lost
+  "docs" (or turned it into a delivery tag); it now reads "See docs (https://x.io) now." in the span's delivery, as
+  the same link already did outside a span.
+- **Docs:** `signals` add their line to every failing tool result except a failed `text_to_speech` call.
+
 ## 0.3.2 — 2026-11-10
 
 Docs only. The plugin's code is unchanged from 0.3.1.
