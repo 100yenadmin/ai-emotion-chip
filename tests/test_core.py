@@ -997,3 +997,12 @@ def test_a_rewrite_after_a_word_or_call_stays_score_syntax(text, tagless, data):
 ])
 def test_links_ranges_bare_headers_and_code_text(text, dialect, expected, data):
     assert render(text, dialect, data=data).text == expected
+
+
+@pytest.mark.parametrize("dialect", ["tagless", "eleven_v4", "fish_s2"])
+@pytest.mark.parametrize("target", ["https://x.io/a[1]", "http://[::1]:8080/"])
+def test_link_target_brackets_inside_a_span_survive(dialect, target):
+    rendered = render(f"[soft: See [docs]({target}) now.]", dialect)
+    assert f"docs ({target})" in rendered.text
+    assert not [d for d in rendered.dropped if d.kind == "syntax"]
+

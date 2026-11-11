@@ -109,8 +109,10 @@ def _flatten(op, inner, dropped, protect, header_shaped):
                 raw = piece[1:-1].strip()
                 link = LINK_TARGET.match(inner, pos + size)
                 if raw and "[" not in raw and "]" not in raw and link and re.search(r"[/.:#]", link[1]):
-                    # Like a top-level link, keep its words and target together as span text.
-                    kind, piece = "text", f"{raw} ({link[1]})"
+                    # Like a top-level link, keep its words and target together as span text; a target's own
+                    # brackets ("/a[1]", "[::1]") are protected so the span's bracket cleanup leaves them alone.
+                    target = protect(link[1]) if protect is not None else link[1]
+                    kind, piece = "text", f"{raw} ({target})"
                     consumed = link.end()
         pos += size
         if kind == "text" and pieces and pieces[-1][0] == "text":
