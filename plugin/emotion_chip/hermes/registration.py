@@ -8,10 +8,9 @@ import threading
 from ..cli import add_commands, run
 from ..data import DIALECTS, load_data
 from ..guide import build_prompt_section, build_skill
-from ..render import dialect_for
 from .commands import make_handler
 from .hooks import HOOKS, Hooks
-from .middleware import make_middleware
+from .middleware import make_middleware, taught_dialect
 from .provider import EmotionChipTTSProvider
 from .settings import Settings, plugin_data_dir, session_env
 from .situation import Situation
@@ -40,7 +39,7 @@ def register_all(ctx, *, reader=None, data_dir=None, env=None, clock=None):
     provider = EmotionChipTTSProvider(settings, situation, env=environment, clock=clock, data_dir=directory)
     data = load_data()
     # Hermes passes tts.model as the call's model on the provider path; the prompt and skill teach that dialect.
-    dialect = dialect_for(settings.get("backend"), settings.model(settings.host("tts.model")))
+    dialect = taught_dialect(settings)
     for name in DIALECTS:
         for key in data.models:
             try:
@@ -72,7 +71,7 @@ def register_all(ctx, *, reader=None, data_dir=None, env=None, clock=None):
     def content_fn(info):
         if settings.get("guide_mode") != "generate":
             return ""
-        current = dialect_for(settings.get("backend"), settings.model(settings.host("tts.model")))
+        current = taught_dialect(settings)
         with skill_lock:
             if written[0] is not None and current != written[0]:
                 try:

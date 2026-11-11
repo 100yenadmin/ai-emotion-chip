@@ -4,6 +4,7 @@ import json
 from ..cli import DIALECTS
 from ..render import dialect_for
 from .commands import build_status
+from .middleware import compat_render, compat_target
 from .provider import PreparedScore
 from .settings import sounds_on
 
@@ -36,6 +37,15 @@ def register_tools(ctx, settings, situation, env, voice_replies=None, provider=N
         text = args["score"]
         if len(text) > 10000:
             return json.dumps({"error": "score exceeds 10000 characters"})
+        target = compat_target(settings)
+        if target is not None and (args.get("dialect") or target.dialect) == target.dialect:
+            text, result, words = compat_render(settings, situation, text, target, with_cue_words=True)
+            return json.dumps(dict(dialect=target.dialect, rendered=text, cue_words=words,
+                                   dropped=[dict(kind=d.kind, raw=d.value, reason=d.reason)
+                                            for d in result.dropped] if result is not None else [],
+                                   params=result.params if result is not None else {},
+                                   notes=result.notes if result is not None else ["Text is sent unchanged."],
+                                   chars=len(text)))
         backend = settings.get("backend")
         profile_dialect = str(provider.preview_dialect() if provider is not None else
                               dialect_for(backend, settings.model(settings.host("tts.model"))))

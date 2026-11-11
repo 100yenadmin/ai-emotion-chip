@@ -723,8 +723,8 @@ def test_pinned_model_all_consumers(rig, pinned, requested, dialect, text):
 def test_load_time_skill_uses_the_fish_model_hermes_sends(tmp_path, key):
     from emotion_chip.guide import build_skill
     ctx = FakeContext({"fish_model": "s2.1-pro"})
-    register_all(ctx, reader=lambda name, default=None: "drama-3" if name == key else default,
-                 data_dir=lambda: tmp_path)
+    host = {key: "drama-3", "tts.provider": "emotion-chip"}
+    register_all(ctx, reader=lambda name, default=None: host.get(name, default), data_dir=lambda: tmp_path)
     assert build_skill("fish_drama3", "default", load_data()) != build_skill("fish_s2", "default", load_data())
     assert ctx.skill[0].read_text() == build_skill("fish_drama3", "default", load_data()) + "\n"
 
@@ -811,7 +811,8 @@ def test_skill_follows_a_live_fish_pin_change(rig, provider):
     host["tts.fish-audio.model"] = "drama-3"
     ctx.section({"model": "default"})
     path = ctx.skill[0]
-    text = build_skill("fish_drama3", "default", load_data()) + "\n"
+    # On the compat path (#51) the skill teaches the dialect the middleware uses, which a Fish pin does not change.
+    text = build_skill("fish_drama3" if provider == "emotion-chip" else "tagless", "default", load_data()) + "\n"
     assert path.read_text() == text
     stamp = path.stat().st_mtime_ns
     ctx.section({"model": "default"})
