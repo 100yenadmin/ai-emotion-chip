@@ -8,6 +8,7 @@ import sys
 import pytest
 
 from emotion_chip import cli
+from emotion_chip.data import load_data
 from emotion_chip.hermes import provider as provider_module
 from emotion_chip.hermes.registration import register_all
 from fakes import FakeContext, FakeFish, fish_like_adapt_tags
@@ -102,8 +103,8 @@ def test_status_matches_command(rig, monkeypatch, case):
     data = call(ctx, "chip_status")
     assert data["ready"] == ("yes" if case == "eleven" else case)
     assert set(data) == {"ready", "problems", "not_checked", "backend", "model", "dialect", "guide_mode",
-                         "signals", "quiet", "delivery_log", "voice_replies", "session_id", "register",
-                         "eleven_voice_id" if case == "eleven" else "fish_model"}
+                         "signals", "quiet", "delivery_log", "voice_replies", "session_id", "register"} | (
+                             set() if case == "no" else {"eleven_voice_id" if case == "eleven" else "fish_model"})
     assert data["session_id"] == "tools-session" and data["register"] == ""
     assert data["quiet"] is False and data["delivery_log"] is True
     ready = data["ready"]
@@ -113,7 +114,8 @@ def test_status_matches_command(rig, monkeypatch, case):
         ready += " (not checked from here: " + ", ".join(data["not_checked"]) + ")"
     fields = dict(ready=ready, backend=data["backend"])
     if case != "eleven":
-        fields["fish_model"] = data["fish_model"]
+        if case != "no":
+            fields["fish_model"] = data["fish_model"]
         assert data["model"] == "s2.1-pro"
     fields.update(guide_mode=data["guide_mode"], signals=data["signals"])
     if case == "eleven":
@@ -476,6 +478,168 @@ def test_speech_report_age_boundary_and_session_fallback(rig):
 def test_preview_null_dialect_uses_profile_dialect(rig):
     handler = rig[0].tools["chip_preview"]["handler"]
     assert json.loads(handler({"score": "[warm] Hi.", "dialect": None})) == json.loads(handler({"score": "[warm] Hi."}))
+
+
+COMPAT_CASES = [("edge", None, None, "tagless")] + [
+    ("fish-audio", model, chip_model, dialect)
+    for model, dialect in ((None, "fish_s2"), ("s1", "tagless"), ("s2.1-pro", "fish_s2"), ("drama-3", "fish_drama3"))
+    for chip_model in (None, "s1")
+] + [("elevenlabs", "eleven_v4", None, "eleven_v4"),
+     ("elevenlabs", "eleven_multilingual_v2", None, "tagless")]
+COMPAT_SCORES = ["[whisper] The tests passed. [pause] The baby is still asleep.",
+                 "(laughs) Hi there.", "Hello.", "[soft: it worked], really."]
+
+
+def register_compat(tmp_path, monkeypatch, provider, model=None, chip_model=None, backend="fish"):
+    from emotion_chip.hermes import middleware
+
+    ctx = FakeContext({"backend": backend, **({"fish_model": chip_model} if chip_model else {})})
+    host = {"tts.provider": provider}
+    if model is not None:
+        host["tts.elevenlabs.model_id" if provider == "elevenlabs" else "tts.model"] = model
+    monkeypatch.setattr(provider_module, "_fish", lambda: FakeFish())
+    monkeypatch.setattr(middleware, "fish_adapter", lambda fish: fish_like_adapt_tags)
+    register_all(ctx, reader=lambda key, default=None: host.get(key, default),
+                 data_dir=lambda: tmp_path, env=lambda key: "")
+    return ctx, host
+
+
+@pytest.mark.parametrize("provider,model,chip_model,dialect", COMPAT_CASES)
+@pytest.mark.parametrize("score", COMPAT_SCORES)
+@pytest.mark.parametrize("explicit", ["absent", "null", "target"])
+def test_compat_preview_status_skill_match_middleware(tmp_path, monkeypatch, provider, model, chip_model,
+                                                    dialect, score, explicit):
+    from emotion_chip.guide import build_skill
+
+    ctx, _ = register_compat(tmp_path, monkeypatch, provider, model, chip_model)
+    args = {"text": score, "output_path": "fixture.mp3"}
+    before = deepcopy(ctx.state)
+    passed = ctx.middleware(tool_name="text_to_speech", args=args)
+    expected = score if passed is None else passed["args"]["text"]
+    options = {} if explicit == "absent" else {"dialect": None if explicit == "null" else dialect}
+    preview = call(ctx, "chip_preview", score=score, **options)
+    assert preview["rendered"] == expected and preview["chars"] == len(expected)
+    assert set(preview) == {"dialect", "rendered", "cue_words", "dropped", "params", "notes", "chars"}
+    status = call(ctx, "chip_status")
+    assert preview["dialect"] == status["dialect"] == dialect
+    assert ctx.skill[0].read_text() == build_skill(dialect, "default", load_data()) + "\n"
+    assert ctx.section({}) == ""  # Compat still adds no system-prompt section.
+    assert f"dialect: {dialect}" in ctx.command("status")
+    assert "eleven_voice_id" not in status
+    if provider == "fish-audio":
+        assert status["fish_model"] == (model or "fish-default")
+    else:
+        assert "fish_model" not in status and "fish_model:" not in ctx.command("status")
+    if passed is None:
+        assert preview["cue_words"] == preview["dropped"] == []
+        assert any("sent unchanged" in note for note in preview["notes"])
+    elif score.startswith("[whisper]"):
+        assert preview["cue_words"] == ["whisper"]
+    assert args == {"text": score, "output_path": "fixture.mp3"} and ctx.state == before
+    assert not (tmp_path / "delivery.jsonl").exists()
+
+
+@pytest.mark.parametrize("stage", ["lookup", "before", "after"])
+@pytest.mark.parametrize("score", ["(laughs) Hi there.", "[warm] Hi. [speaker: 2] (happy) Bye."])
+def test_compat_preview_fish_adapter_failure_matches_middleware(tmp_path, monkeypatch, stage, score):
+    from emotion_chip.hermes import middleware
+
+    ctx, _ = register_compat(tmp_path, monkeypatch, "fish-audio")
+    calls = []
+
+    def adapt(text, family):
+        calls.append(text)
+        if stage == "before" or len(calls) > 2:
+            raise RuntimeError("fixture adapter failure")
+        return text.replace("(laughs)", "[laughs]")
+
+    def factory(fish):
+        if stage == "lookup":
+            raise RuntimeError("fixture adapter unavailable")
+        return adapt
+
+    monkeypatch.setattr(middleware, "fish_adapter", factory)
+    passed = ctx.middleware(tool_name="text_to_speech", args={"text": score})
+    calls.clear()
+    preview = call(ctx, "chip_preview", score=score)
+    assert preview["rendered"] == (score if passed is None else passed["args"]["text"])
+    if stage == "after":
+        assert "Fish adapt_tags failed after render; output not re-checked" in preview["notes"]
+
+
+@pytest.mark.parametrize("provider,model", [("edge", None), ("fish-audio", None), ("elevenlabs", "eleven_v4")])
+def test_compat_status_omits_chip_voice_with_eleven_backend(tmp_path, monkeypatch, provider, model):
+    ctx, _ = register_compat(tmp_path, monkeypatch, provider, model, "s1", backend="eleven")
+    status = call(ctx, "chip_status")
+    assert "eleven_voice_id" not in status and "eleven_voice_id:" not in ctx.command("status")
+    assert ("fish_model" in status) == (provider == "fish-audio")
+    if provider == "fish-audio":
+        assert status["fish_model"] == "fish-default"
+        assert "fish_model: fish-default" in ctx.command("status")
+
+
+def test_compat_explicit_other_dialect_keeps_plain_render(tmp_path, monkeypatch):
+    from emotion_chip.render import render
+
+    ctx, _ = register_compat(tmp_path, monkeypatch, "edge")
+    ctx.provider.tag_adapter = lambda text, family: text
+    score = COMPAT_SCORES[0]
+    result = call(ctx, "chip_preview", score=score, dialect="fish_s2")
+    assert_preview_matches_render(result, render(score, "fish_s2"))
+    assert result["cue_words"] == ["whisper"]
+
+
+@pytest.mark.parametrize("quiet", [False, True])
+def test_compat_preview_keeps_later_fish_words_and_quiet(tmp_path, monkeypatch, quiet):
+    ctx, _ = register_compat(tmp_path, monkeypatch, "fish-audio")
+    if quiet:
+        ctx.command("quiet on")
+    score = "[[register: steady]] [warm] Hi. [speaker: 2] (happy) Bye. [sigh]"
+    passed = ctx.middleware(tool_name="text_to_speech", args={"text": score})
+    preview = call(ctx, "chip_preview", score=score)
+    assert preview["rendered"] == passed["args"]["text"]
+    assert preview["cue_words"] == ["steady", "warm", "happy"]
+    assert ("[sighing]" in preview["rendered"]) is not quiet
+
+
+def test_compat_preview_render_failure_sends_original(tmp_path, monkeypatch):
+    from emotion_chip.hermes import middleware
+
+    ctx, _ = register_compat(tmp_path, monkeypatch, "fish-audio")
+
+    def broken(*args):
+        raise RuntimeError("fixture render failure")
+
+    monkeypatch.setattr(middleware, "settled_render", broken)
+    score = "(laughs) Hi. [warm] Bye."
+    assert ctx.middleware(tool_name="text_to_speech", args={"text": score}) is None
+    preview = call(ctx, "chip_preview", score=score)
+    assert preview["rendered"] == score and preview["cue_words"] == preview["dropped"] == []
+    assert any("sent unchanged" in note for note in preview["notes"])
+
+
+def test_compat_skill_tracks_provider_changes(tmp_path, monkeypatch):
+    from emotion_chip.guide import build_skill
+
+    ctx, host = register_compat(tmp_path, monkeypatch, "edge")
+    for provider, model, dialect in (("fish-audio", "drama-3", "fish_drama3"),
+                                     ("elevenlabs", "eleven_v4", "eleven_v4"), ("edge", None, "tagless")):
+        host.update({"tts.provider": provider, "tts.model": model, "tts.elevenlabs.model_id": model})
+        assert ctx.section({}) == ""
+        assert ctx.skill[0].read_text() == build_skill(dialect, "default", load_data()) + "\n"
+        assert call(ctx, "chip_preview", score="Hello.")["dialect"] == call(ctx, "chip_status")["dialect"] == dialect
+
+
+@pytest.mark.parametrize("backend,dialect", [("fish", "fish_s2"), ("eleven", "eleven_v4")])
+def test_chip_provider_skill_status_preview_stay_aligned(rig, backend, dialect):
+    from emotion_chip.guide import build_skill
+
+    ctx = rig[0]
+    ctx.settings["backend"] = backend
+    assert ctx.section({})  # Refresh the skill after a backend change.
+    assert ctx.skill[0].read_text() == build_skill(dialect, "default", load_data()) + "\n"
+    assert call(ctx, "chip_preview", score="[warm] Hi.")["dialect"] == call(ctx, "chip_status")["dialect"] == dialect
+    assert ctx.middleware(tool_name="text_to_speech", args={"text": "[warm] Hi."}) is None
 
 
 def test_speech_report_never_names_a_media_attachment(rig):

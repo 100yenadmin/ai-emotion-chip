@@ -5,6 +5,7 @@ import os
 
 from ..render import dialect_for
 from . import provider as provider_module
+from .middleware import compat_target
 from .provider import last_render, last_render_lock
 from .settings import session_identity
 from .voice import voice_coverage
@@ -80,15 +81,20 @@ def build_status(settings, situation, env, voice_replies=None):
     problems, unchecked = readiness(settings)
     backend = settings.get("backend")
     model = settings.model(settings.host("tts.model"))
+    target = compat_target(settings)
     session_id = session_identity(env, situation)
     values = dict(ready=ready_value(settings, (problems, unchecked)).split(" ", 1)[0],
                   problems=problems, not_checked=unchecked, backend=backend, model=model,
-                  dialect=str(dialect_for(backend, model)), guide_mode=settings.get("guide_mode"),
+                  dialect=target.dialect if target is not None else str(dialect_for(backend, model)),
+                  guide_mode=settings.get("guide_mode"),
                   signals=settings.get("signals"), quiet=bool(situation.get("quiet", False)),
                   delivery_log=bool(settings.get("delivery_log")),
                   voice_replies=voice_coverage(settings, voice_replies), session_id=session_id,
                   register=situation.session(session_id).get("register", ""))
-    if backend == "eleven":
+    if target is not None:
+        if target.provider == "fish-audio":
+            values["fish_model"] = settings.resolve_fish_model(settings.host("tts.model"), use_setting=False).label
+    elif backend == "eleven":
         values["eleven_voice_id"] = settings.eleven_voice(settings.call_voice())
     else:
         values["fish_model"] = settings.resolve_fish_model(settings.host("tts.model")).label
@@ -104,10 +110,11 @@ def make_handler(settings, situation, env, voice_replies=None):
         if args == ["status"]:
             facts = build_status(settings, situation, env, voice_replies)
             values = {"ready": ready_value(settings, (facts["problems"], facts["not_checked"]))}
-            values.update({key: facts.get(key) for key in ("backend", "fish_model", "guide_mode", "signals")})
+            values.update({key: facts[key] for key in ("backend", "fish_model", "guide_mode", "signals") if key in facts})
             if facts["backend"] == "eleven":
-                values.pop("fish_model")
-                values.update(eleven_model=facts["model"], eleven_voice_id=facts["eleven_voice_id"])
+                values["eleven_model"] = facts["model"]
+                if "eleven_voice_id" in facts:
+                    values["eleven_voice_id"] = facts["eleven_voice_id"]
             values.update(session_id=facts["session_id"], dialect=facts["dialect"],
                           quiet="on" if facts["quiet"] else "off",
                           delivery_log="on" if facts["delivery_log"] else "off", voice_replies=facts["voice_replies"])
