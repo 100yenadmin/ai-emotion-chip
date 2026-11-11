@@ -89,9 +89,11 @@ def _flatten(op, inner, dropped, protect, header_shaped):
     Text takes the nearest enclosing span (or stays plain text when op is None); sounds and cues stay where they
     were written. Code brackets are protected from the rescan; score brackets are flattened.
     """
-    pieces, pos, kept = [], 0, -1
+    pieces, pos, kept, consumed = [], 0, -1, 0
     for kind, piece in _top_level(inner):
         size = len(piece)
+        if pos < consumed:
+            kind, piece = "text", piece[consumed - pos:]
         if kind == "group":
             code = protect is not None and _in_code(inner, pos, kept) and not SPAN_OPEN.search(piece)
             # Same order as the top-level "[[" branch, for groups in code position only: nested-list code stays text,
@@ -103,6 +105,13 @@ def _flatten(op, inner, dropped, protect, header_shaped):
             elif code:
                 kept = pos + size - 1
                 kind, piece = "text", protect(piece)
+            else:
+                raw = piece[1:-1].strip()
+                link = LINK_TARGET.match(inner, pos + size)
+                if raw and "[" not in raw and "]" not in raw and link and re.search(r"[/.:#]", link[1]):
+                    # Like a top-level link, keep its words and target together as span text.
+                    kind, piece = "text", f"{raw} ({link[1]})"
+                    consumed = link.end()
         pos += size
         if kind == "text" and pieces and pieces[-1][0] == "text":
             pieces[-1] = ("text", pieces[-1][1] + piece)

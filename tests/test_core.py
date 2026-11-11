@@ -872,6 +872,46 @@ def test_a_paren_word_after_a_cue_is_not_a_link(data):
     assert isinstance(tokens[0], Cue) and tokens[0].raw == "sad" and tokens[1].s.startswith("(sobbing)")
 
 
+@pytest.mark.parametrize("dialect", DIALECTS)
+@pytest.mark.parametrize("text, op, spoken", [
+    ("[whisper: See [documentation](https://example.com) now.]", "whisper",
+     "See documentation (https://example.com) now."),
+    ("[soft: read [Mercury](https://en.wikipedia.org/wiki/Mercury_(planet)) later.]", "soft",
+     "read Mercury (https://en.wikipedia.org/wiki/Mercury_(planet)) later."),
+])
+def test_markdown_links_inside_a_span_stay_spoken(text, op, spoken, dialect, data):
+    tokens = [t for s in parse(text, data).sentences for t in s.tokens]
+    assert tokens == [Span(op, spoken, f"{op}: {spoken}")]
+    assert render(text, dialect, data=data).text == render(f"[{op}: {spoken}]", dialect, data=data).text
+
+
+@pytest.mark.parametrize("dialect", DIALECTS)
+def test_markdown_link_and_sound_inside_a_span(dialect, data):
+    text = "[soft: see [docs](https://x.io) [laugh] then rest.]"
+    tokens = [t for s in parse(text, data).sentences for t in s.tokens if not isinstance(t, Text)]
+    assert tokens == [Span("soft", "see docs (https://x.io)", "soft: see docs (https://x.io)"),
+                      Event("laugh", "laugh"), Span("soft", "then rest.", "soft: then rest.")]
+    expected = render("[soft: see docs (https://x.io)] [laugh] [soft: then rest.]", dialect, data=data)
+    assert render(text, dialect, data=data).text == expected.text
+
+
+@pytest.mark.parametrize("dialect", DIALECTS)
+def test_non_link_target_inside_a_span_keeps_baseline_output(dialect, data):
+    # Captured on v0.3.2: a target without / . : # still follows a cue.
+    expected = ("[soft tone] pick [one] [soft tone] (two) now.",
+                "<soft>pick</soft> [one] <soft>(two) now.</soft>",
+                "[softly] pick [one] [softly] (two) now.", "pick (two) now.", "pick (two) now.")
+    assert render("[soft: pick [one](two) now.]", dialect, data=data).text == expected[DIALECTS.index(dialect)]
+
+
+@pytest.mark.parametrize("dialect", DIALECTS)
+def test_code_with_link_shaped_target_inside_a_span_keeps_baseline_output(dialect, data):
+    # Captured on v0.3.2: code-position brackets take precedence over links.
+    expected = ("[soft tone] items[0](x.y)", "<soft>items[0](x.y)</soft>",
+                "[softly] items[0](x.y)", "items[0](x.y)", "items[0](x.y)")
+    assert render("[soft: items[0](x.y)]", dialect, data=data).text == expected[DIALECTS.index(dialect)]
+
+
 def test_params_dict_override_reports_no_cue_group(data):
     full = render("[sad] One. Two.", "fish_s2", data=data)
     piece = render("[happy] Two.", "fish_s2", {"params_from": full.params}, data)
