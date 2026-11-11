@@ -32,9 +32,12 @@ def readiness(settings):
     if provider != "emotion-chip":
         # Another voice speaks; the chip only adapts cues for it, so its own backend does not matter here.
         return [f"the speech provider is {provider}; set tts.provider: emotion-chip"], []
-    if settings.command_provider("emotion-chip"):
-        return ["a command provider named emotion-chip (tts.providers or tts.emotion-chip) hides the plugin; rename it"], []
     problems, unchecked = [], []
+    backend_problem = settings.backend_problem()
+    if backend_problem:
+        problems.append(backend_problem)
+    if settings.command_provider("emotion-chip"):
+        return problems + ["a command provider named emotion-chip (tts.providers or tts.emotion-chip) hides the plugin; rename it"], []
     if settings.get("backend") == "eleven":
         key = _has_secret("ELEVENLABS_API_KEY")
         if key is False:
@@ -46,7 +49,7 @@ def readiness(settings):
         return problems, unchecked
     fish = provider_module._fish()
     if fish is None:
-        return ["install and enable the fish-audio plugin, or set backend: eleven"], []
+        return problems + ["install and enable the fish-audio plugin, or set backend: eleven"], []
     if _has_secret("FISH_API_KEY") is None:
         return problems, ["the Fish Audio key"]  # Fish reads its key the same way; this context cannot tell
     try:

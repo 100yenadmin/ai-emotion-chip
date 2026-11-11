@@ -76,10 +76,24 @@ class Settings:
     def get(self, key):
         default = DEFAULTS[key]
         value = self.ctx.get_config(key, default) if self.ctx is not None else default
+        if key == "backend":
+            value = value.strip().lower() if isinstance(value, str) else "fish"
+            return value if value in {"fish", "eleven"} else "fish"
         if key == "signals":
             value = value.strip().lower() if isinstance(value, str) else "off"
             return value if value in {"facts", "facts+affordance"} else "off"
         return value
+
+    def backend_problem(self):
+        default = DEFAULTS["backend"]
+        value = self.ctx.get_config("backend", default) if self.ctx is not None else default
+        if isinstance(value, str) and value.strip().lower() in {"fish", "eleven"}:
+            return None
+        # Repr-style escapes keep controls and status-field separators inside the shown value.
+        shown = ascii(value).replace(";", r"\x3b")
+        if len(shown) > 40:
+            shown = shown[:37] + "..."
+        return f"backend is {shown}; set backend: fish or eleven (using fish until then)"
 
     def host(self, key, default=None):
         return self.reader(key, default)
