@@ -705,3 +705,12 @@ def test_elevenlabs_compat_with_unset_model_registers_and_renders_tagless(model_
     assert json.loads(ctx.tools["chip_status"]["handler"]({}))["dialect"] == "tagless"
     assert ctx.skill[0].read_text() == build_skill("tagless", "default", load_data()) + "\n"
 
+
+def test_compat_preview_keeps_the_dialect_routing_note(rig):
+    ctx, host, *_ = rig
+    host.pop("tts.fish-audio.model")  # the rig pins s2.1-pro, and Fish's pin outranks tts.model
+    host.update({"tts.provider": "fish-audio", "tts.model": "s1"})
+    preview = call(ctx, "chip_preview", score="[sad] Sorry about that.")
+    assert preview["dialect"] == "tagless"
+    assert any("fish s1 takes fixed cues only" in note for note in preview["notes"])
+

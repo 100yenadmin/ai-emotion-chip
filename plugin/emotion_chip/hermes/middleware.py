@@ -32,7 +32,8 @@ def compat_target(settings):
         model_id = settings.host("tts.elevenlabs.model_id", "")
         if isinstance(model_id, str) and model_id.startswith(("eleven_v3", "eleven_v4")):
             dialect = "eleven_v4"
-    return CompatTarget(provider, str(dialect), provider == "fish-audio")
+    # Keep the Dialect object (a str): its routing notes ("fish s1 takes fixed cues only") reach the preview.
+    return CompatTarget(provider, dialect, provider == "fish-audio")
 
 
 def taught_dialect(settings):
