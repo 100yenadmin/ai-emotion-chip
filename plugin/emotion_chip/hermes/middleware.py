@@ -27,8 +27,11 @@ def compat_target(settings):
     if provider == "fish-audio":
         # Fish gets tts.model from Hermes, never the chip's own fish_model setting.
         dialect = dialect_for("fish", settings.resolve_fish_model(settings.host("tts.model"), use_setting=False).effective)
-    elif provider == "elevenlabs" and settings.host("tts.elevenlabs.model_id", "").startswith(("eleven_v3", "eleven_v4")):
-        dialect = "eleven_v4"
+    elif provider == "elevenlabs":
+        # An unset or null model_id means Hermes's default (eleven_multilingual_v2), which reads bracket cues aloud.
+        model_id = settings.host("tts.elevenlabs.model_id", "")
+        if isinstance(model_id, str) and model_id.startswith(("eleven_v3", "eleven_v4")):
+            dialect = "eleven_v4"
     return CompatTarget(provider, str(dialect), provider == "fish-audio")
 
 

@@ -688,3 +688,20 @@ def test_other_tools_keep_signals_behavior(rig, signals):
     else:
         assert list(json.loads(result)) == ["error", "situation"]
     assert transform(tool_name="terminal", status="ok", result='{"success": true}', session_id="tools-session") is None
+
+
+@pytest.mark.parametrize("model_id", [None, 7, ""])
+def test_elevenlabs_compat_with_unset_model_registers_and_renders_tagless(model_id, tmp_path):
+    from emotion_chip.guide import build_skill
+    ctx = FakeContext({})
+    host = {"tts.provider": "elevenlabs", "tts.elevenlabs.model_id": model_id}
+    register_all(ctx, reader=lambda name, default=None: host.get(name, default), data_dir=lambda: tmp_path)
+    score = "[whisper] The tests passed. [pause] The baby is still asleep."
+    passed = ctx.middleware(tool_name="text_to_speech", args={"text": score})
+    expected = passed["args"]["text"] if passed else score
+    preview = json.loads(ctx.tools["chip_preview"]["handler"]({"score": score}))
+    assert preview["dialect"] == "tagless" and preview["rendered"] == expected
+    assert "[" not in expected
+    assert json.loads(ctx.tools["chip_status"]["handler"]({}))["dialect"] == "tagless"
+    assert ctx.skill[0].read_text() == build_skill("tagless", "default", load_data()) + "\n"
+
