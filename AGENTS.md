@@ -29,7 +29,8 @@ PYTHONPATH=plugin uv run python -m emotion_chip check-bundle   # after editing a
 ## Rules
 
 - Keep each change small and focused: one change per PR.
-- Don't bump versions, create tags, or add CHANGELOG release headings. Maintainers cut releases.
+- Contributor PRs don't bump versions, create tags, or add CHANGELOG release headings. Maintainers cut releases in
+  their own release PRs, which do all three.
 - The agent is the only author of emotion cues: never add code that writes, upgrades or removes an emotion word the agent did not write. Renderers translate syntax only.
 - Do not change `EVAL-PREREG.md` bars after a measurement starts; amendments go in its Amendments section with a date and reason.
 - Data files are CC0; keep provenance fields filled.

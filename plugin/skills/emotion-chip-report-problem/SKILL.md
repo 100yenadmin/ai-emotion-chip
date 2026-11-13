@@ -47,8 +47,10 @@ this workflow.
 - `/chip status` (or the `chip_status` tool): `ready`, the backend, model and dialect, and what to fix when not ready.
 - `/chip why`: the last render in this session, with the agent's own cue words, what was dropped and why, and the voice
   parameters. It holds no spoken text.
-- `chip_preview` with the score, or offline `hermes chip render --dialect <dialect> --json "<score>"`: what the chip sends
-  the voice for that score. Neither needs a key or the network, and neither speaks.
+- `chip_preview` with the score: exactly what the chip sends the voice for that score. Without the tool, save the score
+  to its own file with a file tool, not the shell, and run offline `hermes chip render --dialect <dialect> --json < '<score file>'`.
+  That renders the score as written, without Fish's paren-cue adaptation or the final voice settings. Never type the
+  score itself into a command: the shell would run parts of it. Neither needs a key or the network, and neither speaks.
 - `hermes logs --since 1h -n 2000 | grep -i -e emotion -e chip`: recent plugin log lines.
 
 Safe reproduction for this plugin:
@@ -63,8 +65,8 @@ If the diagnostics show a setup issue with a known fix, offer the fix first. The
 - A cue read aloud while another voice speaks (`tts.provider` is not `emotion-chip`): with `guide_mode: generate`, that
   voice gets the chip's translation for its own dialect, and `chip_preview` shows exactly what it receives. A voice
   without cue support gets plain text. A command provider (your own script) gets the agent's text unchanged.
-- Voice mode in the CLI or TUI with Fish's `streaming` set to `off` keeps the opening cue's voice only for the first
-  sentence. This is known: https://github.com/100yenadmin/ai-emotion-chip/issues/2
+- Voice mode in the CLI or TUI on Fish, when Fish does not stream (its `streaming` set to `off`, or Hermes running
+  plugins in an isolated host), keeps the opening cue's voice only for the first sentence. This is known: https://github.com/100yenadmin/ai-emotion-chip/issues/2
 
 If they show the problem is in Hermes itself, point the user to https://github.com/NousResearch/hermes-agent/issues and
 stop. A problem in Fish Audio's own plugin goes to https://github.com/100yenadmin/fish-audio-hermes/issues. This

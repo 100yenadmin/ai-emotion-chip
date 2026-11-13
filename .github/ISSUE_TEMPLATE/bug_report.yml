@@ -70,7 +70,7 @@ body:
     id: diagnostics
     attributes:
       label: Diagnostics
-      description: Output of `hermes chip status` and `hermes plugins list --json` (leave out keys).
+      description: The `/chip status` line and the emotion-chip entry of `hermes plugins list --json` (leave out keys and voice ids).
       render: text
   - type: textarea
     id: logs

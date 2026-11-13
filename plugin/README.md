@@ -141,10 +141,11 @@ directory.
   would replace with a file in the text channel.
 - Read-aloud and voice mode speak the reply text, without cues: a cue written in a reply would also show in the chat.
   Hermes has no seam yet that splits displayed text from spoken text.
-- Voice mode in the CLI and TUI, when the voice does not stream (Fish with its `streaming` setting `off`): Hermes
+- Voice mode in the CLI and TUI, when the voice does not stream (Fish with its `streaming` setting `off`, or with
+  Hermes running plugins in an isolated host): Hermes
   speaks each sentence as its own call, so a sentence without its own cue gets plain voice settings instead of the
   reply's opening cue ([#2](https://github.com/100yenadmin/ai-emotion-chip/issues/2)). ElevenLabs, and Fish with its
-  default `streaming: auto`, stream the reply and keep the cue across sentences.
+  default `streaming: auto` in Hermes's own process, stream the reply and keep the cue across sentences.
 - Hermes's GPT-Live voice chat mode speaks through OpenAI's live voice model, not a speech provider, so the plugin
   does not reach it.
 - When Hermes compresses the conversation in the middle of a reply, sounds after that point start without the earlier
