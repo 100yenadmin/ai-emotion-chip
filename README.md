@@ -128,7 +128,9 @@ The full disclosure is in [plugin/README.md](plugin/README.md#disclosure).
 
 ## Report a bug
 
-Open an issue with the [bug form](https://github.com/100yenadmin/ai-emotion-chip/issues/new?template=bug_report.yml).
+Ask your agent to report it: the plugin ships an `emotion-chip-report-problem` skill that gathers `/chip status`,
+`/chip why` and an offline render, searches existing issues, and files only after you approve the exact text. Or open
+an issue yourself with the [bug form](https://github.com/100yenadmin/ai-emotion-chip/issues/new?template=bug_report.yml).
 Report security problems privately through a
 [security advisory](https://github.com/100yenadmin/ai-emotion-chip/security/advisories/new), not a public issue
 ([SECURITY.md](SECURITY.md)). Problems in Hermes itself belong

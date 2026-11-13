@@ -49,7 +49,7 @@ def rig(tmp_path, monkeypatch):
 
 def test_registration(rig):
     ctx, _, _, _, _, directory = rig
-    assert ctx.calls == [("provider", "emotion-chip"), ("section", "emotion-chip"),
+    assert ctx.calls == [("provider", "emotion-chip"), ("section", "emotion-chip"), ("skill", "emotion-chip-report-problem"),
                          ("skill", "emotion-chip-voice"), *[("hook", name) for name in HOOKS],
                          ("middleware", "tool_request"), ("command", "chip"), ("cli_command", "chip")]
     path, description = ctx.skill
@@ -95,8 +95,37 @@ def test_defer(tmp_path):
     directory = tmp_path / "unused"
     register_all(ctx, reader=lambda key, default=None: "emotion-chip", data_dir=lambda: directory)
     assert ctx.section({"model": "default"}) == ""
-    assert not any(kind == "skill" for kind, _ in ctx.calls) and not directory.exists()
+    # Only the shipped report-problem skill: defer writes and registers no delivery guidance.
+    assert [name for kind, name in ctx.calls if kind == "skill"] == ["emotion-chip-report-problem"]
+    assert not directory.exists()
     assert ctx.middleware(tool_name="text_to_speech", args={"text": "[sad] Hello"}) is None
+
+
+@pytest.mark.parametrize("mode", ["generate", "defer"])
+def test_report_problem_skill_ships_in_every_mode(tmp_path, mode):
+    ctx = FakeContext({"guide_mode": mode})
+    skills = []
+    ctx.register_skill = lambda name, path, description="": skills.append((name, path, description))
+    register_all(ctx, reader=lambda key, default=None: "emotion-chip", data_dir=lambda: tmp_path / "plugin-data")
+    name, path, description = skills[0]
+    text = path.read_text(encoding="utf-8")
+    assert name == path.parent.name == "emotion-chip-report-problem" and path.is_file()
+    assert path.parent.parent == Path(__file__).resolve().parents[1] / "plugin" / "skills"
+    assert f"name: {name}" in text.split("---", 2)[1]
+    assert description == "Hermes Emotion Chip: report a bug or problem"
+    for link in ("100yenadmin/ai-emotion-chip/security/advisories/new", "issues/new?template=bug_report.yml"):
+        assert link in text
+    assert [n for n, _, _ in skills] == (["emotion-chip-report-problem", "emotion-chip-voice"] if mode == "generate"
+                                          else ["emotion-chip-report-problem"])
+
+
+def test_unreadable_report_skill_never_stops_registration(tmp_path, monkeypatch, caplog):
+    import emotion_chip.hermes.registration as registration
+    monkeypatch.setattr(registration, "REPORT_SKILL", tmp_path / "missing" / "SKILL.md")
+    ctx = FakeContext({})
+    register_all(ctx, reader=lambda key, default=None: "emotion-chip", data_dir=lambda: tmp_path / "plugin-data")
+    assert [name for kind, name in ctx.calls if kind == "skill"] == ["emotion-chip-voice"]
+    assert ("command", "chip") in ctx.calls and "report-problem skill not registered" in caplog.text
 
 
 def test_guarded_registrations():

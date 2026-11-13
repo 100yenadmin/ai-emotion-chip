@@ -17,6 +17,14 @@ from .situation import Situation
 from .tools import register_tools
 
 logger = logging.getLogger(__name__)
+REPORT_SKILL = Path(__file__).resolve().parents[2] / "skills" / "emotion-chip-report-problem" / "SKILL.md"
+
+
+def skill_description(text):
+    """The one-line ``description:`` of a SKILL.md's frontmatter, without a YAML dependency."""
+    frontmatter = text.split("---", 2)[1]
+    return next((line.partition(":")[2].strip().strip("\"'") for line in frontmatter.splitlines()
+                 if line.startswith("description:")), "")
 
 
 def model_key(model):
@@ -87,14 +95,19 @@ def register_all(ctx, *, reader=None, data_dir=None, env=None, clock=None):
         ctx.register_tts_provider(provider)
     if hasattr(ctx, "register_system_prompt_section"):
         ctx.register_system_prompt_section("emotion-chip", content_fn, max_chars=4000)
+    if hasattr(ctx, "register_skill"):
+        # Shipped with the plugin and registered in every guide mode: reporting a problem is not delivery guidance.
+        report = REPORT_SKILL
+        try:
+            ctx.register_skill(report.parent.name, report,
+                               description=skill_description(report.read_text(encoding="utf-8")))
+        except Exception as exc:  # a missing or unreadable file never costs the voice
+            logger.warning("emotion-chip report-problem skill not registered (%s: %s)", type(exc).__name__, exc)
     if settings.get("guide_mode") == "generate" and hasattr(ctx, "register_skill"):
         text = write_skill(dialect)
         written[0] = dialect
         path = Path(directory()) / "skills" / "emotion-chip-voice" / "SKILL.md"
-        frontmatter = text.split("---", 2)[1]
-        description = next((line.partition(":")[2].strip().strip("\"'") for line in frontmatter.splitlines()
-                            if line.startswith("description:")), "")
-        ctx.register_skill("emotion-chip-voice", path, description=description)
+        ctx.register_skill("emotion-chip-voice", path, description=skill_description(text))
     voice_replies = None  # set only when the voice-replies line is registered; /chip status reports it
     if hasattr(ctx, "register_hook"):
         hooks = Hooks(settings, situation, environment, start_turn=provider.start_turn)

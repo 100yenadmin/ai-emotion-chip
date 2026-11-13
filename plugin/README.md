@@ -141,6 +141,10 @@ directory.
   would replace with a file in the text channel.
 - Read-aloud and voice mode speak the reply text, without cues: a cue written in a reply would also show in the chat.
   Hermes has no seam yet that splits displayed text from spoken text.
+- Voice mode in the CLI and TUI, when the voice does not stream (Fish with its `streaming` setting `off`): Hermes
+  speaks each sentence as its own call, so a sentence without its own cue gets plain voice settings instead of the
+  reply's opening cue ([#2](https://github.com/100yenadmin/ai-emotion-chip/issues/2)). ElevenLabs, and Fish with its
+  default `streaming: auto`, stream the reply and keep the cue across sentences.
 - Hermes's GPT-Live voice chat mode speaks through OpenAI's live voice model, not a speech provider, so the plugin
   does not reach it.
 - When Hermes compresses the conversation in the middle of a reply, sounds after that point start without the earlier
@@ -161,8 +165,9 @@ directory.
   speech-provider registry to reach it and imports its tag adapter.
 - **Credentials.** The ElevenLabs key is read at each call through the profile's secret scope. The plugin stores no
   credentials.
-- **Prompt and skill.** With `guide_mode: generate` (the default) the plugin registers the `emotion-chip-voice`
-  skill, and while the chip is the speech provider it also adds a delivery guide of up to 4,000 characters to the
+- **Prompt and skill.** In every guide mode the plugin registers the `emotion-chip-report-problem` skill, which
+  helps the agent draft a bug report and publishes nothing without the user's yes to the exact text. With
+  `guide_mode: generate` (the default) it also registers the `emotion-chip-voice` skill, and while the chip is the speech provider it also adds a delivery guide of up to 4,000 characters to the
   system prompt. With `generate`, when another speech provider is selected, its `tool_request` middleware rewrites
   `text_to_speech` text that carries cues for that provider: Fish Audio's dialect for `fish-audio` on S2 and Drama 3
   models, and the ElevenLabs dialect for `elevenlabs` with a v3 or v4 model. Any other provider or model, including

@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.4 — 2026-11-13
+
+Maintenance. Speech, rendering and settings are unchanged from 0.3.3.
+
+- **New: a report-problem skill** (`emotion-chip-report-problem`), registered in every guide mode. Asked to report a
+  problem, the agent keeps security problems and private text out of public issues, diagnoses with `/chip status`,
+  `/chip why` and an offline render (no paid speech calls), searches existing issues, drafts with the bug form's
+  headings, and files only after the user approves the exact text.
+- **Docs: a known limitation** (#2). In CLI and TUI voice mode with a voice that does not stream (Fish with
+  `streaming: off`), later sentences without their own cue lose the reply's opening cue. The fix waits on Hermes's
+  speech hook (NousResearch/hermes-agent#152238).
+
 ## 0.3.3 — 2026-11-11
 
 Bug fixes. No new features.
