@@ -157,7 +157,7 @@ Report security problems privately through a
   deleted the session's only key before scoring (amendment A12 in [EVAL-PREREG.md](EVAL-PREREG.md)). The replacement
   session is tagged but not yet generated. An informal three-pair field test on ElevenLabs v4 (#62) heard no consistent
   difference between hand-written cues and the chip's render. See
-  [VISION.md](VISION.md#where-we-are-november-2026-release-034).
+  [VISION.md](VISION.md).
 
 We state the research the cues follow at the strength it supports. A cue records the delivery the agent chose, not a
 measured internal state; see [plugin/README.md](plugin/README.md#grounding).
