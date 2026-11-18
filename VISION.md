@@ -158,7 +158,8 @@ product has to earn its place.
 - M4: eva's field test (E8);
 - the acoustic check (E6) spans M2 and M3.
 
-The "Now" bars above are E2, E3, E7 and E8.
+The "Now" bars above are scope A3 (amendment A3, which keeps E2's gates frozen for the guarded design and gives
+v1 a mechanical gate plus report-only measures, E3 included), E7 and E8.
 
 ## What would change this vision
 

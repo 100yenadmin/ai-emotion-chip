@@ -145,7 +145,7 @@ Report security problems privately through a
 | [`EVAL-PREREG.md`](EVAL-PREREG.md) | Every evaluation bar, sample size and stop rule: frozen by git tag, with dated amendments made before each run's data and any deviation recorded. |
 | [`evidence/`](evidence/) | Published results, regenerable from the raw files. |
 | [`bench/`](bench/) | The harnesses that produced them: text benches through real Hermes sessions and the blind listening test. |
-| [`VISION.md`](VISION.md) | Why the project exists and where it is going. |
+| [`VISION.md`](VISION.md) | Why the project exists and where it is going. Its Now / Next / Later section is the project's roadmap. |
 | [`tests/`](tests/) | Unit tests and render goldens. |
 
 ## Evaluation so far
@@ -157,7 +157,7 @@ Report security problems privately through a
   deleted the session's only key before scoring (amendment A12 in [EVAL-PREREG.md](EVAL-PREREG.md)). The replacement
   session is tagged but not yet generated. An informal three-pair field test on ElevenLabs v4 (#62) heard no consistent
   difference between hand-written cues and the chip's render. See
-  [VISION.md](VISION.md#where-we-are-november-2026-release-034).
+  [VISION.md](VISION.md).
 
 We state the research the cues follow at the strength it supports. A cue records the delivery the agent chose, not a
 measured internal state; see [plugin/README.md](plugin/README.md#grounding).
