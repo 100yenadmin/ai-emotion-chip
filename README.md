@@ -145,7 +145,7 @@ Report security problems privately through a
 | [`EVAL-PREREG.md`](EVAL-PREREG.md) | Every evaluation bar, sample size and stop rule: frozen by git tag, with dated amendments made before each run's data and any deviation recorded. |
 | [`evidence/`](evidence/) | Published results, regenerable from the raw files. |
 | [`bench/`](bench/) | The harnesses that produced them: text benches through real Hermes sessions and the blind listening test. |
-| [`VISION.md`](VISION.md) | Why the project exists and where it is going. |
+| [`VISION.md`](VISION.md) | Why the project exists and where it is going. Its Now / Next / Later section is the project's roadmap. |
 | [`tests/`](tests/) | Unit tests and render goldens. |
 
 ## Evaluation so far
