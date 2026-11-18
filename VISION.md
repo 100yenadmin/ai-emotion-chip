@@ -48,15 +48,20 @@ its own, grounded in what happened, and audibly realised, without a persona laid
 **Built:**
 - The score language and its renderers: Fish Audio S2, Fish Drama 3 and ElevenLabs v4.
 - The Hermes plugin: the speech provider, the delivery guide and skill, the `/chip` commands, and a local delivery log
-  that never stores the spoken text.
+  that never stores the spoken text. Releases 0.2.0 to 0.3.4 added:
+  - voice replies on messaging platforms that carry the agent's cues (not yet on Discord, #63);
+  - `hermes chip render` and `hermes chip guide` for offline checks;
+  - the agent tools `chip_status` and `chip_preview`, and a render report on each `text_to_speech` result;
+  - correct reporting when another speech provider speaks;
+  - a skill that walks the agent through a bug report.
 - CC0 research data: 171 emotion concepts following Anthropic's emotions work, with valence and arousal ratings re-run
   on Claude Opus 5.5 and Fable 5.1 using the paper's published method. These are lexical ratings, not activation
   measurements.
 - A pre-registered text-mode bench. It compares three arms on held-out items: no chip, the chip's guide, and a
   vendor-style prompting guide.
 
-**Learned from the first listening pilot.** One listener, one ElevenLabs voice, a third of 24 pairs rated so far.
-Each pair was the same prompt answered with and without the chip.
+**Learned from the first listening pilot (October 2026).** One listener, one ElevenLabs voice, a third of 24 pairs
+rated. The pre-registered blind test (E7) replaces it. Each pair was the same prompt answered with and without the chip.
 - The chip changed what the agent wrote. With it, 16 of 20 replies carried delivery cues; without it, 2 of 20 did.
   The voice performed most of them: speech-to-text heard a laugh, sigh or gasp at 20 of the 24 event cues, and no tag
   word was ever spoken aloud.
@@ -67,6 +72,17 @@ Each pair was the same prompt answered with and without the chip.
   preference went the other way.
 - The most audible flaw was register changes with no transition, intense to sweet and back again. The guide now asks
   for a beat at each change.
+
+**Since then.**
+- **E7, the pre-registered blind test:** the first ElevenLabs session is void. A disk cleanup on the run machine deleted
+  its only key before anything was scored, so its ratings are excluded (amendment A12 in
+  [EVAL-PREREG.md](EVAL-PREREG.md)). The replacement session is tagged (`e7-eleven-2`) but not yet generated.
+- **An informal field test (#62), not an E7 result:**
+  - Three blind pairs on ElevenLabs v4 compared hand-written cues with the chip's render of the same cues, plus one
+    identical control. The listener heard the control as identical and no consistent difference in the other pairs.
+  - On v4 the render passed the agent's words through, apart from respelling three tags. So on that backend the chip
+    changes little in the rendering itself. What it changes is whether the agent writes cues at all: 16 of 20 replies
+    against 2 of 20 in the pilot.
 
 So getting the agent to use its voice is not the hard part, and more expression is not the same as better. Realism in
 pacing and transitions, grounding in facts, continuity across turns, and hearing the other person are where the
@@ -100,7 +116,8 @@ product has to earn its place.
 - **Continuity.** The register carries from one reply to the next, and the situation lines build the arc of a session.
   We measure the seams across multi-turn sessions.
 - **Spoken and displayed text, split.** A Hermes change so that spoken replies keep their cues while chat text and
-  captions stay clean. It will be proposed upstream.
+  captions stay clean. Proposed upstream in NousResearch/hermes-agent#152238. A community pull request implementing
+  it, NousResearch/hermes-agent#153230, is in review; the chip adopts the hooks once it ships in a Hermes release.
 - **A closed loop.** Optionally transcribe the rendered clip, catch any cue spoken as a word, and re-render once.
 - **More voices.** Adapters for further speech vendors, using the same score.
 
@@ -132,6 +149,15 @@ product has to earn its place.
 | Less flatness where it fits | Expressed-affect grades, expression given stance | Reported, pre-registered |
 | Listeners hear the difference | Blind pairs per backend, two comparisons, catch trials | At least 15 of 20 in each, ties against |
 | It works in daily use | eva's next 20 voice replies | None flagged "turn it off" or "acting" |
+
+[EVAL-PREREG.md](EVAL-PREREG.md) was written before this roadmap and groups its tests by the original plan's stages:
+- M1: the text benches (E2 to E4);
+- M2: the speech-to-text leak bench (E5);
+- M3: blind listening (E7);
+- M4: eva's field test (E8);
+- the acoustic check (E6) spans M2 and M3.
+
+The "Now" bars above are E2, E3, E7 and E8.
 
 ## What would change this vision
 
