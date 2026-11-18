@@ -51,7 +51,8 @@ its own, grounded in what happened, and audibly realised, without a persona laid
   that never stores the spoken text. Releases 0.2.0 to 0.3.4 added:
   - voice replies on messaging platforms that carry the agent's cues (not yet on Discord, #63);
   - `hermes chip render` and `hermes chip guide` for offline checks;
-  - the agent tools `chip_status` and `chip_preview`, and a render report on each `text_to_speech` result;
+  - the agent tools `chip_status` and `chip_preview`, and a render report on each successful `text_to_speech` call
+    the chip speaks (all three only with `guide_mode: generate`);
   - correct reporting when another speech provider speaks;
   - a skill that walks the agent through a bug report.
 - CC0 research data: 171 emotion concepts following Anthropic's emotions work, with valence and arousal ratings re-run
