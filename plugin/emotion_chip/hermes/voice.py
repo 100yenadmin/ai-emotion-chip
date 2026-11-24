@@ -11,13 +11,15 @@ answers it for the chat's /voice mode (keyed by the bot that owns the chat), ``v
 type. The answer is kept in memory under the chat and message id, and ``pre_llm_call`` turns it into one line for that
 message's turn, once. Anything unknown (an isolated plugin host, a missing method, an error) means no line, which is what
 Hermes does without the chip.
+
+Discord: Hermes plays its voice reply in a voice channel only while the bot is connected in that guild
+(gateway/run_voice.py ``_deliver_voice_reply``); a clip from the agent would go to the text channel instead, so that
+message gets no line. Otherwise (a text channel or thread with no voice connection in the guild, or a DM) Hermes sends
+its reply to the chat as a voice message, as on Telegram, and the line applies.
 """
 import threading
 import time
 
-# Discord voice channels play Hermes's own voice reply in the channel; a clip from the agent would go to the text
-# channel instead, so Discord gets no line.
-NOT_COVERED = {"discord"}
 TTL_SECONDS = 900  # a decision older than this is not used (a turn queued that long is a new situation)
 MAX_PENDING = 256
 
@@ -29,6 +31,19 @@ FACT = ("Hermes will read your reply to this message aloud, without cues. Say it
         "included, and keep code and long lists to the written reply; Hermes then sends no voice note of its own. If "
         "that call fails, fix the cause, such as text that is too long, and try once more: a failed call can leave no "
         "voice note at all.")
+
+
+def plays_in_voice_channel(event, gateway):
+    """Whether Hermes would play this message's voice reply in a Discord voice channel: the test in
+    ``_deliver_voice_reply``. Anything unknown counts as yes, so the message gets no line."""
+    try:
+        adapter = gateway._delivery_adapter_for(event.source)
+        guild_id = gateway._get_guild_id(event)
+        play = getattr(adapter, "play_in_voice_channel", None)
+        is_in_vc = getattr(adapter, "is_in_voice_channel", None)
+        return bool(guild_id and callable(play) and callable(is_in_vc) and is_in_vc(guild_id))
+    except Exception:
+        return True
 
 
 class VoiceReplies:
@@ -49,7 +64,7 @@ class VoiceReplies:
         message = str(getattr(source, "message_id", "") or "")
         decide = getattr(gateway, "_should_send_voice_reply", None)
         voiced = False
-        if platform not in NOT_COVERED:
+        if not (platform == "discord" and plays_in_voice_channel(event, gateway)):
             if not callable(decide):
                 self.check = "missing"
             else:
@@ -97,6 +112,6 @@ def voice_coverage(settings, replies):
     if replies is None:
         return "off until Hermes restarts (the chip read other settings when it started)"
     return {None: "not checked yet (the chip has seen no message from a covered platform in this process)",
-            "ok": "covered, except on Discord",
+            "ok": "covered (Discord: not while the bot is in a voice channel)",
             "missing": "not covered (this Hermes has no voice-reply check)",
             "error": "not covered (Hermes's voice-reply check failed)"}[replies.check]

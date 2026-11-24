@@ -100,7 +100,8 @@ Every setting, the `/chip` commands and the agent tools are in **[plugin/README.
 
 - Every `text_to_speech` call the agent makes carries its cues to the voice.
 - With voice replies on in a chat (`/voice on`), the agent says its answer itself, cues included, so the voice note
-  carries its delivery. Not on Discord, where Hermes plays its own reply in voice channels.
+  carries its delivery. On Discord this covers text channels, threads and DMs, but not while the bot is in a voice
+  channel, where Hermes plays its own reply.
 - Read-aloud and voice mode speak the reply text without cues: Hermes has no seam yet that keeps cues for speech and
   hides them in the chat ([proposed upstream](https://github.com/NousResearch/hermes-agent/issues/152238)).
 - GPT-Live voice chat speaks through OpenAI's live voice model, not a speech provider, so the chip does not reach it.

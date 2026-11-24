@@ -138,7 +138,7 @@ def test_status_register_and_live_voice_coverage(rig):
     assert data["register"] == "[[register: steady]]"
     assert data["quiet"] is True and data["delivery_log"] is False
     assert data["fish_model"] == "drama-3" and data["model"] == "drama-3" and data["dialect"] == "fish_drama3"
-    assert data["voice_replies"] == "covered, except on Discord"
+    assert data["voice_replies"] == "covered (Discord: not while the bot is in a voice channel)"
     assert ctx.command("status").endswith("voice_replies: " + data["voice_replies"])
     session["HERMES_SESSION_ID"] = "another-session"
     assert call(ctx, "chip_status")["register"] == ""

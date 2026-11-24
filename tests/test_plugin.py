@@ -679,7 +679,10 @@ def test_hermes_source_contract():
         pytest.skip("Hermes source absent; text-only local 0.22.2 contract check unavailable in CI")
     plugins = ast.parse((root / "hermes_cli" / "plugins.py").read_text())
     assert set(HOOKS) <= _literal_assignment(plugins, "VALID_HOOKS")
-    ctx = next(n for n in plugins.body if isinstance(n, ast.ClassDef) and n.name == "PluginContext")
+    # Hermes 0.23.1 and later keep PluginContext in plugins_context.py; 0.22.2 has it in plugins.py.
+    context_file = root / "hermes_cli" / "plugins_context.py"
+    context_source = ast.parse(context_file.read_text()) if context_file.is_file() else plugins
+    ctx = next(n for n in context_source.body if isinstance(n, ast.ClassDef) and n.name == "PluginContext")
     methods = {n.name: n for n in ctx.body if isinstance(n, ast.FunctionDef)}
     for name, positional, keywords in (
         ("register_system_prompt_section", ["id", "content"], ["max_chars"]),
@@ -1445,9 +1448,10 @@ def test_status_reports_voice_reply_coverage(rig):
 
     assert coverage() == "not checked yet (the chip has seen no message from a covered platform in this process)"
     ctx.hooks["pre_gateway_dispatch"](event=message("discord"), gateway=SimpleNamespace())
-    assert coverage().startswith("not checked yet")  # Discord is never asked, so it proves nothing either way
+    assert coverage().startswith("not checked yet")  # an unknown runner on Discord proves nothing either way
     ctx.hooks["pre_gateway_dispatch"](event=message(), gateway=Gateway(False))
-    assert coverage() == "covered, except on Discord"  # Hermes answered: this chat has voice replies off
+    # Hermes answered: this chat has voice replies off.
+    assert coverage() == "covered (Discord: not while the bot is in a voice channel)"
     ctx.hooks["pre_gateway_dispatch"](event=message(), gateway=SimpleNamespace())
     assert coverage() == "not covered (this Hermes has no voice-reply check)"
     ctx.hooks["pre_gateway_dispatch"](event=message(), gateway=Gateway(RuntimeError("bug")))

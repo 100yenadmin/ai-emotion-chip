@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.3.5 — 2026-11-24
+Bug fixes. Speech, rendering and settings are unchanged from 0.3.4.
+- **Fix: voice replies carry the agent's delivery on Discord text channels, threads and DMs** (#63). The chip skipped
+  every Discord message, so with voice replies on, Hermes read those replies aloud itself, without cues. Hermes plays
+  its reply in a voice channel only while the bot is connected in that server, and otherwise sends a voice message to
+  the chat, as on Telegram. The chip now asks the same question when a message comes in and adds the line wherever
+  Hermes would send a voice message. While the bot is in a voice channel, nothing changes. `/chip status` reports
+  `voice_replies: covered (Discord: not while the bot is in a voice channel)`. Reported, with the cause and the fix,
+  by @alauer.
+- **Docs: the render report is not on every call.** The plugin README said each successful `text_to_speech` result
+  gains an `emotion_chip` report. It does only when the chip rendered that speech within the last two minutes.
+- **Slow suites skipped:** the text benches, `bench/e4`, `bench/e7` and `bench/hermes`. Nothing they measure changed:
+  this release changes which Discord messages get the voice-replies line, one status string and docs.
+
 ## 0.3.4 — 2026-11-13
 
 Maintenance. Speech, rendering and settings are unchanged from 0.3.3.

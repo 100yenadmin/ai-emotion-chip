@@ -137,8 +137,9 @@ directory.
   text message, and after a voice message it may read the reply without cues or send nothing, so the line also asks
   the agent to fix the cause and try once more. Otherwise nothing changes, and the system prompt is the same
   either way. Only with the chip as the speech provider and `guide_mode: generate`, and only when the plugin runs
-  inside the gateway process. Not on Discord: in a voice channel Hermes plays its own reply, which the agent's clip
-  would replace with a file in the text channel.
+  inside the gateway process. On Discord the line applies in text channels, threads and DMs, but not while the bot
+  is in a voice channel in that server: there Hermes plays its own reply in the channel, and the agent's clip would
+  land in the text channel instead.
 - Read-aloud and voice mode speak the reply text, without cues: a cue written in a reply would also show in the chat.
   Hermes has no seam yet that splits displayed text from spoken text.
 - Voice mode in the CLI and TUI, when the voice does not stream (Fish with its `streaming` setting `off`, or with
@@ -154,9 +155,10 @@ directory.
 ## Disclosure
 
 - **Agent tools and reports.** The plugin registers two read-only, offline agent tools with `guide_mode: generate`.
-  With the chip as the speech provider in that mode, each successful `text_to_speech` result gains an `emotion_chip`
-  report of the fresh render's dialect, the agent's cue words, drops and notes (capped at 600 characters). The report
-  stays in the conversation and is sent nowhere by the plugin.
+  With the chip as the speech provider in that mode, a successful `text_to_speech` result gains an `emotion_chip`
+  report when the chip rendered that speech within the last two minutes: the render's dialect, the agent's cue words,
+  drops and notes (capped at 600 characters). A slower call returns without one. The report stays in the
+  conversation and is sent nowhere by the plugin.
 - **Network.** With `backend: eleven`, the plugin sends your ElevenLabs API key, the rendered text, the model id, voice
   id, voice settings, an optional seed and, on v4 models, up to three earlier request ids from the same session to
   `api.elevenlabs.io` over HTTPS. These are paid requests billed to your ElevenLabs account. With `backend: fish` the
