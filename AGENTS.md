@@ -26,6 +26,28 @@ uv run pytest -q
 PYTHONPATH=plugin uv run python -m emotion_chip check-bundle   # after editing anything in plugin/emotion_chip/data/: build-bundle
 ```
 
+### Slow suites and release skips
+
+The paid suites in `bench/` never run in CI. A release runs every suite whose inputs it changes, and its CHANGELOG
+entry names each suite it skipped, with the reason. Loading the plugin through Hermes imports every module under
+`plugin/emotion_chip/hermes/`, so those suites can skip by path only for the files in the last column. A version bump in
+`plugin/plugin.yaml` and `plugin/emotion_chip/__init__.py` never requires a suite: no suite and no Hermes load step uses the version. Any
+other skip names the code that changed and why the suite cannot run it: for example, the gateway-ingress part of
+`hermes/voice.py`, because no suite builds a gateway. Paths are under `plugin/emotion_chip/` unless they start with
+`plugin/`. Parked or superseded suites run only when their test is reopened: E4 is parked, and runs from the direct
+text arms (`bench/gen.py`) cannot verify the scope A3 gate, which needs runs through Hermes. `bench/hermes/text.py`
+and `bench/hermes/run.py` load the plugin at `main` (`CHIP_REF` in `bench/hermes/run.py`); to test a release
+candidate before the merge, point `CHIP_REF` at the candidate's commit. E7 loads the commit of the tag given to
+`--tag`, with both checkouts clean at that commit, so a candidate E7 run needs a new tag; never move a frozen tag.
+
+| Suite | Measures ([EVAL-PREREG.md](EVAL-PREREG.md)) | How it uses the plugin | Skip by path only when the release changes nothing but |
+|---|---|---|---|
+| `bench/gen.py`, `judge.py`, `score.py` | E2 and E3 text arms, generated with `claude -p` | imports `guide`, `data`, `render`, `score`, `model`, `policy`, `consistency` | `hermes/`, `cli.py`, `__main__.py`, `plugin/skills/`, `plugin/plugin.yaml`, `plugin/__init__.py`, `plugin/README.md`, `plugin/LICENSE`, `plugin/LICENSE-DATA` |
+| `bench/hermes/text.py` | the scope A3 runs (mechanical gate, G1 report-only, E3) through Hermes; harness per A4 | the whole plugin, loaded by Hermes | `__main__.py`, `plugin/README.md`, `plugin/LICENSE`, `plugin/LICENSE-DATA` |
+| `bench/e4/` | E4 situation-line pilot (parked), `claude -p` with tool hooks | imports `hermes/hooks.py` and what it imports, `hermes/situation.py`, and `bench/score.py` | `hermes/registration.py`, `hermes/commands.py`, `hermes/tools.py`, `hermes/middleware.py`, `cli.py`, `guide.py`, `__main__.py`, `data/`, `plugin/skills/`, `plugin/plugin.yaml`, `plugin/__init__.py`, `plugin/README.md`, `plugin/LICENSE`, `plugin/LICENSE-DATA` |
+| `bench/e7/` | E7 blind listening | the whole plugin, loaded by Hermes, plus `hermes/eleven.py` and `render` directly | `__main__.py`, `plugin/README.md`, `plugin/LICENSE`, `plugin/LICENSE-DATA` |
+| `bench/hermes/run.py` | spoken replies through Hermes (no EVAL-PREREG test): chip on and off on Fish, guidance on and off on ElevenLabs; cue words spoken aloud, by speech-to-text (not E5) | the whole plugin, loaded by Hermes | `__main__.py`, `plugin/README.md`, `plugin/LICENSE`, `plugin/LICENSE-DATA` |
+
 ## Rules
 
 - Keep each change small and focused: one change per PR.
