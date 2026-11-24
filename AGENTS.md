@@ -31,7 +31,7 @@ PYTHONPATH=plugin uv run python -m emotion_chip check-bundle   # after editing a
 The paid suites in `bench/` never run in CI. A release runs every suite whose inputs it changes, and its CHANGELOG
 entry names each suite it skipped, with the reason. Loading the plugin through Hermes imports every module under
 `plugin/emotion_chip/hermes/`, so those suites can skip by path only for the files in the last column. A version bump in
-`plugin/plugin.yaml` and `plugin/emotion_chip/__init__.py` never requires a suite: nothing reads the version. Any
+`plugin/plugin.yaml` and `plugin/emotion_chip/__init__.py` never requires a suite: no suite and no Hermes load step uses the version. Any
 other skip names the code that changed and why the suite cannot run it: for example, the gateway-ingress part of
 `hermes/voice.py`, because no suite builds a gateway. Paths are under `plugin/emotion_chip/` unless they start with
 `plugin/`.
