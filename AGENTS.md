@@ -36,8 +36,9 @@ other skip names the code that changed and why the suite cannot run it: for exam
 `hermes/voice.py`, because no suite builds a gateway. Paths are under `plugin/emotion_chip/` unless they start with
 `plugin/`. Parked or superseded suites run only when their test is reopened: E4 is parked, and runs from the direct
 text arms (`bench/gen.py`) cannot verify the scope A3 gate, which needs runs through Hermes. `bench/hermes/text.py`
-and `bench/hermes/run.py` load the plugin at `main` (`CHIP_REF` in `bench/hermes/run.py`), and E7 at its frozen tag,
-so to test a release candidate before the merge, point that ref at the candidate's commit.
+and `bench/hermes/run.py` load the plugin at `main` (`CHIP_REF` in `bench/hermes/run.py`); to test a release
+candidate before the merge, point `CHIP_REF` at the candidate's commit. E7 loads the commit of the tag given to
+`--tag`, with both checkouts clean at that commit, so a candidate E7 run needs a new tag; never move a frozen tag.
 
 | Suite | Measures ([EVAL-PREREG.md](EVAL-PREREG.md)) | How it uses the plugin | Skip by path only when the release changes nothing but |
 |---|---|---|---|
