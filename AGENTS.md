@@ -26,16 +26,6 @@ uv run pytest -q
 PYTHONPATH=plugin uv run python -m emotion_chip check-bundle   # after editing anything in plugin/emotion_chip/data/: build-bundle
 ```
 
-The suites in `bench/` are paid and never run in CI. A release runs only the suites whose inputs it changes and records
-each skip in its CHANGELOG entry. What each one measures (test IDs in [EVAL-PREREG.md](EVAL-PREREG.md)):
-
-| Suite | Measures | Inputs |
-|---|---|---|
-| Text benches: `bench/gen.py`, `judge.py`, `score.py`, `report.py` | E2 and E3: the agent's reply text in three arms (no chip, the chip's guide, a vendor-style guide), and the mechanical gate | `plugin/emotion_chip/`: `guide.py` (guide and skill), `data/`, `render/`, `score.py`, `model.py`, `consistency.py`; `bench/base_system.md`, `bench/native_guide.md` |
-| `bench/e4/` | E4: the situation-line pilot, injected through Claude Code's tool hooks | `plugin/emotion_chip/hermes/`: the situation counters and `situation_line` (`situation.py`), `hooks.py` |
-| `bench/e7/` | E7: blind listening; its end-to-end arm speaks replies written with the guide | `render/`, `data/` (dialect tables), the speech backends (Fish, the ElevenLabs client), the guide and skill, the `bench/hermes/` runner |
-| `bench/hermes/` | spoken replies through real Hermes turns: on Fish, chip on and off; on ElevenLabs, the chip in both arms with and without its guidance | the speech provider, `render/`, `data/`, the ElevenLabs client, the guide and skill |
-
 ## Rules
 
 - Keep each change small and focused: one change per PR.
