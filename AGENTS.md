@@ -34,7 +34,10 @@ entry names each suite it skipped, with the reason. Loading the plugin through H
 `plugin/plugin.yaml` and `plugin/emotion_chip/__init__.py` never requires a suite: no suite and no Hermes load step uses the version. Any
 other skip names the code that changed and why the suite cannot run it: for example, the gateway-ingress part of
 `hermes/voice.py`, because no suite builds a gateway. Paths are under `plugin/emotion_chip/` unless they start with
-`plugin/`.
+`plugin/`. Parked or superseded suites run only when their test is reopened: E4 is parked, and runs from the direct
+text arms (`bench/gen.py`) cannot verify the scope A3 gate, which needs runs through Hermes. `bench/hermes/text.py`
+and `bench/hermes/run.py` load the plugin at `main` (`CHIP_REF` in `bench/hermes/run.py`), and E7 at its frozen tag,
+so to test a release candidate before the merge, point that ref at the candidate's commit.
 
 | Suite | Measures ([EVAL-PREREG.md](EVAL-PREREG.md)) | How it uses the plugin | Skip by path only when the release changes nothing but |
 |---|---|---|---|
@@ -42,7 +45,7 @@ other skip names the code that changed and why the suite cannot run it: for exam
 | `bench/hermes/text.py` | the scope A3 runs (mechanical gate, G1 report-only, E3) through Hermes; harness per A4 | the whole plugin, loaded by Hermes | `__main__.py`, `plugin/README.md`, `plugin/LICENSE`, `plugin/LICENSE-DATA` |
 | `bench/e4/` | E4 situation-line pilot (parked), `claude -p` with tool hooks | imports `hermes/hooks.py` and what it imports, `hermes/situation.py`, and `bench/score.py` | `hermes/registration.py`, `hermes/commands.py`, `hermes/tools.py`, `hermes/middleware.py`, `cli.py`, `guide.py`, `__main__.py`, `data/`, `plugin/skills/`, `plugin/plugin.yaml`, `plugin/__init__.py`, `plugin/README.md`, `plugin/LICENSE`, `plugin/LICENSE-DATA` |
 | `bench/e7/` | E7 blind listening | the whole plugin, loaded by Hermes, plus `hermes/eleven.py` and `render` directly | `__main__.py`, `plugin/README.md`, `plugin/LICENSE`, `plugin/LICENSE-DATA` |
-| `bench/hermes/run.py` | spoken replies through Hermes (no EVAL-PREREG test): chip on and off on Fish, guidance on and off on ElevenLabs | the whole plugin, loaded by Hermes | `__main__.py`, `plugin/README.md`, `plugin/LICENSE`, `plugin/LICENSE-DATA` |
+| `bench/hermes/run.py` | spoken replies through Hermes (no EVAL-PREREG test): chip on and off on Fish, guidance on and off on ElevenLabs; cue words spoken aloud, by speech-to-text (not E5) | the whole plugin, loaded by Hermes | `__main__.py`, `plugin/README.md`, `plugin/LICENSE`, `plugin/LICENSE-DATA` |
 
 ## Rules
 
