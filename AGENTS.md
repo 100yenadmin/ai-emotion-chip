@@ -31,10 +31,10 @@ each skip in its CHANGELOG entry. What each one measures (test IDs in [EVAL-PRER
 
 | Suite | Measures | Inputs |
 |---|---|---|
-| Text benches: `bench/gen.py`, `judge.py`, `score.py`, `report.py` | E2 and E3: the agent's reply text with and without the guide, and the mechanical gate | the guide, skill and prompt section; `plugin/emotion_chip/data/`; `plugin/emotion_chip/render/` |
-| `bench/e4/` | E4: the situation-line pilot | the situation line (`pre_llm_call`) and the guide |
-| `bench/e7/` | E7: blind listening | `plugin/emotion_chip/render/`, the dialect tables and the speech backends |
-| `bench/hermes/` | spoken replies through real Hermes turns, chip on and off | the speech provider, `render/`, the guide and skill |
+| Text benches: `bench/gen.py`, `judge.py`, `score.py`, `report.py` | E2 and E3: the agent's reply text in three arms (no chip, the chip's guide, a vendor-style guide), and the mechanical gate | `plugin/emotion_chip/`: `guide.py` (guide and skill), `data/`, `render/`, `score.py`, `model.py`, `consistency.py`; `bench/base_system.md`, `bench/native_guide.md` |
+| `bench/e4/` | E4: the situation-line pilot, injected through Claude Code's tool hooks | `plugin/emotion_chip/hermes/`: the situation counters and `situation_line` (`situation.py`), `hooks.py` |
+| `bench/e7/` | E7: blind listening; its end-to-end arm speaks replies written with the guide | `render/`, `data/` (dialect tables), the speech backends (Fish, the ElevenLabs client), the guide and skill, the `bench/hermes/` runner |
+| `bench/hermes/` | spoken replies through real Hermes turns: on Fish, chip on and off; on ElevenLabs, the chip in both arms with and without its guidance | the speech provider, `render/`, `data/`, the ElevenLabs client, the guide and skill |
 
 ## Rules
 

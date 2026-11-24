@@ -113,17 +113,18 @@ def test_discord_dm_gets_the_line(guild):
 def test_discord_adapter_without_channel_playback_gets_the_line():
     replies = VoiceReplies()
     replies.observe(event(platform="discord"), DiscordGateway(SimpleNamespace(is_in_voice_channel=lambda g: True)))
-    assert replies.voiced(env(platform="discord")) is True  # no play_in_voice_channel: Hermes sends a voice message
+    assert replies.voiced(env(platform="discord")) is True  # no play_in_voice_channel: the voice-message branch
 
 
 def test_discord_adapter_without_channel_check_gets_the_line():
     replies = VoiceReplies()
-    replies.observe(event(platform="discord"), DiscordGateway(SimpleNamespace(play_in_voice_channel=lambda g, p: True)))
-    assert replies.voiced(env(platform="discord")) is True  # no is_in_voice_channel: Hermes sends a voice message
+    adapter = SimpleNamespace(play_in_voice_channel=lambda g, p: True)
+    replies.observe(event(platform="discord"), DiscordGateway(adapter))
+    assert replies.voiced(env(platform="discord")) is True  # no is_in_voice_channel: the voice-message branch
 
 
 def test_discord_without_delivery_adapter_asks_hermes():
-    replies, gateway = VoiceReplies(), DiscordGateway(None)  # a bot that is down: Hermes cannot play in a channel
+    replies, gateway = VoiceReplies(), DiscordGateway(None)  # no adapter, no playback: Hermes's check decides
     replies.observe(event(platform="discord"), gateway)
     assert gateway.calls == [("reply", [], True)] and replies.voiced(env(platform="discord")) is True
 
