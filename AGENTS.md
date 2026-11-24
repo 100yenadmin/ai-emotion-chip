@@ -26,6 +26,16 @@ uv run pytest -q
 PYTHONPATH=plugin uv run python -m emotion_chip check-bundle   # after editing anything in plugin/emotion_chip/data/: build-bundle
 ```
 
+The suites in `bench/` are paid and never run in CI. A release runs only the suites whose inputs it changes and records
+each skip in its CHANGELOG entry. What each one measures (test IDs in [EVAL-PREREG.md](EVAL-PREREG.md)):
+
+| Suite | Measures | Inputs |
+|---|---|---|
+| Text benches: `bench/gen.py`, `judge.py`, `score.py`, `report.py` | E2 and E3: the agent's reply text with and without the guide, and the mechanical gate | the guide, skill and prompt section; `plugin/emotion_chip/data/`; `plugin/emotion_chip/render/` |
+| `bench/e4/` | E4: the situation-line pilot | the situation line (`pre_llm_call`) and the guide |
+| `bench/e7/` | E7: blind listening | `plugin/emotion_chip/render/`, the dialect tables and the speech backends |
+| `bench/hermes/` | spoken replies through real Hermes turns, chip on and off | the speech provider, `render/`, the guide and skill |
+
 ## Rules
 
 - Keep each change small and focused: one change per PR.

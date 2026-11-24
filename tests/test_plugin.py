@@ -679,7 +679,7 @@ def test_hermes_source_contract():
         pytest.skip("Hermes source absent; text-only local 0.22.2 contract check unavailable in CI")
     plugins = ast.parse((root / "hermes_cli" / "plugins.py").read_text())
     assert set(HOOKS) <= _literal_assignment(plugins, "VALID_HOOKS")
-    # Hermes 0.23.2 moved PluginContext into plugins_context.py.
+    # Hermes 0.23.1 and later keep PluginContext in plugins_context.py; 0.22.2 has it in plugins.py.
     context_file = root / "hermes_cli" / "plugins_context.py"
     context_source = ast.parse(context_file.read_text()) if context_file.is_file() else plugins
     ctx = next(n for n in context_source.body if isinstance(n, ast.ClassDef) and n.name == "PluginContext")

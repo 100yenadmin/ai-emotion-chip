@@ -11,6 +11,8 @@ Bug fixes. Speech, rendering and settings are unchanged from 0.3.4.
   by @alauer.
 - **Docs: the render report is not on every call.** The plugin README said each successful `text_to_speech` result
   gains an `emotion_chip` report. It does only when the chip rendered that speech within the last two minutes.
+- **Slow suites skipped:** the text benches, `bench/e4`, `bench/e7` and `bench/hermes`. Nothing they measure changed:
+  this release changes which Discord messages get the voice-replies line, one status string and docs.
 
 ## 0.3.4 — 2026-11-13
 

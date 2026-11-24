@@ -116,6 +116,18 @@ def test_discord_adapter_without_channel_playback_gets_the_line():
     assert replies.voiced(env(platform="discord")) is True  # no play_in_voice_channel: Hermes sends a voice message
 
 
+def test_discord_adapter_without_channel_check_gets_the_line():
+    replies = VoiceReplies()
+    replies.observe(event(platform="discord"), DiscordGateway(SimpleNamespace(play_in_voice_channel=lambda g, p: True)))
+    assert replies.voiced(env(platform="discord")) is True  # no is_in_voice_channel: Hermes sends a voice message
+
+
+def test_discord_without_delivery_adapter_asks_hermes():
+    replies, gateway = VoiceReplies(), DiscordGateway(None)  # a bot that is down: Hermes cannot play in a channel
+    replies.observe(event(platform="discord"), gateway)
+    assert gateway.calls == [("reply", [], True)] and replies.voiced(env(platform="discord")) is True
+
+
 @pytest.mark.parametrize("gateway", [
     Gateway(True),                                          # no _delivery_adapter_for or _get_guild_id
     DiscordGateway(DiscordAdapter(in_vc=RuntimeError("bug"))),
