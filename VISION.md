@@ -43,13 +43,14 @@ its own, grounded in what happened, and audibly realised, without a persona laid
 7. **One score, every voice.** The agent writes one small bracket score. Each vendor gets it in its own dialect, at
    that vendor's documented ceiling.
 
-## Where we are (November 2026, release 0.3.4)
+## Where we are (November 2026, release 0.3.5)
 
 **Built:**
 - The score language and its renderers: Fish Audio S2, Fish Drama 3 and ElevenLabs v4.
 - The Hermes plugin: the speech provider, the delivery guide and skill, the `/chip` commands, and a local delivery log
-  that never stores the spoken text. Releases 0.2.0 to 0.3.4 added:
-  - voice replies on messaging platforms that carry the agent's cues (not yet on Discord, #63);
+  that never stores the spoken text. Releases 0.2.0 to 0.3.5 added:
+  - voice replies on messaging platforms that carry the agent's cues (on Discord, not while the bot is in a voice
+    channel);
   - `hermes chip render` and `hermes chip guide` for offline checks;
   - the agent tools `chip_status` and `chip_preview`, and a render report that successful `text_to_speech` calls the
     chip speaks can carry (all three only with `guide_mode: generate`);

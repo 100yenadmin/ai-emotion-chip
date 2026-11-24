@@ -57,8 +57,72 @@ def test_unknown_means_no_line(gateway):
     assert replies.voiced(env()) is False
 
 
-def test_discord_is_not_covered():
-    replies, gateway = VoiceReplies(), Gateway(True)
+class DiscordAdapter:
+    def __init__(self, in_vc=False):
+        self.in_vc, self.asked = in_vc, []
+
+    def play_in_voice_channel(self, guild_id, path):
+        return True
+
+    def is_in_voice_channel(self, guild_id):
+        self.asked.append(guild_id)
+        if isinstance(self.in_vc, Exception):
+            raise self.in_vc
+        return self.in_vc
+
+
+class DiscordGateway(Gateway):
+    """Hermes's runner as ``_deliver_voice_reply`` uses it: the chat's adapter and the message's guild."""
+
+    def __init__(self, adapter, guild=123, answer=True):
+        super().__init__(answer)
+        self.adapter, self.guild = adapter, guild
+
+    def _delivery_adapter_for(self, source):
+        return self.adapter
+
+    def _get_guild_id(self, event):
+        if isinstance(self.guild, Exception):
+            raise self.guild
+        return self.guild
+
+
+def test_discord_text_channel_gets_the_line():
+    replies, adapter = VoiceReplies(), DiscordAdapter(in_vc=False)
+    gateway = DiscordGateway(adapter)
+    replies.observe(event(platform="discord"), gateway)
+    assert adapter.asked == [123] and gateway.calls == [("reply", [], True)]
+    assert replies.voiced(env(platform="discord")) is True and replies.check == "ok"
+
+
+def test_discord_voice_channel_gets_no_line():
+    replies, gateway = VoiceReplies(), DiscordGateway(DiscordAdapter(in_vc=True))
+    replies.observe(event(platform="discord"), gateway)
+    assert gateway.calls == []                              # Hermes plays its own reply in the channel
+    assert replies.voiced(env(platform="discord")) is False and replies.check is None
+
+
+@pytest.mark.parametrize("guild", [None, 0])
+def test_discord_dm_gets_the_line(guild):
+    replies, adapter = VoiceReplies(), DiscordAdapter(in_vc=True)
+    replies.observe(event(platform="discord"), DiscordGateway(adapter, guild=guild))
+    assert adapter.asked == []                              # no guild: Hermes sends a voice message, never plays
+    assert replies.voiced(env(platform="discord")) is True
+
+
+def test_discord_adapter_without_channel_playback_gets_the_line():
+    replies = VoiceReplies()
+    replies.observe(event(platform="discord"), DiscordGateway(SimpleNamespace(is_in_voice_channel=lambda g: True)))
+    assert replies.voiced(env(platform="discord")) is True  # no play_in_voice_channel: Hermes sends a voice message
+
+
+@pytest.mark.parametrize("gateway", [
+    Gateway(True),                                          # no _delivery_adapter_for or _get_guild_id
+    DiscordGateway(DiscordAdapter(in_vc=RuntimeError("bug"))),
+    DiscordGateway(DiscordAdapter(), guild=RuntimeError("bug")),
+])
+def test_discord_unknown_means_no_line(gateway):
+    replies = VoiceReplies()
     replies.observe(event(platform="discord"), gateway)
     assert replies.voiced(env(platform="discord")) is False and gateway.calls == []
 
@@ -113,8 +177,14 @@ def test_hermes_voice_contract():
     voice = (root / "gateway" / "run_voice.py").read_text()
     assert ("def _should_send_voice_reply(\n        self, event: MessageEvent, response: str, agent_messages: list, "
             "already_sent: bool = False\n    ) -> bool:") in voice
-    assert '(tc.get("function") or {}).get("name") == "text_to_speech"' in voice    # the tool-call dedup
+    assert ('(tc.get("function") or {}).get("name") == "text_to_speech"' in voice  # the tool-call dedup (<= v0.23.1)
+            or '"text_to_speech" in tool_name_by_call_id(agent_messages[start:]).values()' in voice)  # v0.23.2+
     assert "return not (is_voice_input and not already_sent)" in voice
+    # Discord: the voice-channel test the chip mirrors, and the two runner methods it calls.
+    assert "def _get_guild_id(event: MessageEvent) -> Optional[int]:" in voice
+    assert "if guild_id and callable(play) and callable(is_in_vc) and is_in_vc(guild_id):" in voice
+    assert 'play = getattr(adapter, "play_in_voice_channel", None)' in voice
+    assert "def _delivery_adapter_for(self, source" in (root / "gateway" / "authz_mixin.py").read_text()
     hooks = (root / "gateway" / "run_inbound_hooks.py").read_text()
     assert '"pre_gateway_dispatch", event=event, gateway=self,' in hooks
     run = (root / "gateway" / "run.py").read_text()
